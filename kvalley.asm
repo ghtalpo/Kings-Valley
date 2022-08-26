@@ -16,6 +16,8 @@ VERSION2	equ	1	; Segunda version de la ROM con correccion de fallos
 ;-------------------------------------------------------------------------------
 ; Modificando la constante VERSION2 se pueden generar las dos versiones del juego que existen
 ; La version 2 [A1] corrige algunos fallos de la version previa como:
+; 상수 VERSION2를 수정하면 존재하는 두 가지 버전의 게임을 생성할 수 있습니다.
+; 버전 2[A1]는 다음과 같은 이전 버전의 일부 버그를 수정합니다.
 ;
 ; - Impide que se pueda lanzar un cuchillo cuando la puerta se esta abriendo.
 ;   De esta forma se evita que se corrompa el grafico de la puerta al pasar el cuchillo sobre ella
@@ -26,14 +28,15 @@ VERSION2	equ	1	; Segunda version de la ROM con correccion de fallos
 ; - Se puede picar sobre un muro trampa
 ;
 ; - Corregida la posicion del muro trampa de la piramide 10 de la pantalla de la izquierda, abajo a la izquierda (aparece al coger el cuchillo)
-;   La version original lo ten�a en la pantalla de la derecha bajo las escaleras. Pero hacia falta cabar un par de ladrillos del suelo para que apareciese.
+;   La version original lo ten�a en la pantalla de la derecha bajo las escaleras. Pero hacia falta cabar un par de ladrillos del suelo para que apareciese.
 ;
-; - Modificaci�n de la posicion del muro trampa de la pir�mide 12, en la pantalla de la derecha, abajo a la derecha (aparece al coger el pico) Se ha movido un tile a la derecha (?)
+; - Modificaci�n de la posicion del muro trampa de la pir�mide 12, en la pantalla de la derecha, abajo a la derecha (aparece al coger el pico) Se ha movido un tile a la derecha (?)
 ;
 ; - Los muros trampa se detienen al chocar contra un objeto. En la version anterior lo borraba (erroneamente decrementaba los decimales X en vez de la coordenada Y)
 ;-------------------------------------------------------------------------------
 
 ; En la piramide 10-2 hay una momia que parece por encima del suelo (!?)
+; 피라미드 10-2에는 땅 위에 있는 듯한 미라(!?)
 
 ;-------------------------------------------------------------------------------
 ; Estructuras
@@ -44,7 +47,9 @@ VERSION2	equ	1	; Segunda version de la ROM con correccion de fallos
 ;--------------------------------------
 ACTOR_STATUS:	 equ	0
 ACTOR_CONTROL:	 equ	1			; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 ACTOR_SENTIDO:	 equ	2			; 1 = Izquierda, 2 = Derecha
+									; 1 = 왼쪽, 2 = 오른쪽
 ACTOR_Y:	 equ	3
 ACTOR_X_DECIMAL: equ	4
 ACTOR_X:	 equ	5
@@ -55,13 +60,18 @@ ACTOR_SPEEDROOM: equ	9
 ACTOR_MOV_CNT:	 equ	0Ah
 ACTOR_FRAME:	 equ	0Bh
 ACTOR_JMP_P:	 equ	0Ch		; Puntero a tabla con los valores del salto
+								; 점프 값이 있는 테이블에 대한 포인터
 ACTOR_JMP_P_H:	 equ	0Dh
 ACTOR_JUMPSENT:	 equ	0Eh		; 0 = Subiendo,	1 = Cayendo
+								; 0 = 상승, 1 = 하락
 ACTOR_SENT_ESC:	 equ	0Fh		; Sentido en el	que van	las escaleras. 0 = \  1	= /
+								; 계단이 가는 방향. 0 = \ 1 = /
 ACTOR_POS_RELAT: equ	10h		; 0 = A	la misma altura	(o casi), 1 = Momia por	encima,	2 = Por	debajo
+								; 0 = 같은 높이(또는 거의)에서, 1 = 위의 미라, 2 = 아래
 ACTOR_TIMER:	 equ	11h
 ACTOR_TIPO:	 equ	14h
 ACTOR_STRESS:	 equ	15h		; Contador de stress de	la momia (para saber si	choca muy a menudo)
+								; 미라 스트레스 카운터(너무 자주 충돌하는지 알기 위해)
 
 ;--------------------------------------
 ; Puerta giratoria
@@ -84,8 +94,10 @@ MUSIC_ADD_LOW:	 equ	3
 MUSIC_ADD_HIGH:	 equ	4
 MUSIC_OCTAVA:	 equ	5			; Octava?
 MUSIC_VOLUME_CH: equ	6			; Volumen canal
+									; 채널 볼륨
 MUSIC_VOLUME:	 equ	7
 MUSIC_CNT_LOOP:	 equ	9			; Veces	que se ha reproducido un pattern
+									; 패턴이 재생된 횟수
 MUSIC_TEMPO:	 equ	0Ah
 
 ;-------------------------------------------------------------------------------
@@ -159,30 +171,44 @@ ADD_A_DE:
 ; Actualiza el reproductor de sonido
 ; Evita	que se ejecute la logica al producirse una interrupcion	si no ha
 ; terminado la iteracion anterior
+; 인터럽트 후크(50 또는 60Hz)에서 호출되는 주요 기능
+; 사운드 플레이어 업데이트
+; 이전 반복이 완료되지 않은 경우 인터럽트 시 로직 실행 방지
 ;-------------------------------------------------------------------------------
 
 tickMain:
 		call	RDVDP		; Borra	el flag	de interrupcion
+							; 인터럽트 플래그 지우기
 		di
 		call	updateSound	; Actualiza el driver de sonido
+							; 사운드 드라이버 업데이트
 
 		ld	hl, tickInProgress ; Si	el bit0	esta a 1 no se ejecuta la logica del juego
+								; bit0이 1이면 게임 로직이 실행되지 않습니다.
 		bit	0, (hl)
 		jr	nz, tickMain2	; No se	ha terminado la	iteracion anterior
+							; 이전 반복이 완료되지 않았습니다.
 
 		inc	(hl)		; Indica que se	va a realizar una iteracion
+						; 반복이 수행될 것임을 나타냅니다.
 		ei
 		call	chkControls	; Actualiza el estado de los controles
+							; 컨트롤 상태 업데이트
 		call	runGame		; Ejecuta la logica del	juego
+							; 게임 로직 실행
 
 		xor	a
 		ld	(tickInProgress), a ; Indica que ha terminado la iteracion actual
+								; 현재 반복이 완료되었음을 나타냅니다.
 
 tickMain2:
 		call	RDVDP		; Lee y	borra el flag de interrupcion
+							; 인터럽트 플래그 읽기 및 지우기
 		or	a		; Se ha	producido una interrupcion mientras se ejecutaba logica	del juego?
+					; 게임 로직 실행 중 중단이 발생했습니까?
 		di
 		call	m, updateSound	; Si, actualiza	el sonido
+								; 예, 사운드를 업데이트합니다.
 		ei
 		ret
 
@@ -191,6 +217,9 @@ tickMain2:
 ; Lee el estado	de las teclas
 ; Proteccion anticopia (!?)
 ; Si se	ejecuta	en RAM machaca el programa
+; 키 상태 읽기
+; 복사 방지(!?)
+; RAM에서 실행되면 프로그램이 손상됩니다.
 ;----------------------------------------------------
 
 ReadKeys_AC:
@@ -205,6 +234,9 @@ ReadKeys_AC:
 ; Jump index
 ; (SP) = Puntero a funciones
 ;  A = Indice de la funcion
+; 점프 인덱스
+; (SP) = 함수에 대한 포인터
+; A = 함수의 인덱스
 ;----------------------------------------------------
 
 jumpIndex:
@@ -218,6 +250,7 @@ JumpIndex2:
 
 ;----------------------------------------------------
 ; Igual	que WriteDataVRAM pero escribiendo siempre 0
+; WriteDataVRAM과 동일하지만 항상 0을 씁니다.
 ;----------------------------------------------------
 
 ClearDataVRAM:
@@ -235,10 +268,20 @@ ClearDataVRAM:
 ; Datos:
 ;  FE: next block (nueva direccion + datos)
 ;  FF: end datos
+; 포맷된 데이터를 VRAM에 쓰기
+; 안에:
+; C = 쓸 데이터에 적용된 AND 마스크
+; DE = 데이터 주소
+; 0-1: VRAM 주소
+; 2...: 데이터
+; 데이터:
+; FE: 다음 블록(새 주소 + 데이터)
+; FF: 종료 데이터
 ;----------------------------------------------------
 
 WriteDataVRAM:
 		ld	c, 0FFh		; Mascara a aplicar con	AND al byte a escribir
+						; 쓸 바이트에 AND로 적용할 마스크
 
 writeDataVRAM2:
 		ex	de, hl
@@ -254,11 +297,14 @@ writeDataVRAM3:
 		ld	b, a
 		inc	b		; Es #FF?
 		ret	z		; Fin de los datos
+					; 데이터의 끝
 
 		inc	b		; Es #FE?
 		jr	z, writeDataVRAM2 ; Cambia puntero a VRAM
+								; VRAM에 대한 포인터 변경
 
 		and	c		; Aplica mascara AND al	dato a escribir	en la VRAM
+					; VRAM에 쓸 데이터에 AND 마스크 적용
 		call	WRTVRM
 		inc	hl
 		jr	writeDataVRAM3
@@ -271,6 +317,10 @@ writeDataVRAM3:
 ; Borra	el area	de variables
 ; Inicializa el	hardware (modo de video, PSG)
 ; Ejecuta un loop infinito, tipico de Konami.
+; 매 프레임마다 게임 로직을 호출하는 인터럽트 루틴 수정
+; 변수 영역 지우기
+; 하드웨어 초기화(비디오 모드, PSG)
+; Konami의 전형적인 무한 루프를 실행합니다.
 ;-------------------------------------------------------------------------------
 
 startCode:
@@ -280,21 +330,28 @@ startCode:
 		ld	(H_TIMI), a
 		ld	hl, tickMain
 		ld	(H_TIMI+1), hl	; Pone la rutina de interrupcion que lleva la logica del juego
+							; 게임의 논리를 전달하는 인터럽트 루틴을 넣습니다.
 
 		ld	sp, stackTop	; Fija el lugar de la pila
+							; 더미의 위치를 ​​​​설정하십시오
 		ld	hl, GameStatus
 		ld	de, subStatus
 		ld	bc, 6FFh
 		ld	(hl), 0
 		ldir			; Inicializa el	area de	variables del juego
+						; 게임 변수 영역 초기화
 
 		ld	a, 1
 		ld	(tickInProgress), a ; Evita que	se ejecute la logica del juego mientras	se inicializa el hardware
+								; 하드웨어가 초기화되는 동안 게임 로직이 실행되지 않도록 방지
 		call	initHardware	; Inicializa el	modo de	video y	el PSG
+								; 비디오 모드 및 PSG 초기화
 
 		xor	a
 		ld	(tickInProgress), a ; Permite que se ejecute la	logica del juego en la proxima interrupcion
+								; 다음 인터럽트에서 게임 로직이 실행되도록 허용
 		call	RDVDP		; Borra	el flag	de interrupcion
+							; 인터럽트 플래그 지우기
 		ei
 
 dummyLoop:
@@ -303,10 +360,13 @@ dummyLoop:
 ;----------------------------------------------------
 ; VRAM write con proteccion anticopia
 ; Antes	de escribir en la VRAM machaca el codigo si se ejecuta en RAM
+; 복사 방지 기능이 있는 VRAM 쓰기
+; VRAM에 쓰기 전에 RAM에서 실행 중인 경우 코드를 파쇄하십시오.
 ;----------------------------------------------------
 
 VRAM_writeAC:
 		ld	(copyProtect_+1), de ; Proteccion anticopia (!?)
+								; 복사 방지(!?)
 		jp	setFillVRAM
 
 ;-------------------------------------------------------------------------------
@@ -318,13 +378,18 @@ VRAM_writeAC:
 runGame:
 		ld	hl, timer
 		inc	(hl)		; Incrementa timer global del juego
+						; 글로벌 게임 타이머 증가
 
 		ld	bc, (GameStatus) ;  C =	Game status, B = Substatus
 		ld	a, (controlPlayer) ; bit 6 = Prota controlado por el jugador
+								; bit 6 = 플레이어 제어 게이트(?)
 		bit	6, a		; Se esta jugando?
+						; 재생 중입니까?
 		jr	nz, runGame2	; Si, no esta en modo demo o en	el menu
+							; 예, 데모 모드나 메뉴에 없습니다.
 
-		ld	hl, chkPushAnyKey ; Se a�ade esta funcion para comprobar si se pulsa una tecla y hay que empezar una partida
+		ld	hl, chkPushAnyKey ; Se a�ade esta funcion para comprobar si se pulsa una tecla y hay que empezar una partida
+							; 이 기능은 키가 눌렸는지, 게임을 시작해야 하는지 확인하기 위해 추가되었습니다.
 		push	hl
 
 runGame2:
@@ -332,16 +397,26 @@ runGame2:
 		call	jumpIndex
 
 		dw KonamiLogo		; 0 = Muestra el logo de Konami
+							; 0 = Konami 로고 표시
 		dw WaitMainMenu		; 1 = Espera en	el menu. Si   no se pulsa una tecla salta a la demo
+							; 1 = 메뉴에서 기다립니다. 아무 키도 누르지 않은 경우 데모로 이동
 		dw SetDemo		; 2 = Prepara el modo demo
+						; 2 = 데모 모드 준비
 		dw iniciaPartida	; 3 = Reproduce	musica inicio, parpadea	PLAY START y pasa al modo de juego
+							; 3 = 음악 시작 재생, PLAY START 플래시 및 게임 모드로 이동
 		dw StartGame		; 4 = Borra menu, dibuja piramide, puerta y como entra el prota
+							; 4 = 메뉴 삭제, 피라미드 그리기, 문 및 주인공이 들어가는 방식
 		dw gameLogic		; 5 = Logica del pergamino o del juego
+							; 5 = 스크롤 또는 게임 로직
 		dw tickMuerto		; 6 = Pierde una vida /	Muestra	mensaje	de Game	Over
+							; 6 = 생명을 잃음 / 게임 오버 메시지 표시
 		dw tickGameOver		; 7 = Game Over
 		dw stageClear		; 8 = Stage clear (suma	una vida y activa el pergamino)
+							; 8 = 스테이지 클리어(생명력 추가 및 스크롤 활성화)
 		dw ScrollPantalla	; 9 = Scroll pantalla
+							; 9 = 스크롤 화면
 		dw FinalJuego		; 10 = Muestra el final	del juego
+							; 10 = 게임의 끝을 보여줍니다
 
 
 ;----------------------------------------------------------------------------
@@ -350,6 +425,10 @@ runGame2:
 ; 1 = Sube el logo cada	2 frames. Subraya Konami y pone	el texto "SOFTWARE"
 ; 2 = Espera un	rato y borra la	pantalla.
 ; 3 = Dibuja el	menu.
+; 0 = 로고 초기화: 화면 지우기, 그래픽 로드 및 그래픽 모드 설정
+; 1 = 2 프레임마다 로고를 업로드합니다. Konami에 밑줄을 긋고 "SOFTWARE"라는 텍스트를 넣습니다.
+; 2 = 잠시 기다렸다가 화면을 지웁니다.
+; 3 = 메뉴를 그립니다.
 ;----------------------------------------------------------------------------
 
 KonamiLogo:
@@ -357,12 +436,15 @@ KonamiLogo:
 		ld	a, (timer)
 		rra
 		ret	nc		; Sube el logo cada dos	frames
+					; 두 프레임마다 로고 업로드
 
 		call	dibujaLogo
 		ret	nz		; Aun esta subiendo el logo
+					; 로고는 아직 업로드 중입니다.
 
 		ld	de, TXT_Sofware
 		call	unpackGFXset	; Subraya Konami y pone	texto "Software"
+								; Konami에 밑줄을 긋고 "Software"라는 텍스트를 입력합니다.
 		xor	a
 		jr	UpdateSubstatus
 
@@ -371,16 +453,19 @@ KonamiLogo2:
 		ld	hl, waitCounter
 		dec	(hl)
 		ret	nz		; Espera un rato mostrando el logo
+					; 로고를 표시하는 동안 잠시 기다리십시오
 
 		call	clearScreen
 		call	setColor
 		xor	a
 		ld	(gameLogoCnt), a ; Contador que	indica que parte del logo del menu se esta pintando
+							; 메뉴 로고의 일부가 그려지고 있음을 나타내는 카운터
 		jr	doNextSubStatus
 
 KingsValleyLogo:
 		djnz	InitLogo
 		call	drawGameLogo	; Dibuja el menu
+								; 메뉴를 그리다
 		ret	c
 		xor	a
 		jp	NextGameStatus_
@@ -396,19 +481,23 @@ doNextSubStatus:
 ;----------------------------------------------------------------------------
 ; Menu (1)
 ; Espera un rato y salta a la demo
+; 잠시 기다렸다가 데모로 이동
 ;----------------------------------------------------------------------------
 
 WaitMainMenu:
 		ld	hl, waitCounter
 		dec	(hl)
 		ret	nz		; Hay que seguir esperando
+					; 우리는 계속 기다려야 해요
 
 		jp	NextGameStatusT	; Pasa al modo demo
+							; 데모 모드로 전환
 
 ;----------------------------------------------------------------------------
 ;
 ; Game demo (2)
 ; Pone el status de juego e inicializa las variables de	la demo
+; 게임 상태 설정 및 데모 변수 초기화
 ;
 ;----------------------------------------------------------------------------
 
@@ -417,16 +506,21 @@ SetDemo:
 		ld	(GameStatus), hl
 		ld	l, 0
 		ld	(PiramidesPasadas), hl ; Cada bit indica si la piramide	correspondiente	ya esta	pasada/terminada
+									; 각 비트는 해당 피라미드가 이미 통과/완료되었는지 여부를 나타냅니다.
 		ld	a, l
 		ld	(numFinishGame), a ; Numero de veces que se ha terminado el juego
+								; 게임이 끝난 횟수
 
 		call	setDatosPartida
 
 		ld	hl, 805h	; Piramide 5, puerta de	la derecha
+						; 피라미드 5, 오른쪽 문
 		ld	(piramideDest),	hl
 
 		ld	hl, DemoKeyData	; Controles grabados de	la demo
+							; 녹음된 데모 컨트롤
 		ld	(keyPressDemo),	hl ; Puntero a los controles grabados
+								; 기록된 컨트롤에 대한 포인터
 
 		ld	a, 8
 		ld	(KeyHoldCntDemo), a
@@ -451,19 +545,24 @@ doNothing:
 
 StartGame:
 		ld	a, (flagPiramideMap) ; 0 = Mostrando mapa, 1 = Dentro de la piramide
+								; ; 0 = 지도 보기, 1 = 피라미드 내부
 		rra			; Se esta mostrando el mapa de piramides?
+					; 피라미드 지도가 표시됩니까?
 		jp	nc, showMap
 
 		ld	a, b		; Substatus
 		or	a		; Si es	igual a	cero esta haciendo la cortinilla desde el menu
+					; 0이면 메뉴에서 커튼을 만드는 것입니다.
 		jr	z, waitEntrada	; No dibuja el brillo de las gemas
+							; 보석의 광택을 그리지 않습니다
 
 		push	bc
 		call	drawBrilloGemas	; Dibuja el brillo de las gemas
+								; 보석의 반짝임을 그려
 		pop	bc
 
 ; Sub1:	Espera en las escaleras	de la entrada
-
+; Sub1: 입구 계단에서 대기
 
 waitEntrada:
 		djnz	bajaEscaleras
@@ -473,7 +572,7 @@ waitEntrada:
 		jr	UpdateSubstatus
 
 ; Sub2:	Baja por las escaleras
-
+; Sub2: 계단을 내려가
 bajaEscaleras:
 		djnz	initStage2
 		call	updateSprites
@@ -484,6 +583,8 @@ bajaEscaleras:
 ;-------------------------------------------------------------------------------
 ; Se ejecuta tras perder una vida o al empezar una partida.
 ; Borra	lo que hay en pantalla con una cortinilla negra	de izquierda a derecha.
+; 생명을 잃거나 게임을 시작할 때 실행됩니다.
+; 왼쪽에서 오른쪽으로 검은색 와이프로 화면의 내용을 지웁니다.
 ; Substatus = 0
 ;-------------------------------------------------------------------------------
 
@@ -493,29 +594,39 @@ InitStage:
 
 
 		call	hideSprAttrib	; Quita	sprites	de la pantalla
+								; 화면에서 스프라이트 제거
 		ld	hl, Vidas
 		dec	(hl)		; Quita	una vida
+						; 목숨을 걸다
 
 		ld	a, (flagMuerte)
 		or	a
 		jr	nz, dummyJump	; (!?)
 
 dummyJump:				; Descomprime graficos y mapa con todos	los elementos
+						; 모든 요소가 포함된 차트 및 지도 압축 풀기
 		call	unpackStage
 		call	AI_Salidas	; Pinta	la salida abierta
+							; 열린 출구를 칠하다
 		call	setSprDoorProta
 		call	setAttribProta	; Actualiza atributos de los sprites del prota
+								; 주인공 스프라이트의 속성 업데이트
 		call	updateSprites	; Actualiza attributos de los sprites (RAM->VRAM)
+								; 스프라이트 속성 업데이트(RAM->VRAM)
 		call	setupRoom	; Pinta	pantalla
+							; 페인트 스크린
 		call	renderHUD	; Dibuja el marcador, puntos, vidas
+							; 마커, 포인트, 생명을 그립니다.
 		ld	a, 10h
 		jr	UpdateSubstatus
 
 ; Sub3:	Comienza la fase
+; Sub3: 단계 시작
 
 initStage2:
 		djnz	InitStage
 ; Ha bajado las	escaleras y ya se ha cerrado la	puerta
+; 그는 계단을 내려갔고 문은 이미 닫혀 있었다
 		ld	hl, waitCounter
 		dec	(hl)
 		ret	nz
@@ -525,6 +636,7 @@ initStage2:
 		call	AI_Salidas
 
 		ld	a, (controlPlayer) ; bit 6 = Prota controlado por el jugador
+								; 비트 6 = 플레이어 제어 Prota
 		bit	6, a
 		jr	z, initStage3
 
@@ -572,18 +684,24 @@ doCortinilla:
 ;----------------------------------------------------
 ;
 ; Logica del juego
+; 게임 논리
 ;
 ;----------------------------------------------------
 
 gameLogic:
 		ld	a, (flagPiramideMap) ; 0 = Mostrando mapa, 1 = Dentro de la piramide
+								; 0 = 지도 보기, 1 = 피라미드 내부
 		rra			; Esta en modo juego o mapa?
+					; 게임 모드인가요, 맵 모드인가요?
 		push	af
 		call	c, tickGame	; Logica del juego
+							; 게임 논리
 		pop	af
 		call	nc, tickPergamino ; Logica del pergamino
+									; 양피지(?) 논리
 
 		ld	a, (flagEndPergamino) ;	1 = Ha terminado de mostar el pergamino/mapa
+									; 1 = 스크롤/지도 표시 완료
 		or	a
 		jr	z, chkVivo
 
@@ -594,12 +712,16 @@ gameLogic:
 chkVivo:
 		ld	a, (flagVivo)
 		or	a		; Esta vivo?
+					; 살아있어?
 		ret	nz		; Si
+					; 예
 		jr	NextGameStatusT	; No, pasa al siguiente	status
+							; 아니요, 다음 상태로 이동합니다.
 
 ;----------------------------------------------------
 ;
 ; Pierde una vida / Muestra Game over
+; 목숨을 잃다 / Show Game over
 ;
 ;----------------------------------------------------
 
@@ -607,13 +729,17 @@ tickMuerto:
 		ld	a, (MusicChanData)
 		or	a
 		ret	nz		; Esta sonando la musica de muerte
+					; 죽음의 음악이 흐르고 있어
 
 		ld	a, (controlPlayer) ; bit 6 = Prota controlado por el jugador
+								; 비트 6 = 플레이어 제어 Prota
 		bit	6, a		; Esta en modo demo?
+						; 데모 모드인가요?
 		jr	nz, pierdeVida
 
 		xor	a
 		jp	setGameStatus	; Reinicia el juego al morir en	el modo	demo
+							; 데모 모드에서 사망 시 게임 다시 시작
 
 pierdeVida:
 		ld	a, (Vidas)
@@ -621,6 +747,7 @@ pierdeVida:
 		jr	nz, setGameMode
 
 ; Borra	el area	donde se imprimira el mensaje de GAME OVER
+; GAME OVER 메시지가 인쇄될 영역을 삭제합니다.
 		xor	a
 		ld	hl, 3929h
 		ld	b, 5
@@ -636,18 +763,23 @@ clrGameOverArea:
 		djnz	clrGameOverArea
 
 		ld	a, 9Ah		; Musica de GAME OVER
+						; 게임 오버 음악
 		call	setMusic
 
 		ld	de, TXT_GameOver
 		call	WriteDataVRAM	; Imprime mensaje de GAME OVER
+								; GAME OVER 메시지 인쇄
 
 		ld	a, 6
 		ld	(GameStatus), a	; (!?) Para que	pone esto si en	la siguiente llamada se	cambia?
+							; (!?) 다음 호출에서 변경되면 왜 이것을 넣습니까?
 		ld	a, 0B8h
 		jp	NextGameStatus_	; Pasa al estado de Game Over
+							; 게임 오버 상태로 이동
 
 setGameMode:
 		ld	a, 4		; Empezando la partida
+						; 게임 시작
 
 setGameStatus:
 		ld	(GameStatus), a
@@ -660,6 +792,9 @@ setGameStatus:
 ; Logica del Game Over
 ; Hace una pausa suficientemente larga como para que termine la	musica
 ; Si se	esta pulsando alguna direccion vuelve al menu. De lo contrario muestra el logo de Konami.
+; 게임 종료 로직
+; 그는 음악이 끝날 때까지 충분히 오래 멈춥니다.
+; 아무 주소나 누르면 메뉴로 돌아갑니다. 그렇지 않으면 Konami 로고가 표시됩니다.
 ;
 ;----------------------------------------------------
 
@@ -668,51 +803,63 @@ tickGameOver:
 		ld	a, (hl)
 		and	1
 		ret	z		; Procesa una de cada dos iteraciones
-
+					; 2번의 반복 중 1번 처리
 		inc	hl
 		dec	(hl)
 		ret	nz		; Decrementa el	tiempo de espera
+					; 대기 시간 줄이기
 
 		call	chkPushAnyKey	; Comprueba si se pulsa	una tecla para volver al menu
+								; 메뉴로 돌아가기 위해 키를 눌렀는지 확인
 
 		ld	a, (GameStatus)
 		cp	7		; Modo Game Over?
+					; 게임 오버 모드?
 		ld	de, controlPlayer ; bit	6 = Prota controlado por el jugador
+								; 비트 6 = 플레이어 제어 Prota
 		jr	z, reiniciaJuego
 
 		ld	a, (de)
 		and	10111111b	; Borra	el bit 6
+						; 비트 6 지우기
 		ld	(de), a
 		ret
 
 reiniciaJuego:
 		ld	a, (de)
 		and	10111111b	; Borra	el bit 6
+						; 비트 6 지우기
 		ld	(de), a
 		xor	a
 		jr	setGameStatus	; Muestra el logo de Konami
+							; Konami 로고를 표시합니다.
 
 ;----------------------------------------------------
 ;
 ; Stage	clear
 ;
 ; Silencia el sonido, incrementa la vidas y activa el pergamino
+; 소리를 멈추고 생명을 늘리며 두루마리를 활성화합니다.
 ;
 ;----------------------------------------------------
 
 stageClear:
 		ld	a, 20h		; Silencio
+						; 고요
 		call	setMusic
 
 		ld	hl, Vidas
 		inc	(hl)		; Incrementa las vidas
+						; 수명을 늘리다
 		inc	hl
 		ld	a, (hl)
 		add	a, 1
 		daa
 		ld	(hl), a		; Activa pergamino/mapa
+						; 스크롤/맵 활성화
 		xor	a
 		ld	(flagEndPergamino), a ;	1 = Ha terminado de mostar el pergamino/mapa
+									; 1 = 스크롤/지도 표시 완료
 		jr	setGameMode
 
 
@@ -721,29 +868,42 @@ stageClear:
 ; Scroll de la pantalla
 ; Mueve	la pantalla y actualiza	la posicion del	prota
 ; al cambiar de	una habitacion a otra
+; 화면 스크롤
+; 화면을 이동하고 주인공의 위치를 ​​업데이트
+; 한 방에서 다른 방으로 변경할 때
 ;
 ;----------------------------------------------------
 
 ScrollPantalla:
 		call	tickScroll
 		ret	c		; No ha	terminado el scroll
+					; 스크롤이 끝나지 않았다
 
 		ld	hl, GameStatus
 		ld	(hl), 5		; Modo = jugando
+						; 모드 = 재생
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+								; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		ld	c, 0F0h		; Coordena X del prota en la parte derecha de la pantalla
+						; 화면 오른쪽에 있는 주인공의 X 좌표
 		ld	b, a
 		dec	b		; Mueve	el prota una pantalla a	la izquierda
+					; 영웅을 왼쪽으로 한 화면 이동
 		jr	c, scrollPantalla2
 		inc	b
 		inc	b		; Mueve	el prota una pantalla a	la derecha
+					; 영웅을 한 화면 오른쪽으로 이동
 		ld	c, 4		; Coordenada X en la parte izquierda
+						; 왼쪽의 X 좌표
 
 scrollPantalla2:
 		ld	(ProtaX), bc	; Coloca al prota en la	posicion correcta
+							; 주인공을 올바른 위치에 배치
 		jp	setAttribProta	; Actualiza atributos de los sprites del prota
+							; 주인공 스프라이트의 속성 업데이트
 
 ;----------------------------------------------------
 ;
@@ -761,6 +921,11 @@ FinalJuego:
 ; - Reproduce musica de	inicio de partida
 ; - Parpadea PLAY START
 ; - Inicia las variables de la partida y pasa el estado	de juego
+; 게임 시작
+;
+; - 게임 시작 음악 재생
+; - PLAY START가 깜박입니다.
+; - 게임 변수 초기화 및 게임 상태 전달
 ;
 ;----------------------------------------------------
 
@@ -771,10 +936,13 @@ iniciaPartida:
 		jr	z, ComienzaPartida
 
 		bit	2, (hl)		; Parpadea cada	4 frames
+						; 4프레임마다 깜박임
 		ld	de, TXT_PLAY_START
 		jp	nz, ClearDataVRAM ; Borra texto
+								; 텍스트 삭제
 
 		jp	WriteDataVRAM	; Muestra "PLAY START"
+							; "PLAY START" 표시
 
 ComienzaPartida:
 		call	IniciaDatosPartida
@@ -782,6 +950,7 @@ ComienzaPartida:
 
 PlayIntroMusic:
 		ld	a, 97h		; Musica de incio de partida
+						; 게임 시작 음악
 		call	setMusic
 		ld	a, 50h
 		ld	(waitCounter), a
@@ -800,34 +969,43 @@ setColor:
 ;----------------------------------------------------
 ;
 ; Cargar graficos del logo de Konami, la fuente	y el menu
+; Konami 로고, 글꼴 및 메뉴의 그래픽 업로드
 ;
 ;----------------------------------------------------
 
 LoadIntroGfx:
 		call	loadKonamiLogo	; Logo de Konami
-		
+								; 코나미 로고
+
 		call	loadFont	; Fuente
-		
+							; 폰트
+
 		ld	hl, 8
 		ld	de, GFX_Space	; Espacio en blanco
+							; 빈 공간
 		call	UnpackPatterns	; Patron de espacio en blanco
+								; 공백 패턴
 
 setGfxMenu:
 		ld	de, GFX_Menu	; Logo de King's Valley y piramide del menu
+							; King's Valley 로고 및 메뉴 피라미드
 		ld	hl, 2480h	; BG char
 		call	UnpackPatterns
 
 		ld	de, ATTRIB_Menu	; Atributos de color de	la piramide del	menu
+							; 메뉴 피라미드의 색상 속성
 		ld	hl, 480h	; BG Attrib
 		call	UnpackPatterns
 
 		ld	hl, 44D8h	; #4D8 = Tabla de color	del logo
+						; #4D8 = 로고 색상 차트
 		ld	b, 16h
 
 coloreaLogo:
 		push	bc
 		push	hl
 		ld	de, COLORES_LOGO ; Atributos de	color del logo de King's Valley del menu
+							; King's Valley 메뉴 로고의 색상 속성
 		call	UnpackPatterns
 		pop	hl
 		ld	bc, 10h
@@ -837,11 +1015,13 @@ coloreaLogo:
 
 		ld	a, 40h		; Color
 		ld	bc, 10h		; Bytes	a rellenar
+						; 채울 바이트
 		jp	fillVRAM3Bank
 
 
 ;----------------------------------------------------
 ; Inicializa las variables para	una partida nueva
+; 새 게임에 대한 변수 초기화
 ;----------------------------------------------------
 
 IniciaDatosPartida:
@@ -856,6 +1036,7 @@ IniciaDatosPartida:
 ;----------------------------------------------------
 ;
 ; Inicializa los valores para una partida nueva
+; 새 게임의 값 초기화
 ;
 ;----------------------------------------------------
 
@@ -873,19 +1054,30 @@ ValoresIniciales:db    5
 		db    1			; Piramide actual
 		db    1			; Piramide destino
 		db    8			; Direccion de la flecha
+					; 생명
+					; 양피지를 보여주지 않는다
+					; 추가 생명 카운터
+					; 라이브 플래그
+					; 현재 피라미드
+					; 운명의 피라미드
+					; 화살표 방향
 
 ;----------------------------------------------------
 ;
 ; Carga	los graficos y prepara la piramide actual
+; 차트 로드 및 현재 피라미드 준비
 ;
 ;----------------------------------------------------
 
 unpackStage:
 		call	loadGameGfx	; Carga	los graficos y sprites
+							; 그래픽 및 스프라이트 로드
 		jp	setupStage	; Descomprime el mapa actual
+						; 현재 지도 압축 풀기
 
 ;----------------------------------------------------
 ; Cortinilla vertical
+; 수직 블라인드
 ;----------------------------------------------------
 
 drawCortinilla:
@@ -894,29 +1086,36 @@ drawCortinilla:
 		inc	hl
 		dec	(hl)
 		ret	m
-		
+
 		ld	a, (hl)
 		ld	h, 38h		; #3800	es el area del BG map
+						; #3800은 BG 맵의 영역입니다.
 		xor	1Fh
 		ld	l, a
 		ld	b, 18h		; Numero de patrones a escribir	verticales
+						; 세로로 쓸 패턴 수
 		xor	a
 
 drawCortinilla2:
 		call	WRTVRM
 		ld	de, 20h
 		add	hl, de		; Siguiente columna
+						; 다음 열
 		djnz	drawCortinilla2
 
 
 ;----------------------------------------------------
 ; Borra	los atributos de los sprites de	la VRAM
+; VRAM에서 스프라이트 속성 지우기
 ;----------------------------------------------------
 
 HideSprites:
 		ld	hl, 3B00h	; Sprite attribute area
+						; 스프라이트 속성 영역
 		ld	bc, 80h		; Numero de bytes a rellenar (32 sprites * 4 bytes)
+						; 채울 바이트 수(32개의 스프라이트 * 4바이트)
 		ld	a, 0C3h		; Valor	a rellenar
+						; 채울 값
 		call	setFillVRAM
 		xor	a
 		ret
@@ -925,6 +1124,7 @@ HideSprites:
 ;----------------------------------------------------
 ; Oculta los sprites colocando su coordenada Y de los
 ; atributos RAM	en #E1
+; RAM 속성의 Y 좌표를 #E1로 설정하여 스프라이트를 숨깁니다.
 ;----------------------------------------------------
 
 hideSprAttrib:
@@ -932,6 +1132,7 @@ hideSprAttrib:
 
 hideSprAttrib2:
 		ld	hl, sprAttrib	; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
+							; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 
 hideSprAttrib3:
 		ld	(hl), 0E1h
@@ -944,6 +1145,7 @@ hideSprAttrib3:
 
 ;----------------------------------------------------
 ; Quita	momias
+; 미라를 제거하다
 ;----------------------------------------------------
 
 quitaMomias:
@@ -957,12 +1159,17 @@ quitaMomias:
 ; (C) KONAMI PYRAMID-xx
 ; El numero de la piramide se calcula:
 ; veces	que se ha terminado el juego * 15 + piramide actual
+; 텍스트를 그리다
+; (C) KONAMI 피라미드-xx
+; 피라미드의 수는 다음과 같이 계산됩니다.
+; 시간 게임 오버 * 15 + 현재 피라미드
 ;----------------------------------------------------
 
 drawPyramidNumber:
 		ld	de, TXT_KONAMI_PYR
 		call	WriteDataVRAM
 		ld	a, (numFinishGame) ; Numero de veces que se ha terminado el juego
+								; 게임이 끝난 횟수
 		ld	b, a
 		add	a, a
 		add	a, a
@@ -973,15 +1180,18 @@ drawPyramidNumber:
 		ld	a, (piramideActual)
 		add	a, b
 		ld	hl, 3AF3h	; Coordenadas
+						; 좌표
 		jp	drawDigit
 
 
 ;----------------------------------------------------
 ; Dibuja el numero de vidas
+; 생명의 수를 그리다
 ;----------------------------------------------------
 
 dibujaVidas:
 		ld	hl, 381Dh	; VRAM address name table = coordendas de las vidas
+						; VRAM 주소 이름 테이블 = 생활 좌표
 		ld	a, (Vidas)
 
 drawDigit:
@@ -991,6 +1201,7 @@ drawDigit:
 
 ;----------------------------------------------------
 ; Convierte un valor a decimal
+; 값을 십진수로 변환
 ;----------------------------------------------------
 
 convDecimal:
@@ -1023,6 +1234,7 @@ convDecimal3:
 
 SetUpMenu:
 		call	setGfxMenu	; Carga	los graficos del logo del menu
+							; 메뉴 로고 그래픽 로드
 		xor	a
 		ld	(gameLogoCnt), a
 
@@ -1034,21 +1246,28 @@ loopDrawLogo:
 ;
 ; Dibuja el logo de KING'S VALLEY del menu
 ; Lo hace pintando columna a columna cada palabra
+; 메뉴에서 KING'S VALLEY 로고 그리기
+; 각 단어를 열별로 페인팅하여 이를 수행합니다.
 ;
 ;---------------------------------------------------
 
 drawGameLogo:
 		ld	hl, gameLogoCnt	; Contador para	saber que parte	del logo del menu se esta pintado
+							; 메뉴 로고의 어느 부분이 그려져 있는지 알 수 있는 카운터
 		ld	a, (hl)
 		inc	(hl)
 		cp	16h		; Ha terminado de pintar KING'S VALLEY?
+					; KING's VALLEY 그림을 완성하셨나요?
 
 copyProtect_:
 		jp	nc, drawMenuEnd
 		ld	hl, 38A7h	; Coordenadas de KING'S
+						; KING'S의 좌표
 		cp	9		; Ha terminado de pintar "KING'S"?
+					; "KING's" 그림은 다 완성하셨나요?
 		jr	c, drawGameLogo2
 		ld	hl, 3904h	; Coordenadas de VALLEY
+						; VALLEY 좌표
 
 drawGameLogo2:
 		ld	c, a
@@ -1057,22 +1276,27 @@ drawGameLogo2:
 		ld	a, c
 		add	a, a
 		add	a, 9Bh		; #9B es el primer patron que forma el logo. KING'S(#9B-#AC), VALLEY(#AD-C6)
+						; #9B는 로고를 형성하는 첫 번째 패턴입니다. KING'S(#9B-#AC), VALLEY(#AD-C6)
 		ld	c, a
 		ld	b, 2		; Numero de patrones a pintar por iteracion
+						; 반복당 페인트할 패턴 수
 
 drawGameLogo3:
 		ld	a, c
 		call	WRTVRM
 		ld	a, 20h		; Incrementa la	coordenada Y (siguiente	fila de	patrones)
+						; Y 좌표 증가(패턴의 다음 행)
 		call	ADD_A_HL
 		inc	c
 		djnz	drawGameLogo3
 
 		ld	a, l
 		sub	0ECh		; Nametable + #EC = Parte de abajo de la G
+						; 이름표 + #EC = G의 맨 아래
 		cp	2
 		jr	nc, drawGameLogo4
 		add	a, 0C7h		; Patron parte de abajo	de la G	de KING'S
+						; G of KING'S의 패턴 바닥 부분
 		call	WRTVRM
 
 drawGameLogo4:
@@ -1082,10 +1306,13 @@ drawGameLogo4:
 drawMenuEnd:
 		ld	de, TXT_MainMenu
 		call	WriteDataVRAM	; Imprime "KONAMI 1985" y "PUSH SPACE KEY"
+								; "KONAMI 1985" 및 "PUSH SPACE KEY" 인쇄
 
 		ld	de, GFX_PiramidLogo
 		ld	hl, 3892h	; Coordenadas
+						; 좌표
 		ld	bc, 306h	; Alto x ancho
+						; 높이 x 너비
 		call	DEtoVRAM_NXNY
 		xor	a
 		ret
@@ -1093,6 +1320,7 @@ drawMenuEnd:
 
 ;----------------------------------------------------
 ; Muestra informacion pantalla:	marcador, vidas
+; 정보 화면 표시: 마커, 생명
 ;----------------------------------------------------
 
 renderHUD:
@@ -1110,37 +1338,52 @@ renderMarcador:
 ; DE = Puntos a	sumar
 ; A los	10000 puntos vida extra
 ; Luego	cada 20000
+;
+; 점수 및 기록 업데이트
+;
+; DE = 추가할 포인트
+; 10,000포인트 추가 수명
+; 그럼 매 20000
 ;----------------------------------------------------
 
 SumaPuntos:
 		ld	a, (controlPlayer) ; bit 6 = Prota controlado por el jugador
+								; 비트 6 = 플레이어 제어 Prota
 		add	a, a
 		ret	p		; Esta en modo demo, no	suma puntos
+					; 데모 모드이며 포인트를 추가하지 않습니다.
 
 		ld	hl, score_0000xx
 		ld	a, (hl)
 		add	a, e
 		daa
 		ld	(hl), a		; Actualiza unidades/decenas
+						; 단위/십 업데이트
 
 		ld	e, a
 		inc	l
 		ld	a, (hl)
 		adc	a, d		; Suma el acarreo de la	anterior operacion
+						; 이전 작업의 캐리 추가
 		daa
 		ld	(hl), a		; Actualiza centenas/unidades de millar
+						; 수백/천 단위 업데이트
 
 		ld	d, a
 		inc	hl
 		jr	nc, setRecord	; No han cambiado la decenas de	millar
+							; 그들은 만 명을 바꾸지 않았다
 
 		ld	a, (hl)
 		add	a, 1		; Incrementa decenas de	millar x0000
+						; 만 x0000 증가
 		daa
 		ld	(hl), a
 		jr	nc, chkExtraLife ; Comprueba si	obtiene	una vida extra
+							; 여분의 생명을 얻을 수 있는지 확인
 
 		ld	bc, 9999h	; Maxima puntuacion posible
+						; 가능한 최고 점수
 		ld	(record_0000xx), bc
 		ld	(record_0000xx+1), bc ;	Recors = 999999
 		jr	renderRecord
@@ -1153,13 +1396,16 @@ chkExtraLife:
 		push	de
 		push	hl
 		add	a, 2		; Cada 20000 puntos
+						; 20000포인트마다
 		daa
 		jr	nc, chkExtraLife2
 		ld	a, 0FFh
 
 chkExtraLife2:
 		ld	(extraLifeCounter), a ;	Siguiente multiplo de 10.000 en	el que obtendra	una vida extra
+									; 추가 생명을 얻게 되는 10,000의 다음 배수
 		call	VidaExtra	; Suma vida extra
+							; 생명을 더하다
 		pop	hl
 		pop	de
 
@@ -1168,6 +1414,7 @@ setRecord:
 		ld	b, (hl)
 		sub	b
 		jr	c, setRecord2	; La puntuacion	es mayor que el	record actual. Actualiza el record
+							; 점수가 현재 기록보다 높습니다. 기록 업데이트
 
 		jr	nz, renderScore	; Es menor
 
@@ -1183,6 +1430,7 @@ setRecord2:
 renderRecord:
 		ld	de, record_xx0000
 		ld	hl, 3811h	; Coordenadas /	Direccion VRAM
+						; 좌표 / VRAM 주소
 		call	renderNumber
 
 renderScore:
@@ -1191,6 +1439,7 @@ renderScore:
 
 renderNumber:
 		ld	b, 3		; Imprime 3 pares de numeros (cada byte	son dos	numeros)
+						; 3쌍의 숫자 인쇄(각 바이트는 2개의 숫자임)
 
 renderNumber2:
 		ld	a, (de)
@@ -1198,17 +1447,22 @@ renderNumber2:
 renderNumber3:
 		push	bc
 		call	AL_C__AH_B	; Copia	el nibble alto de A en B y el bajo en C
+							; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 		ld	a, b
 		add	a, 10h		; Numero de patron que corresponde con el '0'
+						; '0'에 해당하는 패턴 번호
 		call	WRTVRM
 
 		inc	hl		; Incrementa la	coordenada X
+					; X 좌표를 증가시킵니다.
 		ld	a, c
 		add	a, 10h		; Numero de patron que corresponde con el '0'
 		call	WRTVRM
 
 		dec	de		; Siguiente pareja (byte)
+					; 다음 쌍(바이트)
 		inc	hl		; Siguiente posicion VRAM
+					; 다음 VRAM 위치
 		pop	bc
 		djnz	renderNumber2
 		ret
@@ -1216,6 +1470,7 @@ renderNumber3:
 
 ;----------------------------------------------------
 ; Copia	el nibble alto de A en B y el bajo en C
+; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 ;----------------------------------------------------
 
 AL_C__AH_B:
@@ -1237,11 +1492,16 @@ AL_C__AH_B:
 ;
 ; Oculta los sprites y borra la	tabla de nombres
 ;
+; 화면을 지우다
+;
+; 스프라이트를 숨기고 이름 테이블 지우기
+;
 ;----------------------------------------------------
 
 clearScreen:
 		call	HideSprites
 		ld	hl, 7800h	; Tabla	de nombres (#3800) VRAM	= 16K #0000-#3FFF
+						; 이름 테이블(#3800) VRAM = 16K #0000-#3FFF
 		ld	bc, 300h	; Name table size
 		xor	a
 
@@ -1250,6 +1510,10 @@ clearScreen:
 ; HL = Direccion VRAM
 ; A = Dato
 ; BC = Numero de bytes
+; VRAM 채우기
+; HL = VRAM 주소
+; A = 데이터
+; BC = 바이트 수
 ;----------------------------------------------------
 
 setFillVRAM:
@@ -1273,6 +1537,7 @@ VRAM_write2:
 
 ;----------------------------------------------------
 ; Rellena BC bytes de VRAM con el dato (DE)
+; 데이터(DE)로 VRAM의 BC 바이트 채우기
 ;----------------------------------------------------
 
 fillVRAM_DE:
@@ -1287,6 +1552,11 @@ fillVRAM_DE:
 ; DE = Origen
 ; BC = Numero de datos
 ;
+; RAM에서 VRAM으로 데이터 전송
+; HL = VRAM의 대상 주소
+; SD = 원점
+; BC = 데이터 번호
+;
 ;----------------------------------------------------
 
 DEtoVRAMset:
@@ -1298,6 +1568,10 @@ DEtoVRAMset:
 ; Transfiere datos desde la RAM	a la VRAM
 ; DE = Origen
 ; BC = Numero de datos
+;
+; RAM에서 VRAM으로 데이터 전송
+; SD = 원점
+; BC = 데이터 번호
 ;
 ;----------------------------------------------------
 
@@ -1316,17 +1590,21 @@ DEtoVRAM:
 
 ;----------------------------------------------------
 ; Carga	la fuente y rellena la tabla de	color
+; 글꼴을 로드하고 색상표를 채웁니다.
 ;----------------------------------------------------
 
 loadFont:
 		ld	de, GFX_Font
 		ld	hl, 2080h	; Pattern generator table addres (pattern 16)
+						; 패턴 생성기 테이블 주소(패턴 16)
 		call	UnpackPatterns
 
 		ld	a, 0F0h		; Color	blanco sobre negro
+						; 블랙에 화이트 컬러
 		ld	hl, 80h		; Color	table address (tile 16)
+						; 색상표 주소(타일 16)
 		ld	bc, 180h	; Numero de bytes a rellenar
-
+						; 채울 바이트 수
 fillVRAM3Bank:
 		ld	d, 3
 
@@ -1334,7 +1612,9 @@ fillVRAM3Bank2:
 		push	bc
 		push	de
 		call	setFillVRAM	; Rellena la tabla de color
+							; 색상표 채우기
 		ld	de, 800h	; Siguiente banco
+						; 다음 은행
 		add	hl, de
 		pop	de
 		pop	bc
@@ -1346,6 +1626,8 @@ fillVRAM3Bank2:
 ; Descomprime datos de la tabla	de patrones o de colores
 ; en los tres bancos de	la pantalla
 ;
+; 화면의 세 뱅크에 있는 패턴 또는 색상표에서 데이터 압축을 풉니다.
+;
 ;----------------------------------------------------
 
 UnpackPatterns:
@@ -1356,6 +1638,7 @@ setPatternDatax_:
 		push	de
 		call	unpackGFX
 		ld	de, 800h	; Siguiente banco
+						; 다음 은행
 		add	hl, de
 		pop	de
 		pop	bc
@@ -1365,6 +1648,7 @@ setPatternDatax_:
 
 ;----------------------------------------------------
 ; (!?) Codigo no usado!!
+; (!?) 코드를 사용하지 않음!!
 ;----------------------------------------------------
 		exx
 		ld	b, 3
@@ -1386,6 +1670,8 @@ loc_4504:
 ; DE:
 ; +0 DW	direccion VRAM donde descomprimir
 ;
+; +0 압축을 풀 DW VRAM 주소
+;
 ;----------------------------------------------------
 
 unpackGFXset:
@@ -1394,6 +1680,7 @@ unpackGFXset:
 		inc	hl
 		ld	d, (hl)
 		ex	de, hl		; HL = Direccion de la VRAM
+						; HL = VRAM 주소
 		inc	de
 ;---------------------------------------------------------------
 ; Interpreta los datos graficos
@@ -1409,6 +1696,20 @@ unpackGFXset:
 ; +1: Datos a transferir
 ;
 ; 0 = Fin de datos
+;
+; 그래픽 데이터 해석
+;
+; DE = 해석할 데이터
+; HL = VRAM 주소
+;
+; +0: ​​​​데이터 반복 횟수
+; +1: 반복할 데이터
+;
+; 반복할 횟수의 bit7이 활성인 경우:
+; +0: ​​​​VRAM으로 전송할 바이트 수
+; +1: 전송할 데이터
+;
+; 0 = 데이터 끝
 ;---------------------------------------------------------------
 
 
@@ -1424,6 +1725,7 @@ unpackGFX2:
 		jr	nz, unpackGFX3
 		cp	c
 		jr	nz, unpackGFXset ; Cambia a una	nueva posicion en la VRAM
+							; VRAM에서 새 위치로 변경
 		ret
 
 unpackGFX3:
@@ -1431,12 +1733,14 @@ unpackGFX3:
 		cp	c
 		push	af
 		call	nz, DEtoVRAM	; Transfiere desde DE a	VRAM (BC bytes)
+								; DE에서 VRAM으로 전송(BC 바이트)
 		pop	af
 		call	z, fillVRAM_DE
 		jr	unpackGFX2
 
 ;----------------------------------------------------
 ; Prepara el VDP para escritura
+; 쓰기를 위한 VDP 준비
 ;----------------------------------------------------
 
 setVDPWrite:
@@ -1452,8 +1756,10 @@ setVDPWrite:
 
 ;----------------------------------------------------
 ;(!?) Codigo no	usado
+;(!?) 사용하지 않는 코드
 ;----------------------------------------------------
 		call	SETRD		; Prepara el VDP para lectura
+							; 읽을 수 있도록 VDP 준비
 		exx
 		ld	a, (byte_7)
 		ld	c, a
@@ -1464,6 +1770,10 @@ setVDPWrite:
 ; Invierte un sprite
 ; HL = Direccion VRAM original
 ; DE = Direccion VRAM invertido
+;
+; 스프라이트 뒤집기
+; HL = 원래 VRAM 주소
+; DE = VRAM 주소 반전
 ;----------------------------------------------------
 
 flipSprites:
@@ -1496,11 +1806,16 @@ flipSprite3:
 ; HL = Direccion VRAM patrones originales
 ; DE = Direccion VRAM patrones invertido
 ; C = Numero de	patrones a invertir
+;
+; 반전 패턴
+; HL = 원래 패턴 VRAM 주소
+; DE = 패턴 VRAM 주소 반전
+; C = 반전할 패턴의 수
 ;----------------------------------------------------
 
 FlipPatrones:
 		ld	b, 3		; Numero de bancos de tiles
-
+						; 타일 ​​뱅크 수
 flipPatron2:
 		push	bc
 		push	hl
@@ -1518,6 +1833,7 @@ flipPatron4:
 		jr	nz, flipPatron3
 		pop	hl
 		ld	de, 800h	; Distancia al siguiente banco
+						; 다음 은행까지의 거리
 		add	hl, de
 		ex	de, hl
 		pop	hl
@@ -1529,6 +1845,10 @@ flipPatron4:
 ; Invierte un byte
 ; In: A	= Byte a invertir
 ; Out: A = byte	invertido
+;
+; 바이트를 반전
+; 입력: A = 반전할 바이트
+; 출력: A = 반전된 바이트
 ;----------------------------------------------------
 
 invierteByte:
@@ -1548,6 +1868,10 @@ invierteByte2:
 ; Invierte un patron en	la VRAM
 ; HL = Direccion patron	original
 ; DE = Direccion patron	invertido
+;
+; VRAM에서 패턴 반전
+; HL = 원래 패턴 주소
+; DE = 패턴 방향 반전
 ;----------------------------------------------------
 
 InviertePatron:
@@ -1562,6 +1886,9 @@ InviertePatron:
 ;----------------------------------------------------
 ; Inicializa el	hardware
 ; Silencia el PSG, borra la VRAM y pone	el modo	de video
+;
+; 하드웨어 초기화
+; PSG 음소거, VRAM 지우기 및 비디오 모드 설정
 ;----------------------------------------------------
 
 initHardware:
@@ -1571,7 +1898,8 @@ initHardware:
 		ld	a, 20h		; Silencio
 		call	setMusic
 
-		ld	de, 0		; (!?) No tendr�a que ser HL? Aunque la proteccion anticopia use DE, la rutina "setFillVRAM" usa HL
+		ld	de, 0		; (!?) No tendr�a que ser HL? Aunque la proteccion anticopia use DE, la rutina "setFillVRAM" usa HL
+						; (!?) HL이 아니어야 합니까? 복사 방지는 DE를 사용하지만 "setFillVRAM" 루틴은 HL을 사용합니다.
 		ld	bc, 4000h
 		xor	a
 		call	VRAM_writeAC
@@ -1588,6 +1916,9 @@ initHardware:
 ; Sprite atribute table	= #3b00-#3B7F
 ; Sprite generator table = #1800-#1FFF
 ; Background color = #E4 (Gris/Azul)
+;
+; 비디오 모드:
+; 배경 색 = #E4 (그레이 블루)
 ;----------------------------------------------------
 
 SetVideoMode:
@@ -1617,35 +1948,48 @@ VDP_InitData:	db 2
 ;----------------------------------------------------
 ;
 ; Actualiza el estado de los controles
+; 컨트롤 상태 업데이트
 ;
 ;----------------------------------------------------
 
 chkControls:
 		ld	hl, controlPlayer ; bit	6 = Prota controlado por el jugador
+								; 비트 6 = 플레이어 제어 Prota
 		bit	6, (hl)
 		jr	nz, UpdateKeys	; No esta en modo demo
+							; 데모 모드가 아닙니다.
 
 		ld	a, (GameStatus)
 		cp	5
 		jr	nz, UpdateKeys	; No esta en modo de juego
+							; 게임모드가 아닙니다
 
 ReplaySavedMov:
 		call	ControlProtaDemo ; Lee los movimientos grabados	de la demo
+								; 데모의 녹음된 움직임 읽기
 		jr	storeControls	; Actualiza el valor de	los controles
+							; 컨트롤 값 업데이트
 
 UpdateKeys:
 		call	ReadKeys	; Lee el estado	de los cursores	y el joystick
+							; 커서와 조이스틱의 상태 읽기
 
 storeControls:
 		ld	hl, KeyHold	; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha, #10 = Boton A, #20	=Boton B
+						; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 
 StoreKeyValues:
 		ld	c, (hl)		; Lee valores anteriores
+						; 이전 값 읽기
 		ld	(hl), a		; Guarda los nuevos en KeyHold
+						; KeyHold에 새 항목 저장
 		xor	c		; Borra	las teclas que siguen pulsadas
+					; 여전히 누르고 있는 키 지우기
 		and	(hl)		; Se queda con las que se acaban de pulsar
+						; 그것은 방금 눌린 것들과 함께 남아 있습니다.
 		dec	hl
 		ld	(hl), a		; Lo guarda en KeyTrigger
+						; KeyTrigger에 저장
 		ret
 
 
@@ -1658,6 +2002,14 @@ StoreKeyValues:
 ; 3: Derecha
 ; 4: Boton A / Space
 ; 5: Boton B / Select
+;
+; 커서와 조이스틱의 상태 읽기
+; 0: 위로
+; 1: 아래로
+; 2 개 남았다
+; 3: 오른쪽
+; 4: A / 스페이스 버튼
+; 5: B / 선택 버튼
 ;---------------------------------------------------------------------------
 
 ReadKeys:
@@ -1667,6 +2019,7 @@ ReadKeys:
 		ld	a, 0Eh
 		di
 		call	RDPSG		; Lee el estado	del joystick
+							; 조이스틱 상태 읽기
 		ei
 		cpl
 		and	3Fh
@@ -1706,34 +2059,44 @@ ReadKeys:
 
 ;----------------------------------------------------
 ; Interpreta la	secuencia de pulsaciones grabada para la demo
+; 데모용으로 녹음된 비트 시퀀스 재생
 ;----------------------------------------------------
 
 ControlProtaDemo:
 		ld	hl, KeyHoldCntDemo
 		dec	(hl)		; decrementa tiempo de la pulsacion
+						; 펄스 시간 감소
 		ld	b, (hl)
 
 		ld	hl, (keyPressDemo) ; Puntero a los controles grabados
+								; 기록된 컨트롤에 대한 포인터
 		ld	a, (hl)		; Controles pulsados
+						; 컨트롤 누름
 
 		push	af
 		ld	a, b
 		or	a
 		jr	nz, controlDemo2 ; Aun sigue la	tecla apretada
+							; 키가 여전히 눌려져 있습니다
 
 		inc	hl
 		ld	a, (hl)		; Tiempo que hay que mantener las nuevas pulsaciones
+						; 새로운 맥동을 유지할 시간
 		cp	0FFh		; Ha terminado la demo?
+						; 데모가 끝났습니까?
 		jr	nz, controlDemo1
 
 		xor	a
 		ld	(flagVivo), a	; Fin de la demo
+							; 데모 끝
 		jr	controlDemo2
 
 controlDemo1:
 		ld	(KeyHoldCntDemo), a ; Actualiza	el tiempo de pulsacion
+								; 펄스 시간 업데이트
 		inc	hl
 		ld	(keyPressDemo),	hl ; Puntero a los controles grabados
+								; 기록된 컨트롤에 대한 포인터
 
 controlDemo2:
 		pop	af
@@ -1744,14 +2107,20 @@ controlDemo2:
 ; Si se	pulsa, salta al	menu
 ; Si ya	estaba en el menu comienza una partida.
 ;
+; 연주하지 않을 때 키가 눌렸는지 확인하는 기능
+; 누르면 메뉴로 이동
+; 메뉴에 이미 있었다면 게임을 시작하십시오.
+;
 ;----------------------------------------------------------------------------
 
 chkPushAnyKey:
 		call	ReadKeys_AC	; (!?) Cuidado
+							; (!?) 조심해
 		ld	hl, KeyHold2
 		call	StoreKeyValues
 		or	a
 		ret	z		; No se	ha pulsado ninguna tecla
+					; 키를 누르지 않음
 
 		push	af
 		ld	a, 20h		; Silencio
@@ -1765,8 +2134,10 @@ chkPushAnyKey:
 		ld	hl, GameStatus
 		cp	(hl)
 		jr	z, StartGame_0	; Si esta en el	menu comienza una partida
+							; 메뉴에 있으면 게임을 시작하십시오.
 
 		ld	(hl), a		; Pone status de menu
+						; 메뉴 상태 설정
 		call	clearScreen
 		call	setColor
 		jp	SetUpMenu
@@ -1775,16 +2146,20 @@ StartGame_0:
 		ld	a, b
 		and	30h
 		ret	z		; No ha	pulsado	el disparo 1 o 2
+					; 샷 1 또는 2를 누르지 않았습니다.
 
 		ld	hl, controlPlayer ; bit	6 = Prota controlado por el jugador
+							; 비트 6 = 플레이어 제어 Prota
 		set	6, (hl)		; Control manual
 		ld	hl, 3		; Game start status
 		ld	(GameStatus), hl ; Status parpadea PUSH	START
+							; 상태 깜박임 PUSH START
 		ret
 
 
 ;----------------------------------------------------
 ; Graficos de la fuente
+; 글꼴 그래픽
 ;----------------------------------------------------
 GFX_Font:	db 8Bh,	0, 1Ch,	22h, 63h, 63h, 63h, 22h, 1Ch, 0, 18h, 38h, 4, 18h, 0CEh, 7Eh
 		db 0, 3Eh, 63h,	3, 0Eh,	3Ch, 70h, 7Fh, 0, 3Eh, 63h, 3, 0Eh, 3, 63h, 3Eh
@@ -1807,6 +2182,7 @@ GFX_Font:	db 8Bh,	0, 1Ch,	22h, 63h, 63h, 63h, 22h, 1Ch, 0, 18h, 38h, 4, 18h, 0CE
 		db 1Ch,	38h, 70h, 7Fh, 0, 3, 24h, 4, 0,	0
 
 ; Grafico del espacio en blanco
+; 공백 그래픽
 GFX_Space:	db 8
 		db 0FFh
 		db    0
@@ -1819,6 +2195,13 @@ GFX_Space:	db 8
 ; - Patrones
 ; - #FE	= Leer nuevas coordenadas y datos
 ; - #FF	= Fin
+;
+; 마커 텍스트
+; 체재:
+; - VRAM 좌표/주소(2바이트)
+; - 패턴
+; - #FE = 새 좌표 및 데이터 읽기
+; - #FF = 끝
 ;----------------------------------------------------
 TXT_Marcador:	dw 3818h
 		db  32h, 25h, 33h, 34h,	20h ; REST
@@ -1839,6 +2222,10 @@ TXT_Marcador:	dw 3818h
 ; Textos del menu principal
 ; "KONAMI 1985"
 ; "PUSH SPACE KEY"
+;
+; 메인 메뉴 텍스트
+; "코나미 1985"
+; "푸시 스페이스 키"
 ;----------------------------------------------------
 TXT_MainMenu:	dw 39AAh
 		db 1Ah,	2Bh, 2Fh, 2Eh, 21h, 2Dh, 29h, 0, 11h, 19h, 18h,	15h ; KONAMI 1985
@@ -1861,6 +2248,7 @@ TXT_PLAY_START:	dw 3A49h
 
 ;----------------------------------------------------
 ; Mensaje de "GAME OVER"
+; "게임 종료" 메시지
 ;----------------------------------------------------
 TXT_GameOver:	dw 396Bh
 		db  27h, 21h, 2Dh, 25h,	  0, 2Fh, 36h, 25h, 32h	; GAME OVER
@@ -1869,12 +2257,18 @@ TXT_GameOver:	dw 396Bh
 
 TXT_Sofware:	dw 394Ah
 		db 0Ch			; Longitud linea subrayado
+						; 밑줄 길이
 		db 7Ah			; Patron de subrayado
+						; 밑줄 패턴
 		db 16h			; Numero de espacios (para cuadrar SOFWARE debajo de la	raya)
+						; 공백 수(줄 아래 SOFWARE에 맞도록)
 		db 0			; Patron vacio
+						; 빈 패턴
 		db 88h			; Transferir 8 bytes a la posicion VRAM	actual
+						; 현재 VRAM 위치로 8바이트 전송
 		db 33h,	2Fh, 26h, 34h, 37h, 21h, 32h, 25h ; texto:SOFTWARE
 		db 0			; Fin de los datos
+						; 데이터의 끝
 
 ;----------------------------------------------------
 ; Texto	informacion "(C)KONAMI" "PYRAMID-"
@@ -1883,9 +2277,10 @@ TXT_KONAMI_PYR:	dw 3AE1h
 		db  1Ah			; (C)
 		db 2Bh,	2Fh, 2Eh, 21h, 2Dh, 29h	; KONAMI
 		db 0FEh			; Cambio de coordenadas
-
+						; 좌표 변경
 
 		dw 3AEBh		; Coordenadas
+						; 좌표
 		db 30h,	39h, 32h, 21h, 2Dh, 29h, 24h, 20h ; texto: PYRAMID-
 		db 0FFh
 
@@ -1895,13 +2290,17 @@ TXT_KONAMI_PYR:	dw 3AE1h
 ; Descomprime los patrones que forman el logo de Konami
 ; y los	colorea	de blanco
 ;
+; Konami 로고를 구성하는 패턴의 압축을 풀고 흰색으로 칠하십시오.
+;
 ;----------------------------------------------------
 
 loadKonamiLogo:
 		ld	a, 0Eh
 		ld	(gameLogoCnt), a ; Filas que sube el logo
+							; 위로 올라가는 행 로고
 
 		ld	hl, 3AAAh	; Coordenadas iniciales	del logo
+						; 로고의 초기 좌표
 		ld	(CoordKonamiLogo), hl
 
 		ld	de, GFX_KonamiLogo
@@ -1909,9 +2308,13 @@ loadKonamiLogo:
 		call	UnpackPatterns
 
 		ld	hl, 300h	; Direccion de los atributos de	color del logo
-		ld	bc, 0D8h	; Tama�o
+						; 로고 색상 속성의 방향
+		ld	bc, 0D8h	; Tama�o
+						; 크기
 		ld	a, 0F0h		; Blanco
+						; 하얀색
 		jp	fillVRAM3Bank	; Colorea el logo
+							; 색상 로고
 
 
 
@@ -1923,6 +2326,13 @@ loadKonamiLogo:
 ; - Parte superior de la "K"
 ; - Parte central del logo
 ; - Parte inferior
+;
+; Konami 로고를 그리고 위로 이동
+;
+; 로고는 세 개의 행으로 구성됩니다.
+; - "K"의 상단
+; - 로고 중앙 부분
+; - 맨 아래
 ;----------------------------------------------------
 
 dibujaLogo:
@@ -1930,21 +2340,29 @@ dibujaLogo:
 		ld	de, -20h
 		add	hl, de
 		ld	(CoordKonamiLogo), hl ;	Lo desplaza hacia arriba una fila
+								; 한 행 위로 이동합니다.
 
 		ld	a, 60h		; Primer patron	del logo de Konami
+						; Konami 최초의 로고 패턴
 		ld	b, 3		; Tres patrones	de la parte alta de la "K"
+						; "K"의 상단에서 세 가지 패턴
 		call	drawLogoRow	; Dibuja fila superior
+							; 맨 위 행 그리기
 
 		ld	bc, 0B0Ch
 		call	drawLogoRow	; Dibuja fila central
+							; 중간 행 그리기
 
 		ld	b, c
 		call	drawLogoRow	; Dibuja fila inferior
+							; 맨 아래 행 그리기
 
 		xor	a
 		call	setFillVRAM	; Borra	rasto inferior
+							; 지하 슬러지
 		ld	hl, gameLogoCnt
 		dec	(hl)		; Decrementa el	numero de iteraciones restantes
+						; 남은 반복 횟수를 줄입니다.
 		ret
 
 ;----------------------------------------------------
@@ -1952,6 +2370,11 @@ dibujaLogo:
 ;
 ; A = Patron inicial de	la fila
 ; B = Numero de	patrones a dibujar
+;
+; 로고의 행을 그리고 포인터를 다음 행으로 이동
+;
+; A = 초기 행 패턴
+; B = 그릴 패턴의 수
 ;----------------------------------------------------
 
 drawLogoRow:
@@ -1965,11 +2388,14 @@ drawLogoRow2:
 		pop	de
 		ld	hl, 20h
 		add	hl, de		; Siguiente fila del logo
+						; 로고의 다음 행
 		ret
 
 ;----------------------------------------------------
 ;
 ; Graficos del logo de Konami
+;
+; 코나미 로고 그래픽
 ;
 ;----------------------------------------------------
 GFX_KonamiLogo:	db 0Fh,	0, 1, 1, 6, 0, 82h, 0FFh, 0FEh,	8, 0Fh,	84h, 0C3h, 0C7h, 0CFh, 0DFh
@@ -1987,6 +2413,8 @@ GFX_KonamiLogo:	db 0Fh,	0, 1, 1, 6, 0, 82h, 0FFh, 0FEh,	8, 0Fh,	84h, 0C3h, 0C7h,
 ;----------------------------------------------------
 ;
 ; Grafico del logo de King's Valley y piramide del menu
+;
+; King's Valley 로고 그래픽 및 메뉴 피라미드
 ;
 ;----------------------------------------------------
 GFX_Menu:	db 0ACh, 0, 3, 7, 0, 1Fh, 3Fh, 7Fh, 0, 0, 3, 7,	0Fh, 0,	0, 0
@@ -2018,6 +2446,7 @@ GFX_Menu:	db 0ACh, 0, 3, 7, 0, 1Fh, 3Fh, 7Fh, 0, 0, 3, 7,	0Fh, 0,	0, 0
 
 ;----------------------------------------------------
 ; Atributos de la piramide del menu
+; 메뉴 피라미드의 속성
 ;----------------------------------------------------
 ATTRIB_Menu:	db 1Ch,	0E0h, 88h, 0F0h, 0E0h, 0F0h, 0E0h, 0F0h, 0E0h
 		db 0E0h, 0F0h, 3, 0E0h,	2, 0F0h, 3, 0E0h, 2Ch, 0F0h, 0
@@ -2025,6 +2454,8 @@ ATTRIB_Menu:	db 1Ch,	0E0h, 88h, 0F0h, 0E0h, 0F0h, 0E0h, 0F0h, 0E0h
 ;----------------------------------------------------
 ;
 ; Colores del logo KING'S VALLEY
+;
+; KING'S VALLEY 로고 색상
 ;
 ;----------------------------------------------------
 COLORES_LOGO:	db 3, 60h, 8Dh,	80h, 80h, 90h, 90h, 0A0h, 0B0h,	0E0h, 30h
@@ -2034,6 +2465,7 @@ COLORES_LOGO:	db 3, 60h, 8Dh,	80h, 80h, 90h, 90h, 0A0h, 0B0h,	0E0h, 30h
 ;----------------------------------------------------
 ;
 ; Tabla	de nombres de la piramide del menu
+; 메뉴 피라미드의 이름 표
 ;
 ;----------------------------------------------------
 GFX_PiramidLogo:db    0,   0, 93h, 96h,	  0,   0
@@ -2043,6 +2475,8 @@ GFX_PiramidLogo:db    0,   0, 93h, 96h,	  0,   0
 ;----------------------------------------------------
 ;
 ; Pulsaciones de teclas	de la demo
+;
+; 데모 키 입력
 ;
 ;----------------------------------------------------
 DemoKeyData:	db    8, 98h
@@ -2082,54 +2516,80 @@ DemoKeyData:	db    8, 98h
 ;
 ; Logica del juego (jugando)
 ;
+; 게임 논리(재생)
+;
 ;----------------------------------------------------
 
 tickGame:
 		ld	hl, flagStageClear
 		ld	a, (hl)
 		or	a		; Ha cogido todas la gemas?
+					; 보석을 모두 가져갔습니까?
 		jr	z, tickGame2	; No
 
 		ld	a, (musicCh1)
 		ld	b, a
 		ld	a, (musicCh2)
 		or	b		; Esta sonando algo?
+					; 뭔가 울리나요?
 		jr	nz, tickGame2	; Si
 
 		ld	(hl), a
 		ld	a, 8Bh		; Ingame music
 		call	setMusic	; Hace sonar de	nuevo la musica	del juego tras la fanfarria de fase completada
+							; 스테이지 완료 팡파르 후 게임 내 음악을 다시 재생합니다.
 
 tickGame2:
 		call	updateSprites	; Actualiza los	sprites	RAM->VRAM
+								; 스프라이트 RAM->VRAM 업데이트
 		call	chkScroll	; Comprueba si el prota	se sale	de la pantalla e indica	que hay	que hacer scroll
+							; 주인공이 화면을 떠나 스크롤해야 함을 나타내는지 확인하십시오.
 		call	drawBrilloGemas	; Cambia el color del brillo de	las gemas y de la palanca de la	puerta
+								; 보석의 반짝임과 문의 레버 색상 변경
 
 		ld	a, (flagEntraSale) ; 1 = Entrando o saliendo de	la piramide. Ejecuta una logica	especial para este caso
+							; 1 = 피라미드에 들어가거나 나가는 것. 이 경우에 대해 특수 논리 실행
 		and	a		; Esta entrando	o saliendo de la piramide?
+					; 당신은 피라미드에 들어가고 있습니까, 아니면 떠나고 있습니까?
 		jp	nz, escalerasEntrada ; Ejecuta logica especial para este caso
+								; 이 경우에 특수 논리 실행
 
 		call	chkPause	; Comprueba si se pausa	el juego o ya esta pausado
+							; 게임이 일시 중지되었거나 이미 일시 중지되었는지 확인합니다.
 		call	AI_Momias	; Mueve	a las momias
+							; 미라를 움직여라
 		call	AI_Gemas	; Si se	coge una se borra de la	pantalla y del mapa
+							; 잡히면 화면과 지도에서 삭제
 		call	AI_Prota	; Logica del prota
+							; 주인공의 논리
 		call	AI_Cuchillos	; Logica de los	cuchillos
+								; 칼의 논리
 		call	chkCogeKnife	; Comprueba si el prota	coge un	cuchillo del suelo
+								; 주인공이 땅에서 칼을 집는지 확인
 		call	chkCogeGema	; Comprueba si el prota	coge una gema
+							; 주인공이 보석을 가져가는지 확인
 		call	AI_Salidas	; Logica de las	puertas	de la piramide
+							; 피라미드 문의 논리
 		call	MurosTrampa	; Logica de los	muros trampa que se cierran al pasar el	prota
+							; 주인공이 지나가면 닫히는 함정 벽의 논리
 		call	chkCogePico	; Comprueba si el prota	coge un	pico
+							; 주인공이 곡괭이를 들고 있는지 확인
 		call	chkTocaMomia	; Comprueba si el prota	toca a una momia
+								; 주인공이 미라를 만지는지 확인
 		call	spiningDoors	; Logica de las	puerta giratorias
-
+								; 회전문 논리
 
 ; Comprueba si se suicida pulsando F2
+; F2를 눌러 자살 여부를 확인하십시오.
 
 		ld	a, (controlPlayer) ; bit 6 = Prota controlado por el jugador
+								; 비트 6 = 플레이어 제어 Prota
 		bit	6, a
 		ret	z		; Esta en modo demo, no	comprueba si se	suicida	pulsado	F2
+					; 데모 모드이며 F2를 눌러 자살 여부를 확인하지 않습니다.
 
 		ld	a, 6		; Si se	pulsa F2 se suicida
+						; F2를 누르면 스스로 죽습니다.
 		call	SNSMAT		;  Read	keyboard row
 		cpl
 		bit	6, a		; F2 key
@@ -2140,6 +2600,7 @@ tickGame2:
 		inc	a
 		ld	(flagMuerte), a
 		ld	a, 1Dh		; Musica muerte
+						; 죽음의 음악
 		call	setMusic
 
 doNothing2:
@@ -2151,75 +2612,107 @@ doNothing2:
 ; Al prota y al	cacho de puerta	los pinta siempre en los mismos	planos
 ; A los	enemigos los cambia de plano para evitar que desaparezcan si coinciden mas de 5	sprites	en la misma Y
 ;
+; 스프라이트 속성 업데이트 RAM -> VRAM
+; 주인공과 문 조각은 항상 같은 평면에 그려져 있습니다.
+; 5개 이상의 스프라이트가 동일한 Y에서 일치하는 경우 적들이 사라지는 것을 방지하기 위해 평면을 변경합니다.
+;
 ;-----------------------------------------------------------------------------------------------------------
 
 updateSprites:
 		ld	de, sprAttrib	; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
+							; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 		ld	hl, 3B00h	; Tabla	de atributos de	los sprites
+						; 스프라이트 속성 테이블
 		ld	bc, 18h		; 6 sprites (6*4)
+						; 6 스프라이트(6*4)
 		call	DEtoVRAMset
 
 		ld	hl, offsetPlanoSpr ; Contador que modifica el plano en el que son pintados los sprites,	asi se consigue	que parpaden en	vez de desaparecer
+								; 스프라이트가 그려지는 평면을 수정하여 사라지지 않고 깜박이도록 하는 카운터
 		inc	(hl)		; Incrementa el	desplazamiento de plano	de los enemigos
+						; 적의 평면 변위 증가
 		ld	a, (hl)
 		and	3		; Rango	de 0-3 (4 enemigos max.)
+					; 0-3 범위(최대 4명의 적)
 		ld	c, a		; C = indice de	desplazamiento
+						; C = 변위 지수
 		add	a, a
 		add	a, a		; x4 (sprite attribute size)
+						; x4(스프라이트 속성 크기)
 		ld	de, enemyAttrib	; Tabla	de atributos de	los enemigos en	RAM
+							; RAM에 있는 적의 속성 표
 		call	ADD_A_DE	; Calcula el plano que le corresponde a	ese desplazamiento
+							; 해당 변위에 해당하는 평면을 계산합니다.
 		ld	hl, 3B18h	; Direccion VRAM de los	atributos de los sprites de los	enemigos
+						; 적 스프라이트 속성의 VRAM 주소
 		ld	b, 4		; Numero de enemigos/planos a rotar
+						; 회전할 적/비행기 수
 
 setSprAttrib2:
 		push	bc
 		ld	bc, 4
 		call	DEtoVRAMset	; Actualiza los	atributos de un	sprite/momia
+							; 스프라이트/미라의 속성 업데이트
 		pop	bc
 		ld	a, 4
 		call	ADD_A_HL	; Siguiente momia
+							; 다음 미라
 		inc	c		; Incrementa el	indice de desplazamiento
+					; 스크롤 속도 증가
 		ld	a, c
 		cp	4		; Comprueba si ha llegado al ultimo plano reservado para enemigos
+					; 적에게 예약된 마지막 비행기에 도착했는지 확인하세요.
 		jr	nz, setSprAttrib3
 
 		ld	de, enemyAttrib	; Apunta al comienzo de	la tabla de atributos de los enemigos
+							; 적 속성 테이블의 시작 부분을 가리킵니다.
 		ld	c, 0		; Resetea el indice
+						; 인덱스 재설정
 
 setSprAttrib3:
 		djnz	setSprAttrib2
 
 		ld	de, unk_E0D8	; Attributos del resto de sprites del juego
+							; 게임에서 나머지 스프라이트의 속성
 		ld	hl, 3B28h
 		ld	bc, 58h		; Attrib. size
 		jp	DEtoVRAMset	; Actualiza VRAM
+						; VRAM 업데이트
 
 
 ;----------------------------------------------------
 ; Comprueba si el prota	llega a	los limites laterales de la pantalla
 ; Si es	asi, indica que	hay que	realizar scroll	y quita	los sprites
+; 주인공이 화면의 측면 한계에 도달했는지 확인
+; 그렇다면 스크롤하여 스프라이트를 제거해야 함을 나타냅니다.
 ;----------------------------------------------------
 
 
 chkScroll:
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		ld	a, (ProtaX)
 		jr	nc, chkScroll2
 		cp	2		; Limite parte derecha
+					; 오른쪽 한계
 		ret	nc
 		jr	c, chkScroll3
 
 chkScroll2:
 		cp	0F4h		; Limite parte izquierda
+						; 왼쪽 한계
 		ret	c
 
 chkScroll3:
 		ld	a, 20h
 		ld	(waitCounter), a ; Numero de desplazamientos o tiles a moverse
+							; 이동할 변위 또는 타일 수
 		ld	a, 1
 		ld	(flagScrolling), a ; Se	esta realizando	el scroll
+								; 스크롤링 중입니다
 		call	HideSprites	; Borra	sprites	dela VRAM
+							; VRAM에서 스프라이트 지우기
 		call	hideSprAttrib	; Borra	sprites	de la RAM
 		ld	a, 9		; Scroll mode
 		ld	(GameStatus), a
@@ -2230,23 +2723,33 @@ chkScroll3:
 ;----------------------------------------------------
 ; Cambia el color de los destellos de las gemas
 ; y de la palanca de la	puerta
+; 보석의 반짝임 색상 변경
+; 그리고 문 손잡이
 ;----------------------------------------------------
 
 drawBrilloGemas:
 		ld	a, (timer)
 		rra
 		and	3		; Indice de color a usar
+					; 사용할 색상 인덱스
 
 		push	af
 		ld	hl, coloresBrillo ; Colores de los destellos de	las gemas
+							; 보석 스파클 색상
 		ld	de, 288h	; Color	table address (destellos)
+						; 색상표 주소(깜박임)
 		ld	bc, 18h		; Numero de bytes (3 destellos por 8 bytes)
+						; 바이트 수(8바이트당 3회 깜박임)
 		call	chgColorBrillo	; Cambia el color de los destellos de las gemas
+								; 보석의 반짝임 색상 변경
 		pop	af
 
 		ld	bc, 3		; Numero de bytes a cambiar
+						; 변경할 바이트 수
 		ld	de, 2E5h	; Color	table address de la parte inferior de la palanca de la puerta
+						; 도어 레버 하단의 색상표 주소
 		ld	hl, ColoresPalanca ; Colores de	la palanca de la puerta
+								; 도어 레버 색상
 
 chgColorBrillo:
 		call	ADD_A_HL
@@ -2256,10 +2759,10 @@ chgColorBrillo:
 
 coloresBrillo:	db 10h,	0F0h, 0A0h, 0A0h
 					; Colores de los destellos de las gemas
-
+					; 보석 스파클 색상
 ColoresPalanca:	db 16h,	0F6h, 0A6h, 0A6h
 					; Colores de la	palanca	de la puerta
-
+					; 도어 레버 색상
 
 
 ;----------------------------------------------------
@@ -2267,12 +2770,16 @@ ColoresPalanca:	db 16h,	0F6h, 0A6h, 0A6h
 ; Comprueba si se pulsa	F1 para	pausar el juego
 ; Si se	pausa, muestra el texto	PAUSING	en la esquina inferior derecha del mapa
 ;
+; F1을 눌러 게임을 일시 중지하는지 확인하십시오.
+; 일시 중지된 경우 지도의 오른쪽 하단에 PAUSING이라는 텍스트가 표시됩니다.
+;
 ;----------------------------------------------------
 
 chkPause:
 		ld	a, (controlPlayer) ; bit 6 = Prota controlado por el jugador
 		bit	6, a
 		ret	z		; Esta en modo demo
+					; 데모 모드입니다
 
 		ld	a, 6		; F3 F2	F1 CODE	CAPS GRAPH CTRL	SHIFT
 		call	SNSMAT		;  Read	keyboard row
@@ -2283,19 +2790,25 @@ chkPause:
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; Flag que indica si esta pausado
+						; 일시 중지 여부를 나타내는 플래그
 		jr	nz, chkPause2	; Se ha	pulsado	F1
+							; F1을 눌렀다
 		and	a		; Esta pausado?
+					; 일시 중지되어 있습니까?
 		ret	z		; No
 
 		call	blinkPausing	; Muestra el cartel de "PAUSING" parpadeando
+								; "PAUSING" 표시가 깜박임을 나타냅니다.
 		pop	hl
 		ret
 
 chkPause2:
 		xor	1
 		ld	(hl), a		; Invierte el flag de pausa
+						; 일시 중지 플래그 반전
 		and	a
 		jr	z, erasePausing	; Se acaba de quitar la	pusa, borra el letrero
+							; 일시 중지가 방금 제거되었습니다. 기호를 삭제하십시오.
 		ret
 
 blinkPausing:
@@ -2303,8 +2816,10 @@ blinkPausing:
 		ld	b, a
 		and	7
 		ret	nz		; El parpadeo dura 8 frames
+					; 깜박임은 8프레임 동안 지속됩니다.
 
 		bit	4, b		; Cada 8 frames	muestra	el texto o lo borra
+						; 8 프레임마다 텍스트를 표시하거나 삭제합니다.
 		ld	de, txtPAUSING
 		jr	z, printPause
 
@@ -2313,6 +2828,7 @@ erasePausing:
 
 printPause:
 		ld	hl, 3AF6h	; Coordenadas de pantalla
+						; 화면 좌표
 		ld	bc, 7
 		jp	DEtoVRAMset
 
@@ -2326,35 +2842,48 @@ txtPAUSING:	db 30h,	21h, 35h, 33h, 29h, 2Eh, 27h
 ;
 ; Logica del prota
 ;
+; 주인공의 논리
+;
 ;----------------------------------------------------
 
 AI_Prota:
 		ld	hl, setAttribProta ; Actualiza atributos de los	sprites	del prota
+								; 주인공의 스프라이트 속성 업데이트
 		push	hl		; Mete en la pila la funcion que actualiza los atributos del prota
+						; 주인공의 속성을 업데이트하는 함수를 스택에 푸시합니다.
 		ld	a, (protaStatus) ; Obtiene el estado actual del	prota
+							; 주인공의 현재 상태 가져오기
 		and	a
 		jr	z, AI_Prota2	; Estado 0 = Andando
+							; 상태 0 = 걷기
 
 		cp	3
 		jr	nz, AI_Prota3	; Estado 2 = Cayendo. No comprueba los controles
+							; 상태 2 = 추락. 컨트롤을 확인하지 않음
 
 AI_Prota2:
 		ld	hl, protaControl ; 1 = Arriba, 2 = Abajo, 4 = Izquierda, 8 = Derecha, #10 = Boton A, #20 =Boton	B
+							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 		ld	a, (KeyHold)	; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha, #10 = Boton A, #20	=Boton B
 		ld	(hl), a		; Copia	los controles/teclas pulsados al control del prota
+						; 누른 컨트롤/키를 메인 컨트롤에 복사
 		and	a
 		jr	z, AI_Prota3	; No hay ninguna tecla pulsada
+							; 누른 키가 없습니다
 
 		rra
 		rra
 		and	3
 		jr	z, AI_Prota3	; No esta pulsado ni DERECHA ni	IZQUIERDA
+							; RIGHT 또는 LEFT를 누르지 않음
 
 		inc	hl
 		ld	(hl), a		; Sentido del prota
+						; 주인공의 센스
 
 AI_Prota3:
 		ld	a, (protaStatus) ; Estado del prota
+							; 주인공의 상태
 		call	jumpIndex
 		dw protaAnda		; 0 = Andar
 		dw protaSalta		; 1 = Realiza el salto y comprueba si choca con	algo
@@ -2363,88 +2892,131 @@ AI_Prota3:
 		dw protaLanzaKnife	; 4 = Anima al prota para hacer	la animacion de	lanzamiento. Al	terminar restaura el sprite y pasa al estado de	andar
 		dw protaPicando		; 5 = Animacion	del prota picando y rompiendo los ladrillos
 		dw protaGiratoria	; 6 = Pasando por una puerta giratoria
+; 0 = 걷기
+; 1 = 점프하고 무언가와 충돌하는지 확인
+; 2 = 떨어지는
+; 3 = 주인공을 계단 위로 이동시키고 계단 바닥에 도달했는지 확인
+; 4 = 시작 애니메이션을 수행하기 위해 주인공을 애니메이션합니다. 완료되면 스프라이트를 복원하고 걷기 상태로 이동합니다.
+; 5 = 벽돌을 자르고 부수는 주인공의 애니메이션
+; 6 = 회전문 통과하기
 
 ;----------------------------------------------------
 ; Prota	status 0: Andar
+; 주인공 상태 0: 걷기
 ;----------------------------------------------------
 
 protaAnda:
 		ld	a, (KeyTrigger)
 		bit	4, a		; Acaba	de pulsar FIRE1	/ Boton	A?
+						; 방금 FIRE1 / 버튼 A를 눌렀습니까?
 		jr	z, protaAnda2	; No
 
 		ld	a, (objetoCogido) ; #10	= Cuchillo, #20	= Pico
+							; #10 = 칼, #20 = 곡괭이
 		and	0F0h		; Tiene	algun objeto el	prota?
+						; 주인공에게 물건이 있습니까?
 		jp	z, setProtaSalta ; No, intenta saltar
+							; 점프를 시도하지 마십시오
 
 		cp	10h		; Es un	cuchillo?
+					; 칼이야?
 		jp	nz, chkProtaPica ; No, es un pico. Intenta hacer un agujero
-
+							; 아니요, 절정입니다. 구멍을 만들려고
 		jp	setLanzaKnife	; Lanza	el cuchillo
+							; 칼을 던지다
 
 protaAnda2:
 		call	chkProtaCae	; Hay suelo bajo el prota?
+							; 주인공 밑에 땅이 있나요?
 		jp	c, setProtaCae	; No hay suelo
+							; 땅이 없다
 
 		xor	a
 		ld	(modoSentEsc), a ; Si es 0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = \, 1 = /
 		call	chkCogeEscalera	; Comprueba si coge una	escalera para subir o bajar
+								; 그가 사다리를 타고 올라가거나 내려가는지 확인하십시오.
 		ret	z		; si, la ha cogido
+					; 예, 그가 가져갔습니다.
 
 		ld	hl, protaControl ; 1 = Arriba, 2 = Abajo, 4 = Izquierda, 8 = Derecha, #10 = Boton A, #20 =Boton	B
+							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 		ld	a, (hl)
 		and	1100b		; Se queda solo	con los	controles DERECHA e IZQUIERDA
+						; RIGHT 및 LEFT 컨트롤만 남습니다.
 		jp	z, protaQuieto	; No se	mueve hacia los	lados
+							; 옆으로 움직이지 않는다
 
 		ld	hl, protaMovCnt	; Contador usado cada vez que se mueve el prota. (!?) No se usa	su valor
+							; 주인공이 움직일 때마다 사용하는 카운터. (!?) 값이 사용되지 않습니다.
 		inc	(hl)		; Incrementa el	contador de movimientos
+						; 이동 카운터 증가
 
 		call	chkChocaAndar
 		jr	nc, protaAnda3	; No choca
+		; 충돌하지 않는다
 
 		ld	a, (hl)		; HL apunta al tile del	mapa contra el que ha chocado
+						; HL은 충돌한 지도 타일을 가리킵니다.
 		and	0F0h		; Se queda con el tipo de tile/familia
+						; 타일/패밀리의 유형으로 유지됩니다.
 		cp	50h		; Es una puerta	giratoria?
+					; 회전문인가요?
 		jr	nz, protaAnda5	; No
 
 		ld	a, (hl)
 		and	0Fh		; Tipo de tile de puerta giratoria
+					; 회전문 타일 유형
 		sub	1
 		cp	2		; Ha choacado contra la	parte azul de la puerta?
+					; 문의 파란색 부분과 충돌했나요?
 		jr	c, protaAnda5	; No
 
 		ld	hl, timerEmpuja	; Timer	usado para saber el tiempo que se empuja una puerta giratoria
+							; 회전문을 누르는 시간을 알던 타이머
 		inc	(hl)		; Incrementa tiempo de empuje
+						; 푸시 시간 늘리기
 		ld	a, 10h		; Tiempo necesario de empuje para que se mueva la puerta
+						; 문이 움직이는 데 필요한 시간
 		cp	(hl)
 		jp	nz, protaAnda5	; Aun no ha empujado lo	suficiente
+							; 그는 아직 충분히 멀리 밀지 않았다.
 
 		ld	a, 6		; Estado: Pasando por una puerta giratoria
+						; 상태: 회전문 통과
 		ld	(protaStatus), a ; Actualiza el	estado del prota
+							; 주인공 상태 업데이트
 		ld	a, 20h
 		ld	(accionWaitCnt), a ; Contador usado para controlar la animacion	y duracion de la accion	(lanzar	cuchillo, cavar, pasar puerta giratoria)
+								; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 
 		ld	a, 3		; Puerta giratoria
+						; 회전문
 		call	setMusic
 		jp	chkGiratorias	; Identifia la puerta que esta empujando
-
+							; 당신이 밀고있는 문을 식별
 protaAnda3:
 		xor	a
 		ld	(timerEmpuja), a ; Resetea contador de empuje
+							; 추력 카운터 재설정
 
 protaAnda4:
 		call	mueveProta	; Actualiza las	coordenadas del	prota
+							; 주인공의 좌표 업데이트
 
 protaAnda5:
 		jp	calcFrame	; Actualiza el fotograma de la animacion
+						; 애니메이션 프레임 업데이트
 
 ;----------------------------------------------------
 ; Actualiza los	atributos de los dos sprite del	prota en RAM
 ; segun	sus coordenadas
+; 좌표에 따라 RAM에 있는 주인공의 두 스프라이트 속성 업데이트
 ;----------------------------------------------------
 
 setAttribProta:
 		ld	hl, ProtaY	; Actualiza atributos de los sprites del prota
+						; 주인공 스프라이트의 속성 업데이트
 		ld	c, (hl)		; Y prota
 		inc	hl
 		inc	hl		; X prota
@@ -2454,13 +3026,17 @@ setAttribProta:
 		dec	c
 		dec	c
 		bit	0, a		; El frame es par o impar?
+						; 프레임이 짝수인가요 홀수인가요?
 		jr	z, setAttribProta2
 		inc	c		; Los frames pares los mueve un	pixel hacia arriba
+					; 프레임도 한 픽셀 위로 이동합니다.
 
 setAttribProta2:
 		ld	de, framesProta	; Sprite a usar	segun el frame
+							; 프레임에 따라 사용할 스프라이트
 		call	ADD_A_DE
 		ld	a, (de)		; Numero de sprite
+						; 스프라이트 번호
 		ld	d, a
 		call	setAttribProta3
 
@@ -2470,18 +3046,24 @@ setAttribProta3:			; Y
 		ld	(hl), b		; X
 		inc	hl
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+								; 1 = 왼쪽, 2 = 오른쪽
 		rra			; En que sentido mira?
+					; 어떤 방향으로 보십니까?
 		ld	a, d
 		jr	nc, setAttribProta4 ; Derecha
+								; 오른쪽
 		add	a, 60h		; Distancia a sprites girados a	la izquierda
+						; 왼쪽으로 회전된 스프라이트까지의 거리
 
 setAttribProta4:
 		ld	(hl), a		; Sprite
 		ld	a, d
 		add	a, 4		; Siguiente sprite 16x16
+						; 다음 스프라이트 16x16
 		ld	d, a
 		inc	hl		; Color
 		inc	hl		; Atributos del	siguiente sprite
+					; 다음 스프라이트의 속성
 		ret
 
 
@@ -2654,18 +3236,18 @@ setLanzaKnife:
 		xor	a
 		ld	hl,ElemEnProceso
 		ld	(hl),a
-chkPuertaMov:		
+chkPuertaMov:
 		push	hl
 		ld	a,04
-		call	getExitDat	; Obtiene puntero al estatus de la puerta que se est� procesando
+		call	getExitDat	; Obtiene puntero al estatus de la puerta que se est� procesando
 		and	#F0		; Se queda con el status (nibble alto)
 		cp	#30		; Se esta abriendo?
 		pop	hl
 		ret	z		; Impide lanzar el cuchillo mientras la puerta se abre para impedir que se corrompan los tiles al pasar el cuchillo sobre la puerta
 		inc	(hl)
-		ld	a,04		; Numero m�ximo de cuchillos
+		ld	a,04		; Numero m�ximo de cuchillos
 		cp	(hl)
-		jr	nz,chkPuertaMov ; A�n quedan cuchillos por comprobar
+		jr	nz,chkPuertaMov ; A�n quedan cuchillos por comprobar
 	ENDIF
 
 		xor	a
@@ -2937,7 +3519,7 @@ chkProtaPica2:
 	ELSE
 		ld	bc, 810h	; Offset: izquierda = 8, derecha = 16
 	ENDIF
-	
+
 chkProtaPica3:
 		ld	a, e		; Sentido
 		rra
@@ -2981,8 +3563,8 @@ chkProtaPica4:
 	ELSE
 		ret	nc		; No
 	ENDIF
-	
-chkProtaPica4b:	
+
+chkProtaPica4b:
 		ld	a, 60h		; Desplazamiento a una fila inferior
 		call	ADD_A_HL
 		ld	a, (hl)		; Tile del mapa	que esta por debajo del	anterior
@@ -3290,7 +3872,7 @@ chkChocaSuelo2:
 chkProtaCae:
 		ld	hl, ProtaY
 
-chkCae:	
+chkCae:
 		call	chkPisaSuelo
 		ret	z		; Esta pisando suelo
 
@@ -3511,7 +4093,7 @@ chkCogeEsc3:
 		cp	b		; Es una escalera?
 		jr	z, chkSubeEsc2	; si
 
-; Comprueba si hay un cuchillo sobre el	primer pelda�o de la escalera
+; Comprueba si hay un cuchillo sobre el	primer pelda�o de la escalera
 
 		push	af
 		ld	a, b
@@ -3556,8 +4138,8 @@ chkSubeEsc3:
 		ret
 
 ;----------------------------------------------------
-; Tabla	con las	distancias al primer pelda�o dependiendo
-; de la	posicion del personaje respecto	al tile	del pelda�o
+; Tabla	con las	distancias al primer pelda�o dependiendo
+; de la	posicion del personaje respecto	al tile	del pelda�o
 ;
 ;----------------------------------------------------
 distPeldano:	db 0
@@ -3905,7 +4487,7 @@ AI_Cuchillos2:
 
 ;----------------------------------------------------
 ; Knife	Status 0: Comprueba el tile que	tiene de fondo y lo guarda
-; Si esta sobre	un pelda�o de escalera lo cambia por un	tile de	cuchillo especial que indica que hay escalera detras
+; Si esta sobre	un pelda�o de escalera lo cambia por un	tile de	cuchillo especial que indica que hay escalera detras
 ; Pasa al siguiente estado (1)
 ;----------------------------------------------------
 
@@ -3929,29 +4511,29 @@ initCuchillo:
 initCuchillo2:
 		ld	a, b
 	IF	(VERSION2)
-		sub	#31		; Cuchillo sobre pelda�o?
-		cp	2		; Dos posibles direcciones de las escaleras (cuchillo sobre pelda�o hacia la derecha y sobre pelda�o a la izquierda)
+		sub	#31		; Cuchillo sobre pelda�o?
+		cp	2		; Dos posibles direcciones de las escaleras (cuchillo sobre pelda�o hacia la derecha y sobre pelda�o a la izquierda)
 		ld	a,b
 		jr	c,initCuchillo5
-		
+
 		ld	a,b		; (!?) No hace falta ponerlo! A ya es igual a B
-		sub	#21		; Pelda�o de escalera que sube a la izquierda
-		cp	2		; Comprueba los dos tipos de pelda�o (derecha e izquierda)
+		sub	#21		; Pelda�o de escalera que sube a la izquierda
+		cp	2		; Comprueba los dos tipos de pelda�o (derecha e izquierda)
 		jr	nc,initCuchillo4
-		
+
 		ld	a,b
 	ELSE
-		cp	31h		; Cuchillo sobre pelda�o?
+		cp	31h		; Cuchillo sobre pelda�o?
 		jr	z, initCuchillo6
 
-		cp	21h		; Pelda�o escalera que sube a la izquierda
+		cp	21h		; Pelda�o escalera que sube a la izquierda
 		jr	z, initCuchillo3
 
-		cp	22h		; Pelda�o escalera que sube a la derecha
+		cp	22h		; Pelda�o escalera que sube a la derecha
 		jr	nz, initCuchillo4
 	ENDIF
 initCuchillo3:
-		add	a, 10h		; Convierte el tile de cuchillo	en "cuchillo sobre pelda�o"
+		add	a, 10h		; Convierte el tile de cuchillo	en "cuchillo sobre pelda�o"
 		jr	initCuchillo5
 
 initCuchillo4:
@@ -4097,7 +4679,7 @@ movKnife:
 	IF	(VERSION2)
 		jr	nz,movKnife1	; Si no esta en pantalla no lo pinta
 	ENDIF
-	
+
 		inc	a
 		inc	hl
 		call	WRTVRM		; segundo tile del cuchillo
@@ -4453,9 +5035,9 @@ knifeEnd:
 		call	hideKnifeSpr
 		xor	a
 		call	getKnifeData
-	
+
 	IF	(VERSION2)
-		jr	setReboteKnife2	; Apa�o para ahorrar un byte
+		jr	setReboteKnife2	; Apa�o para ahorrar un byte
 	ELSE
 		ld	(hl), 0
 		ret
@@ -4481,11 +5063,11 @@ setReboteKnife2:
 caeKnife4:
 		ld	a, 2		; Y
 		call	getKnifeData
-	
+
 	IF	(VERSION2)
 		ld	a,(hl)
 		add	a,4
-	ELSE	
+	ELSE
 		inc	(hl)
 		inc	(hl)
 		inc	(hl)
@@ -4724,7 +5306,7 @@ chkKnifeMomia5:
 		call	SumaPuntos
 		ld	a, 8		; SFX explota momia
 		call	setMusic
-	ENDIF	
+	ENDIF
 		ld	(ix+ACTOR_STATUS), 6 ; Estado: Destello
 		ld	(ix+ACTOR_CONTROL), 4 ;	Control: IZQUIERDA
 		ld	a, (ix+ACTOR_Y)	; Y momia
@@ -5096,7 +5678,7 @@ chkTocaProta:
 ; BC incia las coordenadas del area a comprobar
 ; B = X	area
 ; C = Y	area
-; El Tama�o del	area viene indicado por	HL+1 y HL+3
+; El Tama�o del	area viene indicado por	HL+1 y HL+3
 
 ; HL:
 ; +0 = Offset X1
@@ -5251,7 +5833,7 @@ indexTiles:	dw tilesNULL
 		dw tilesSalida		; #60
 		dw tilesSalida2		; #70
 		dw tilePico		; #80
-	
+
 	IF	(!VERSION2)
 		dw byte_5DC3		; #90 (!?) Estos bloques no se usan!
 		dw byte_5DC4		; #A0
@@ -5280,9 +5862,9 @@ tilesPlataforma:db    0
 
 
 tilesEscalera:	db 75h
-		db 76h			; Pelda�os bajan derecha
+		db 76h			; Pelda�os bajan derecha
 		db 85h
-		db 84h			; Pelda�os bajan izquierda
+		db 84h			; Pelda�os bajan izquierda
 
 
 tilesCuchillo:	db 4Bh
@@ -5340,9 +5922,9 @@ tilesSalida2:	db 71h
 tilePico:	db 4Ch
 
 	IF	(VERSION2)
-tilesAgujero:	db	#4e	
+tilesAgujero:	db	#4e
 	ELSE
-	
+
 byte_5DC3:	db 4Eh
 
 byte_5DC4:	db 4Fh
@@ -5689,12 +6271,12 @@ tilesAnimCavar:	db 0
 ; Comprueba si ha procesado todas las gemas
 ;----------------------------------------------------
 	IF	(VERSION2)
-	
+
 chkLastGema:
 		call	chkLastGema2	; Se han procesado todas las gemas?
 		ret	z		; Si
 		jp	nextGema	; No, sigue con otra
-chkLastGema2:		
+chkLastGema2:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
 		inc	(hl)		; Siguiente gema
 		ld	a, (hl)
@@ -5702,7 +6284,7 @@ chkLastGema2:
 		cp	(hl)		; Ha procesado todas?
 		ret
 	ELSE
-	
+
 chkLastGema:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
 		inc	(hl)		; Siguiente gema
@@ -5712,7 +6294,7 @@ chkLastGema:
 		ret	z		; Si, termina
 		jp	nextGema	; No, procesa la siguiente
 	ENDIF
-	
+
 ;----------------------------------------------------
 ; Devuelve en HL el puntero a los datos	de la gema y en	A la variable indicada
 ; In:
@@ -5774,7 +6356,7 @@ DEtoVRAM_NXNY:
 
 
 putBrillosMap:
-		ld	bc, -60h	; Tama�o de una	fila del mapa (3 pantallas de 32 tiles)
+		ld	bc, -60h	; Tama�o de una	fila del mapa (3 pantallas de 32 tiles)
 		add	hl, bc		; Fila superior
 		ex	de, hl
 		ldi			; Pone brillo superior de la gema
@@ -6666,7 +7248,7 @@ spiningDoors2:
 		bit	0, (hl)		; Esta girando esta puerta?
 		jr	nz, spiningDoors3 ; Si
 
-		ld	de, 7		; Tama�o de la estructura de cada puerta giratoria
+		ld	de, 7		; Tama�o de la estructura de cada puerta giratoria
 		add	hl, de		; Puntero a la siguiente puerta
 		djnz	spiningDoors2
 		ret
@@ -6735,7 +7317,7 @@ putGiratMap:
 		ld	a, (de)		; Los bits 2-1 indican la altura extra
 		rra
 		and	3
-		add	a, 2		; Le a�ade la altura minima de la puerta (2)
+		add	a, 2		; Le a�ade la altura minima de la puerta (2)
 		ld	b, a		; Altura de la puerta
 		ld	a, 5
 		call	ADD_A_DE
@@ -6865,7 +7447,7 @@ quitaGiratorias:
 
 quitaGiratoria2:
 		push	hl
-		ld	a, (hl)		; Tama�o de la puerta giratoria
+		ld	a, (hl)		; Tama�o de la puerta giratoria
 		rra
 		and	3
 		add	a, 2
@@ -7073,7 +7655,7 @@ getNextDoor:
 		dec	a
 		ld	(de), a		; Marca	salida como no disponible
 		inc	hl
-		ld	a, 7		; Tama�o de la estructura de cada salida
+		ld	a, 7		; Tama�o de la estructura de cada salida
 		call	ADD_A_DE	; DE apunta al buffer de la siguiente salida
 		jr	chkLastDoor	; Comprueba si ya se han procesado todas las puertas
 
@@ -7430,7 +8012,7 @@ getStairs4:
 
 getStairs5:
 		ld	c, 15h
-		call	putPeldanoMap	; Pone pelda�o especial	de inicio/fin escalera
+		call	putPeldanoMap	; Pone pelda�o especial	de inicio/fin escalera
 		pop	de
 		inc	de
 		pop	bc
@@ -7442,7 +8024,7 @@ putPeldanoMap:
 		and	a
 		jr	z, putPeldanoMap2
 		inc	c
-		inc	c		; Pelda�os hacia la izquierda
+		inc	c		; Pelda�os hacia la izquierda
 
 putPeldanoMap2:
 		ld	(hl), c
@@ -8354,7 +8936,7 @@ framesMomia:	db 2Ch			; Pie atras
 		db 28h			; Pies juntos
 		db 30h			; Pies eparados
 		db 0E8h			; Nube grande
-		db 0ECh			; Nube peque�a
+		db 0ECh			; Nube peque�a
 		db 0D4h			; Destello
 
 ;----------------------------------------------------
@@ -8380,7 +8962,7 @@ momiaSetSalta:
 		push	ix
 		pop	hl		; Datos	momia
 
-Salta:	
+Salta:
 		ld	(hl), 1		; Status = Saltar
 		inc	hl
 		res	4, (hl)		; Quita	"Boton A" del estado de las teclas del elemento
@@ -8595,7 +9177,7 @@ momiaAparece:
 		ld	a, 8		; Frame	nube grande
 		jr	z, setMomiaFrame
 
-		inc	a		; Frame	nube peque�a
+		inc	a		; Frame	nube peque�a
 
 setMomiaFrame:
 		ld	(ix+ACTOR_FRAME), a
@@ -9081,7 +9663,7 @@ guardaOrden:
 		ex	af, af'
 		push	af
 		and	0FCh		; Mantiene el sentido de la busqueda
-		or	c		; A�ade	orden de subir o bajar
+		or	c		; A�ade	orden de subir o bajar
 		ld	(de), a		; Guarda la orden
 		pop	af
 		ex	af, af'
@@ -9270,7 +9852,7 @@ chkTocaY_8:
 
 chkChocaSalto:
 		inc	hl
-		ld	a, (sentidoEscalera) ; Valor de	los controles en el momento del	salto. As� se sabe si fue un salto vertical
+		ld	a, (sentidoEscalera) ; Valor de	los controles en el momento del	salto. As� se sabe si fue un salto vertical
 		cp	10h		; Boton	A apretado? (Hold jump)
 chkChocaSalto1:
 		inc	hl
@@ -9352,7 +9934,7 @@ chkLlegaSuelo:
 		call	chkPisaSuelo
 		jr	z, setFinSalto	; Si, esta en el suelo
 
-setNZ:	
+setNZ:
 		xor	a
 		cp	1		; Set NZ
 		ret
@@ -9732,7 +10314,7 @@ setupEnding:
 		ld	c, 92h
 		call	drawHalfPiram
 
-		ld	hl, 3A2Bh	; VRAM address name table = Posicion vert. izq.	piramide peque�a central
+		ld	hl, 3A2Bh	; VRAM address name table = Posicion vert. izq.	piramide peque�a central
 		call	drawHalfPiram
 
 		ld	hl, 3A04h	; VRAM address name table = Posicion vertice superior lado derecho piramide mediana izquierda
@@ -9740,7 +10322,7 @@ setupEnding:
 		inc	a		; Lado derecho de las piramides
 		call	drawHalfPiram
 
-		ld	hl, 3A2Ch	; VRAM address name table = Posicion vertice superior lado derecho piramide peque�a central
+		ld	hl, 3A2Ch	; VRAM address name table = Posicion vertice superior lado derecho piramide peque�a central
 		call	drawHalfPiram
 
 		ld	de, tilesEndDoor ; Patrones que	forman la puerta de la piramide	grande
@@ -10114,7 +10696,7 @@ gfxSprMapa:	dw 1F20h		; Direccion VRAM sprite	#E4
 		db 20h, 0,	30h, 39h, 32h, 21h, 2Dh, 29h, 24h, 1Bh, 33h,	0, 2Dh,	21h, 30h, 0, 20h	; Text: "- Pyramid's Map -"
 
 
-		; Tabla de nombres del pergamino		
+		; Tabla de nombres del pergamino
 		db 4Fh, 0, 85h, 0CFh, 0D0h
 		db 1, 1, 0D2h, 4, 1, 88h, 0D0h,	0D3h, 1, 1, 1, 0D2h, 0D0h
 		db 0D5h, 0Fh, 0, 81h, 0D8h, 10h, 1, 81h, 0DCh, 0Eh, 0
@@ -10137,7 +10719,7 @@ gfxSprMapa:	dw 1F20h		; Direccion VRAM sprite	#E4
 		db 1, 85h, 0CAh, 0CCh, 0CDh, 0CEh, 0CBh, 5, 1, 81h, 0E6h
 		db 0Eh,	0, 84h,	0D6h, 0D1h, 0D4h, 0D1h,	4, 1, 8Ah, 0D4h
 		db 1, 1, 1, 0D1h, 0D1h,	1, 1, 0D1h, 0E7h, 0
-		
+
 coloresFlecha:	db 1, 6, 6, 0Ah, 0Ah, 6, 6, 6	; Colores usados para resaltar la flecha y piramide en el mapa
 
 
@@ -10191,7 +10773,7 @@ TXT_ENDING:
 		db #2e, 0									; Rellena #2e patrones
 		db 90h			; Transfiere #10 patrones
 		db 33h, 30h, 25h, 23h, 29h, 21h, 2Ch, 0, 22h, 2Fh, 2Eh, 35h, 33h, 0, 0, 11h 	; "SPECIAL BONUS  1"
-		
+
 		db    4, 10h									; "0000"
 		db    0										; Fin
 
@@ -10224,7 +10806,7 @@ setMusic:
 		ei
 		ret
 	ENDIF
-	
+
 SetMusic_:
 		ld	c, a
 		and	3Fh
@@ -10239,11 +10821,11 @@ SetMusic_:
 		inc	b		; Usa los 3 canales
 		jr	setMus
 
-setSFX:	
+setSFX:
 		dec	b		; Solo usa 1 canal
 		ld	hl, musicCh3	; El canal 3 es	el que reproduce los efectos de	sonido
 
-setMus:	
+setMus:
 		ld	a, (hl)		; Musica que esta sonando en este canal
 		and	3Fh		; Descarta bits	de configuracion y se queda solo con el	numero de musica
 		ld	e, a		; E = Sonido actual
@@ -10882,15 +11464,21 @@ MUS_SalirPiram2:db 0D4h, 0FCh, 3, 3, 0E1h, 40h,	0E0h, 0, 40h, 0, 40h, 0FFh
 	IF	(VERSION2)
 		db #ff
 	ENDIF
-	
-;------------------------------------------------------------------------------	
+
+;------------------------------------------------------------------------------
 ;
 ; Identificador del juego de Konami: OUKE NO TANI
 ;
 ;    -00: #AA (Token)
-;    -01: N�mero RC7xx en formato BCD
-;    -02: N�mero de bytes usados para el nombre
-;    -03: Nombre en katakana (escrito al rev�s)
+;    -01: N�mero RC7xx en formato BCD
+;    -02: N�mero de bytes usados para el nombre
+;    -03: Nombre en katakana (escrito al rev�s)
+; 코나미 게임 ID: OUKE NO TANI(수령 의 계곡)
+;
+; -00: #AA(토큰)
+; -01: ​​BCD 형식의 ​RC7xx 숫자
+; -02: 이름에 사용된 바이트 수
+; -03: 가타카나로 된 이름(뒤로 쓰기)
 ;
 ;------------------------------------------------------------------------------
 		db 95h,	8Fh, 98h, 88h, 82h, 84h, 6, 27h, 0AAh
@@ -10901,36 +11489,47 @@ MUS_SalirPiram2:db 0D4h, 0FCh, 3, 3, 0E1h, 40h,	0E0h, 0, 40h, 0, 40h, 0FFh
 ; ===========================================================================
 
 		MAP     #e000
-		
+
 GameStatus:	# 1
 					; 0 = Konami Logo
 					; 1 = Menu wait
 					; 2 = Set demo
 					; 3 = Musica de	inicio,	parpadea START PLAY, pone modo juego
+					;		음악 시작, START PLAY 깜박임, 게임 모드 전환
 					; 4 = Empezando	partida
+					;		게임 시작
 					; 5 = Jugando /	Mapa
+					;		재생 / 지도
 					; 6 = Perdiendo	una vida / Game	Over
+					;		목숨을 잃다 / 게임 오버
 					; 7 = Game Over
 					; 8 = Stage Clear
 					; 9 = Scroll pantalla
+					;		스크롤 화면
 					; 10 = Muestra el final	del juego
+					;		게임의 끝을 보여주세요
 subStatus:	# 1
 controlPlayer:	# 1			; bit 6	= Prota	controlado por el jugador
+							;		플레이어 제어 게이트
 timer:		# 1
 waitCounter:	# 1
 tickInProgress:	# 1			; Si el	bit0 esta a 1 no se ejecuta la logica del juego
+							;		bit0이 1이면 게임 로직이 실행되지 않습니다.
 
 dummy_1		# 2
 
 KeyTrigger:	# 1
 KeyHold:	# 1			; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha, #10 = Boton A, #20	=Boton B
+						;	1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 gameLogoCnt:	# 1
 
 dummy_2		# 2
 
 flagEndPergamino:# 1
 					; 1 = Ha terminado de mostar el	pergamino/mapa
+					;		스크롤/지도 표시를 완료했습니다.
 CoordKonamiLogo:# 2			; Direccion BG Map (name table)	del logo
+							;		로고의 BG Map 주소(네임표)
 
 
 MusicChanData:	# 2
@@ -10944,9 +11543,11 @@ musicCh3:	# 12
 
 mixerValuePSG:	# 1
 flagSetCaeSnd:	# 1			; Si es	0 hay que inicializar los datos	del sonido de caida
+							;	; 0이면 떨어지는 소리의 데이터 초기화가 필요하다
 dummy_3		# 2
 
 caidaSndDat:	# 1			; Este byte y los dos anteriores controlan la frecuencia del sonido de caida
+							;	이 바이트와 이전 2바이트는 감쇠 사운드의 주파수를 제어합니다.
 dummy:		# 1
 
 KeyTrigger2:	# 1
@@ -10967,29 +11568,38 @@ dummy_5		# 4
 Vidas:		# 1
 flagPiramideMap:# 1
 					; 0 = Mostrando	mapa, 1	= Dentro de la piramide
+					;	 0 = 지도 보기, 1 = 피라미드 내부
 extraLifeCounter:# 1
 flagVivo:	# 1
 					; 0 = Muerto, 1	= Vivo
+					;	; 0 = 사망, 1 = 생존
 piramideActual:	# 1
 piramideDest:	# 1
 puertaEntrada:	# 1
 					; Indica la puerta/direccion por la que	se esta	entrando a la piramide
+					; 피라미드로 들어가는 문/방향을 나타냅니다.
 puertaSalida:	# 1
 					; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha
+					; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 numFinishGame:	# 1
 					; Numero de veces que se ha terminado el juego
+					; 게임이 끝난 횟수
 dummy_6		# 2
 
 UNKNOWN:	# 1			; (!?) Se usa?
 dummy_7		# 2
 
 flagMuerte:	# 1			; No se	usa (!?)
+						; 사용하지 않음(!?)
 quienEscalera:	# 1			; (!?) Se usa esto? Quien esta en una escalera 0 = Prota. 1 = Momia
+							; (!?) 이것은 사용됩니까? 사다리에 있는 사람 0 = 주인공. 1 = 미라
 
 dummy_8:	# 1
 
 offsetPlanoSpr:	# 1			; Contador que modifica	el plano en el que son pintados	los sprites, asi se consigue que parpaden en vez de desaparecer
+							; 스프라이트가 그려지는 평면을 수정하여 사라지지 않고 깜박이도록 하는 카운터
 PiramidesPasadas:# 2			; Cada bit indica si la	piramide correspondiente ya esta pasada/terminada
+								; 각 비트는 해당 피라미드가 이미 통과/완료되었는지 여부를 나타냅니다.
 keyTriggerMap:	# 1
 keyHoldMap:	# 1
 mapPaused:	# 1			; 1 = Pausing
@@ -10997,8 +11607,9 @@ mapPaused:	# 1			; 1 = Pausing
 dummy_9:	# 25
 
 keyPressDemo:	# 2			; Puntero a los	controles grabados
+							; 기록된 컨트롤에 대한 포인터
 KeyHoldCntDemo:	# 1
-escaleraData:	# 45
+escaleraData:	# 45		; 사다리 데이터
 
 ;----------------------------------------------------
 ; Tabla	de atributos de	los sprites en RAM
@@ -11008,8 +11619,16 @@ escaleraData:	# 45
 ; 4-5 =	Prota
 ; 6-9 =	Momias
 ; 15 = Cuchillo	o flecha mapa
+; RAM에 있는 스프라이트의 속성 테이블
+; 스프라이트:
+; 0-3 = 피라미드 문의 왼쪽 부분(주인공을 가리고 그가 뒤를 지나가고 있다는 인상을 주기 위해 사용됨)
+; 3 = 지도에서 피라미드의 후광으로도 사용됨
+; 4-5 = 메인
+; 6-9 = 미라
+; 15 = 칼 또는 지도 화살표
 ;----------------------------------------------------
 sprAttrib:	# 1			; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
+						; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 puertaXspr:	# 15
 protaAttrib:	# 3
 protaColorRopa:	# 4
@@ -11018,20 +11637,28 @@ enemyAttrib:	# 16
 unk_E0D8:	# 20
 
 ; Atributos del	cuchillo al rebotar
+; Ricochet의 칼 속성
 knifeAttrib:	# 16
 attrPiramidMap:	# 3			; Atributos del	sprite usado para resaltar una piramide	en el mapa (silueta)
+							; 지도에서 피라미드를 강조 표시하는 데 사용되는 스프라이트의 속성(실루엣)
 
 colorPiramidMap:# 1			; Color	del outline de la piramide en el mapa
+							; 지도의 피라미드 윤곽선 색상
 attrFlechaMap:	# 3			; Atributos de la flecha del mapa
+							; 지도 화살표 속성
 
 colorFlechaMap:	# 1			; Color	de la flecha que indica	a que piramide vamos en	el mapa
+							; 지도에서 우리가 가고 있는 피라미드를 나타내는 화살표의 색상
 
 dummy_10:	# 2Ch
 
 statusEntrada:	# 1			; Timer	usado en el mapa/pergamino de piramides
 					; como status del prota	en las escaleras de entrada/salida
+							; 맵/피라미드 스크롤에 사용되는 타이머는 입구/출구 계단에서 주인공의 상태로 스크롤됩니다.
 lanzamFallido:	# 1			; 1 = El cuchillo se ha	lanzado	contra un muro y directamente sale rebotando
+							; 1 = 칼이 벽에 부딪혀 바로 튕겨져 나옴
 flagEntraSale:	# 1			; 1 = Entrando o saliendo de la	piramide. Ejecuta una logica especial para este	caso
+							; 1 = 피라미드에 들어가거나 나가는 것. 이 경우에 대해 특수 논리 실행
 flagStageClear:	# 1
 protaStatus:	# 1			; 0 = Normal
 					; 1 = Salto
@@ -11040,39 +11667,66 @@ protaStatus:	# 1			; 0 = Normal
 					; 4 = Lanzando un cuhillo
 					; 5 = Picando
 					; 6 = Pasando por un apuerta giratoria
-					
+					; 0 = 정상
+					; 1 = 점프
+					; 2 = 떨어지는
+					; 3 = 계단
+					; 4 = 칼을 던지다
+					; 5 = 찌른다
+					; 6 = 회전문 통과하기
+
 protaControl:	# 1			; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha, #10 = Boton A, #20	=Boton B
+							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 sentidoProta:	# 1			; 1 = Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 ProtaY:		# 1
 ProtaXdecimal:	# 1			; 'Decimales' usados en el calculo de la X. Asi se consiguen velocidades menores a 1 pixel
+							; X 계산에 사용되는 '소수'. 따라서 1픽셀 미만의 속도가 달성됩니다.
 ProtaX:		# 1
 ProtaRoom:	# 1			; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+						; X 좌표의 상단 피라미드의 방을 나타냅니다.
 protaSpeed:	# 2			; El byte bajo indica la parte "decimal" y el alto la entera
+						; 하위 바이트는 "소수" 부분을 나타내고 상위 바이트는 정수를 나타냅니다.
 speedRoom:	# 1			; Usando para sumar/restar a la	habitacion cuando se pasa de una a otra
+						; 한 방에서 다른 방으로 이동할 때 방에 더하거나 빼기 위해 사용
 protaMovCnt:	# 1			; Contador usado cada vez que se mueve el prota. (!?) No se usa	su valor
+							; 주인공이 움직일 때마다 사용하는 카운터. (!?) 값이 사용되지 않습니다.
 protaFrame:	# 1
 
 ; Los siguientes dos bytes se usan para	guardar	un puntero a una tabla con los valores del salto +#0C y	+#0D
+; 다음 2바이트는 점프 값이 +#0C 및 +#0D인 테이블에 대한 포인터를 저장하는 데 사용됩니다.
 timerPergam2:	# 1			; Se usa para hacer una	pausa tras terminar de sonar la	musica del pergamino al	llegar al GOAL
+							; GOAL에 도달했을 때 스크롤 음악 재생이 끝난 후 일시 중지하는 데 사용됩니다.
 dummy_11:	# 1
 
 flagSalto:	# 1			; 0 = Saltando,	1 = En el suelo
+						; 0 = 점프, 1 = 지상에서
 sentidoEscalera:# 1			; 0 = \, 1 = /
 					; Tambien usado	para saber si el salto fue en vertical (guarda el estado de las	teclas en el momento del salto.
+					; 또한 점프가 수직인지 확인하는 데 사용됩니다(점프 시 키의 상태를 저장합니다.
 objetoCogido:	# 1			; #10 =	Cuchillo, #20 =	Pico
+							; #10 = 칼, #20 = 곡괭이
 accionWaitCnt:	# 1			; Contador usado para controlar	la animacion y duracion	de la accion (lanzar cuchillo, cavar, pasar puerta giratoria)
+							; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 timerEmpuja:	# 1			; Timer	usado para saber el tiempo que se empuja una puerta giratoria
+							; 회전문을 누르는 시간을 알던 타이머
 flagScrolling:	# 1
 agujeroCnt:	# 1			; Al comenzar a	pica vale #15
+						; 구멍숫자(?) Pica를 시작할 때 #15의 가치가 있습니다.
 
 ; Datos	del agujero que	se esta	picando
+; 드릴되는 구멍의 세부 정보
 agujeroDat:	# 4			; Y, X,	habitacion
+						; Y, X, 방
 
 modoSentEsc:	# 1			; Si es	0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = \, 1 = /
 momiasPiramid:	# 3*6			; Datos	de las momias que hay en la piramide actual: y,	x (%xxxxx--p), tipo
+								; 현재 피라미드에 있는 미라 데이터: y, x(%xxxxx--p), 유형
 
 dummy_12:	# 2
 pMomiaProceso:	# 2			; Puntero a los	datos de la momia en proceso
+							; 처리 중인 미라 데이터에 대한 포인터
 numMomias:	# 1
 momiaEnProceso:	# 1
 ordenSubir:	# 1
@@ -11101,8 +11755,31 @@ momiaDat:	# 16h*4			; 0 = Andando
 					; +#0b = Frame
 					; +#11 = Timer
 					; +#14 = Tipo momia
+					; 0 = 걷기
+					; 1 = 점프
+					; 2 = 떨어지는
+					; 3 = 계단
+					; 4 = 림보
+					; 5 = 나타남
+					; 6 = 자살
+					; 7 = 생각
+					;
+					; +#00 = 상태
+					; +#01 = 모니터
+					; +#02 = 방향
+					; +#03 = 그리고
+					; +#04 = X 소수부
+					; +#05 = X
+					; +#06 = 방
+					; +#07 = 속도 X 소수부
+					; +#08 = 속도 X
+					; +#09 = 스피드룸
+					; +#0b = 프레임
+					; +#11 = 타이머
+					; +#14 = 미라 유형
 
 puertaCerrada:	# 1			; Vale 1 al cerrarse la	salida
+							; 문 닫힘: 출력이 닫힐 때 1의 가치가 있습니다.
 
 dummy_13:	# 1
 
@@ -11114,11 +11791,19 @@ pyramidDoors:	# 18h			; Y (FF	= Desactivado)
 					; Status (Nibble alto =	Status,	Nibble bajo = contador)
 					; Piramide destino
 					; Direccion por	la que se entra	/ Flecha del mapa
+					; Y (FF = 꺼짐)
+					; X 소수부
+					; X
+					; 방
+					; 상태(높은 니블 = 상태, 낮은 니블 = 카운터)
+					; 운명의 피라미드
+					; 진입 방향 / 지도 화살표
 dummy_14:	# 21
 
 gemasCogidas:	# 1
 gemasTotales:	# 1
 ElemEnProceso:	# 1			; Usado	para saber la gema o puerta que	se esta	procesando
+							; 처리중인 보석이나 문을 아는 데 사용됩니다.
 datosGemas:	# 6Ch			; 0 = Color/activa. Nibble alto	indica el color. El bajo si esta activa	(1) o no (0)
 					; 1 = Status
 					; 2 = Y
@@ -11126,15 +11811,27 @@ datosGemas:	# 6Ch			; 0 = Color/activa. Nibble alto	indica el color. El bajo si 
 					; 4 = X
 					; 5 = habitacion
 					; 6-8 =	0, 0, 0
-					
-					
+
+					; 0 = 색상/활성. 높은 니블은 색상을 나타냅니다. 저음이 활성화된 경우(1) 그렇지 않은 경우(0)
+					; 1 = 상태
+					; 2 = Y
+					; 3 = X 소수부
+					; 4 = X
+					; 5 = 방
+					; 6-8 = 0, 0, 0
+
+
 IDcuchilloCoge:	# 1			; Cuchillo que coge el prota
+							; 주인공을 잡는 칼
 knifeEnProceso:	# 1
 numKnifes:	# 1
 ;
 ; Datos	de los cuchillos
 ; Numero maximo	de cuchillos 6
-; Tama�o de la estructura 17 bytes
+; Tama�o de la estructura 17 bytes
+; 칼 데이터
+; 칼의 최대 수 6
+; 구조 크기 17바이트 (6*17=102=66h)
 ;
 knifesData:	# 66h			; 0 = Status (1	= suelo, 2 = Cogido, 4 = Lanzamiento?, 5= lanzado, 7 =Rebotando)
 					; 1 = Sentido (1 = izquierda, 2	= Derecha)
@@ -11148,20 +11845,39 @@ knifesData:	# 66h			; 0 = Status (1	= suelo, 2 = Cogido, 4 = Lanzamiento?, 5= la
 					; 9 = Contador movimiento
 					; A = Tile backup 1 (fondo)
 					; B = Tile backup 2 (guarda dos	tiles al lanzarlo)
-
+					; 0 = 상태(1 = 땅, 2 = 잡힘, 4 = 시작?, 5= 던짐, 7 = 튕김)
+					; 1 = 방향(1 = 왼쪽, 2 = 오른쪽)
+					; 2 = Y
+					; 3 = X 소수
+					; 4 = X
+					; 5 = 방
+					; 6 = 십진법 속도
+					; 7 = 나이프 속도
+					; 8 = 방 변경 속도
+					; 9 = 이동 카운터
+					; A = 타일 백업 1(백그라운드)
+					; B = 타일 백업 2(시전 시 타일 2개 저장)
 idxPicoCogido:	# 1			; Indice del pico cogido por el	prota
+							; 주인공이 잡은 부리의 인덱스
 numPicos:	# 1
 
 ; 5 bytes por entrada
+; 입력당 5바이트
 picosData:	# 50h			; 0 = Status
 					; 1 = Y
 					; 2 = X	decimal
 					; 3 = X
 					; 4 = Habitacion
+					; 0 = 상태
+					; 1 = Y
+					; 2 = X 소수
+					; 3 = X
+					; 4 = 방
 GiratEnProceso:	# 1
 numDoorGira:	# 1
 
 ; 7 bytes por puerta
+; 게이트당 7바이트
 doorGiraData:	# 0DFh			; 0 = Status (bit 0 = Girando, bits 2-1	= altura + 2)
 					; 1 = Y
 					; 2 = X	decimal
@@ -11169,12 +11885,23 @@ doorGiraData:	# 0DFh			; 0 = Status (bit 0 = Girando, bits 2-1	= altura + 2)
 					; 4 = Habitacion
 					; 5 = Sentido giro
 					; 6 = Contador giro
+					; 0 = 상태(비트 0 = 회전, 비트 2-1 = 높이 + 2)
+					; 1 = Y
+					; 2 = X 소수
+					; 3 = X
+					; 4 = 방
+					; 5 = 회전 방향
+					; 6 = 카운터 회전
 muroTrampProces:# 1
 numMuroTrampa:	# 1 			; Numero de muros trampa que hay en la piramide
+								; 피라미드의 트랩 벽 수
 muroTrampaDat:	# 5*4			; Y, decimales X, X, habitacion
+								; Y, 소수 X, X, 방
 
 stackArea:	# 2edh; 301h
 stackTop:	# 0
 MapaRAMRoot:	# 60h			; La primera fila del mapa no se usa (ocupada por el marcador).	Tambien	usado como inicio de la	pila
+								; 지도의 첫 번째 행은 사용되지 않습니다(마커가 점유). 스택의 시작으로 사용됨
 MapaRAM:	# 8A0h			; Mapa de las tres posibles habitaciones de la piramide. Cada fila ocupa #60 bytes (#20 * 3)
+							; 피라미드의 가능한 세 개의 방의 지도. 각 행은 #60바이트를 차지합니다(#20 * 3).
 
