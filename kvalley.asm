@@ -236,7 +236,7 @@ ReadKeys_AC:
 ;  A = Indice de la funcion
 ; 점프 인덱스
 ; (SP) = 함수에 대한 포인터
-; A = 함수의 인덱스
+;  A = 함수의 인덱스
 ;----------------------------------------------------
 
 jumpIndex:
@@ -268,15 +268,16 @@ ClearDataVRAM:
 ; Datos:
 ;  FE: next block (nueva direccion + datos)
 ;  FF: end datos
+;
 ; 포맷된 데이터를 VRAM에 쓰기
-; 안에:
-; C = 쓸 데이터에 적용된 AND 마스크
-; DE = 데이터 주소
-; 0-1: VRAM 주소
-; 2...: 데이터
+; 입력:
+;   C = 쓸 데이터에 적용된 AND 마스크
+;  DE = 데이터 주소
+;  0-1: VRAM 주소
+;  2...: 데이터
 ; 데이터:
-; FE: 다음 블록(새 주소 + 데이터)
-; FF: 종료 데이터
+;  FE: 다음 블록(새 주소 + 데이터)
+;  FF: 종료 데이터
 ;----------------------------------------------------
 
 WriteDataVRAM:
@@ -317,6 +318,7 @@ writeDataVRAM3:
 ; Borra	el area	de variables
 ; Inicializa el	hardware (modo de video, PSG)
 ; Ejecuta un loop infinito, tipico de Konami.
+;
 ; 매 프레임마다 게임 로직을 호출하는 인터럽트 루틴 수정
 ; 변수 영역 지우기
 ; 하드웨어 초기화(비디오 모드, PSG)
@@ -360,6 +362,7 @@ dummyLoop:
 ;----------------------------------------------------
 ; VRAM write con proteccion anticopia
 ; Antes	de escribir en la VRAM machaca el codigo si se ejecuta en RAM
+;
 ; 복사 방지 기능이 있는 VRAM 쓰기
 ; VRAM에 쓰기 전에 RAM에서 실행 중인 경우 코드를 파쇄하십시오.
 ;----------------------------------------------------
@@ -425,6 +428,7 @@ runGame2:
 ; 1 = Sube el logo cada	2 frames. Subraya Konami y pone	el texto "SOFTWARE"
 ; 2 = Espera un	rato y borra la	pantalla.
 ; 3 = Dibuja el	menu.
+;
 ; 0 = 로고 초기화: 화면 지우기, 그래픽 로드 및 그래픽 모드 설정
 ; 1 = 2 프레임마다 로고를 업로드합니다. Konami에 밑줄을 긋고 "SOFTWARE"라는 텍스트를 넣습니다.
 ; 2 = 잠시 기다렸다가 화면을 지웁니다.
@@ -868,9 +872,9 @@ stageClear:
 ; Scroll de la pantalla
 ; Mueve	la pantalla y actualiza	la posicion del	prota
 ; al cambiar de	una habitacion a otra
+;
 ; 화면 스크롤
-; 화면을 이동하고 주인공의 위치를 ​​업데이트
-; 한 방에서 다른 방으로 변경할 때
+; 한 방에서 다른 방으로 변경할 때 화면을 이동하고 주인공의 위치를 ​​업데이트
 ;
 ;----------------------------------------------------
 
@@ -921,6 +925,7 @@ FinalJuego:
 ; - Reproduce musica de	inicio de partida
 ; - Parpadea PLAY START
 ; - Inicia las variables de la partida y pasa el estado	de juego
+;
 ; 게임 시작
 ;
 ; - 게임 시작 음악 재생
@@ -1159,6 +1164,7 @@ quitaMomias:
 ; (C) KONAMI PYRAMID-xx
 ; El numero de la piramide se calcula:
 ; veces	que se ha terminado el juego * 15 + piramide actual
+;
 ; 텍스트를 그리다
 ; (C) KONAMI 피라미드-xx
 ; 피라미드의 수는 다음과 같이 계산됩니다.
@@ -1246,6 +1252,7 @@ loopDrawLogo:
 ;
 ; Dibuja el logo de KING'S VALLEY del menu
 ; Lo hace pintando columna a columna cada palabra
+;
 ; 메뉴에서 KING'S VALLEY 로고 그리기
 ; 각 단어를 열별로 페인팅하여 이를 수행합니다.
 ;
@@ -1510,6 +1517,7 @@ clearScreen:
 ; HL = Direccion VRAM
 ; A = Dato
 ; BC = Numero de bytes
+;
 ; VRAM 채우기
 ; HL = VRAM 주소
 ; A = 데이터
@@ -1554,7 +1562,7 @@ fillVRAM_DE:
 ;
 ; RAM에서 VRAM으로 데이터 전송
 ; HL = VRAM의 대상 주소
-; SD = 원점
+; DE = 원점
 ; BC = 데이터 번호
 ;
 ;----------------------------------------------------
@@ -1570,7 +1578,7 @@ DEtoVRAMset:
 ; BC = Numero de datos
 ;
 ; RAM에서 VRAM으로 데이터 전송
-; SD = 원점
+; DE = 원점
 ; BC = 데이터 번호
 ;
 ;----------------------------------------------------
@@ -1918,6 +1926,14 @@ initHardware:
 ; Background color = #E4 (Gris/Azul)
 ;
 ; 비디오 모드:
+;
+; 화면 2
+; 확대되지 않은 16x16 스프라이트
+; 패턴명 테이블 = #3800-#3AFF
+; 패턴 색상표 = #0000-#17FF
+; 패턴 생성기 테이블 = #2000-#37FF
+; 스프라이트 속성 테이블 = #3b00-#3B7F
+; 스프라이트 생성기 테이블 = #1800-#1FFF
 ; 배경 색 = #E4 (그레이 블루)
 ;----------------------------------------------------
 
@@ -2004,9 +2020,9 @@ StoreKeyValues:
 ; 5: Boton B / Select
 ;
 ; 커서와 조이스틱의 상태 읽기
-; 0: 위로
-; 1: 아래로
-; 2 개 남았다
+; 0: 위
+; 1: 아래
+; 2: 왼쪽
 ; 3: 오른쪽
 ; 4: A / 스페이스 버튼
 ; 5: B / 선택 버튼
@@ -2197,7 +2213,7 @@ GFX_Space:	db 8
 ; - #FF	= Fin
 ;
 ; 마커 텍스트
-; 체재:
+; 형식:
 ; - VRAM 좌표/주소(2바이트)
 ; - 패턴
 ; - #FE = 새 좌표 및 데이터 읽기
@@ -2638,7 +2654,7 @@ updateSprites:
 						; C = 변위 지수
 		add	a, a
 		add	a, a		; x4 (sprite attribute size)
-						; x4(스프라이트 속성 크기)
+						; x4 (스프라이트 속성 크기)
 		ld	de, enemyAttrib	; Tabla	de atributos de	los enemigos en	RAM
 							; RAM에 있는 적의 속성 표
 		call	ADD_A_DE	; Calcula el plano que le corresponde a	ese desplazamiento
@@ -2723,8 +2739,7 @@ chkScroll3:
 ;----------------------------------------------------
 ; Cambia el color de los destellos de las gemas
 ; y de la palanca de la	puerta
-; 보석의 반짝임 색상 변경
-; 그리고 문 손잡이
+; 보석의 반짝임과 문의 레버의 색상을 변경합니다.
 ;----------------------------------------------------
 
 drawBrilloGemas:
@@ -2866,7 +2881,7 @@ AI_Prota2:
 							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 		ld	a, (KeyHold)	; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha, #10 = Boton A, #20	=Boton B
 		ld	(hl), a		; Copia	los controles/teclas pulsados al control del prota
-						; 누른 컨트롤/키를 메인 컨트롤에 복사
+						; 누른 컨트롤/키를 주인공 컨트롤에 복사
 		and	a
 		jr	z, AI_Prota3	; No hay ninguna tecla pulsada
 							; 누른 키가 없습니다
@@ -2933,7 +2948,7 @@ protaAnda2:
 
 		xor	a
 		ld	(modoSentEsc), a ; Si es 0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
-							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "sentidoEscalera"에 저장합니다. 0 = \, 1 = /
 		call	chkCogeEscalera	; Comprueba si coge una	escalera para subir o bajar
 								; 그가 사다리를 타고 올라가거나 내려가는지 확인하십시오.
 		ret	z		; si, la ha cogido
@@ -3229,7 +3244,7 @@ setProtaCae:
 ; Comprueba si llega al	suelo
 ; 주인공 상태 2: 추락
 ; 추락으로 인한 주인공의 좌표 업데이트
-; 충돌 상태를 넣어
+; 충돌 상태를 판단
 ; 땅에 닿았는지 확인
 ;----------------------------------------------------
 
@@ -3363,8 +3378,7 @@ setLanzaKnife3:
 ; Comprueba si al lanzar un cuchillo contra un muro
 ; hay un hueco sobre este para que caiga el cuchillo
 ; Por ejemplo: el prota	esta en	un agujero pero	a los lados sobre su cabeza hay	sitio libre
-; 벽에 칼을 던지는지 확인
-; 칼을 넣을 수 있는 구멍이 위에 있어요
+; 칼을 벽에 던질 때 칼이 떨어질 구멍이 있는지 확인하십시오.
 ; 예: 주인공은 구멍에 있지만 머리 위 측면에는 여유 공간이 있습니다.
 
 setLanzaKnife4:
@@ -3553,11 +3567,11 @@ protaPicando3:
 		bit	4, a		; Es multiplo de #20
 						; #20의 배수입니다.
 		ld	b, 4		; Frames con el	pico abajo
-						; 부리가 아래로 향하는 프레임
+						; 곡괭이가 아래로 향하는 프레임
 		jr	nz, protaPicando4
 
 		ld	b, 8		; Frames con el	pico arriba
-						; 부리가 있는 프레임
+						; 곡괭이가 있는 프레임
 		push	bc
 		push	hl
 		ld	hl, agujeroCnt	; Al comenzar a	pica vale #15
@@ -3619,8 +3633,7 @@ cogeObjeto:
 ; Tambien comprueba que	sobre el lugar del agujero no haya un cuchillo o una gema
 ; 주인공는 곡괭이를 사용합니다.
 ; 주인공이 곡괭이로 구멍을 뚫을 수 있는지 확인
-; 이렇게 하려면 단단한 바닥(돌 플랫폼)에 있어야 합니다.
-; 그리고 플랫폼 아래에는 회전문이 없습니다.
+; 이렇게 하려면 단단한 바닥(돌 플랫폼) 위에 있어야 하며 플랫폼 아래에 회전문이 없어야 합니다.
 ; 또한 구멍 위치에 칼이나 보석이 없는지 확인하십시오.
 ;----------------------------------------------------
 
@@ -3832,8 +3845,8 @@ setPicarStatus:
 ;----------------------------------------------------
 ; Cuando el prota esta atrapado	entre dos muros	en vez de
 ; picar	en el suelo, pica en la	pared
-; 주인공이 두 개의 벽 사이에 갇힌 경우
-; 바닥을 찌르다, 벽을 찌르다
+;
+; 주인공이 두 개의 벽 사이에 갇혔을 때 땅을 치지 않고 벽에 부딪힙니다.
 ;----------------------------------------------------
 
 picaLateral:
@@ -3978,8 +3991,8 @@ chkIncrust2:
 ;
 ; Carga	los graficos y sprites del juego y
 ; crea copias invertidas de algunos de ellos
-; 게임의 그래픽과 스프라이트를 로드하고
-; 그들 중 일부의 거꾸로 된 사본 만들기
+;
+; 게임의 그래픽과 스프라이트를 로드하고 그 중 일부의 반전된 복사본을 만듭니다.
 ;
 ;----------------------------------------------------
 
@@ -4095,8 +4108,8 @@ IndexSprites:	dw GFX_Prota
 ;
 ; 땅에 닿았는지 확인
 ; 출력:
-; Z = 충돌했습니다
-; C = 충돌하지 않음
+;   Z = 충돌했습니다
+;   C = 충돌하지 않음
 ;----------------------------------------------------
 
 chkChocaSuelo:
@@ -4135,8 +4148,8 @@ chkChocaSuelo2:
 ;
 ; 주인공의 발 밑에 땅이 있는지 확인
 ; 출력:
-; Z = 접지가 있습니다
-; C = 접지 없음
+;    Z = 접지가 있습니다
+;    C = 접지 없음
 ;----------------------------------------------------
 
 chkProtaCae:
@@ -4181,8 +4194,8 @@ chkCae2:
 ; 현재 요소가 지상에 있는지 확인
 ; 주인공과 미라 모두 키가 16이므로 키에 17을 더하면 발 바로 아래에 있는 것이 보입니다.
 ; 출력:
-; DE = 지도 타일에 대한 포인터
-; Z = 충돌
+;   DE = 지도 타일에 대한 포인터
+;    Z = 충돌
 ;----------------------------------------------------
 
 chkPisaSuelo:
@@ -4262,12 +4275,12 @@ getMapOffset00:
 ; HL이 가리키는 좌표에서 지도 타일을 가져옵니다.
 ;
 ; 입력:
-; HL = 좌표 포인터(Y, X 소수, X, 방)
-; B = 오프셋 X(음수 값을 가질 수 있음)
-; C = 오프셋 Y
+;  HL = 좌표 포인터(Y, X 소수, X, 방)
+;   B = 오프셋 X(음수 값을 가질 수 있음)
+;   C = 오프셋 Y
 ; 출력:
-; HL = 해당 좌표의 지도 위치에 대한 포인터
-; A = 해당 좌표에 있는 지도의 패턴
+;  HL = 해당 좌표의 지도 위치에 대한 포인터
+;   A = 해당 좌표에 있는 지도의 패턴
 ;----------------------------------------------------
 
 getMapOffset:
@@ -4354,8 +4367,8 @@ getMapOff2:
 ;
 ; 사다리의 바닥에 도달했는지 확인하십시오.
 ; 출력:
-; Z = 끝에 도달했습니다
-; NZ = 끝에 도달하지 않음
+;   Z = 끝에 도달했습니다
+;  NZ = 끝에 도달하지 않음
 ;----------------------------------------------------
 
 chkFinEscalera:
@@ -4392,7 +4405,7 @@ chkFinEscalera:
 ; 지도 타일에 대한 상대 위치 X에 따라 오른쪽(0-3) 또는 왼쪽(4-7)으로 올라가는지 확인합니다.
 ; 그런 다음 캐릭터의 발에 있는 타일을 보고 이전 유형의 사다리와 비교합니다.
 ; 출력:
-; NZ = 픽업하지 않음
+;   NZ = 픽업하지 않음
 ;----------------------------------------------------
 
 chkCogeEscalera:
@@ -4466,7 +4479,7 @@ chkSubeEsc2:
 						; 1 = 오른쪽 계단, 0 = 왼쪽 계단
 
 		ld	a, (modoSentEsc) ; Si es 0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
-							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "sentidoEscalera"에 저장합니다. 0 = \, 1 = /
 		and	a
 		jr	nz, chkSubeEsc3	; No guarda en sentidoEscalera el sentido de la	escalera
 							; 사다리 방향의 계단 방향은 저장하지 않습니다.
@@ -4530,7 +4543,7 @@ noCogeEscalera:
 ;
 ; 캐릭터 발 아래로 내려가는 계단이 있는지 확인
 ; 출력:
-; NC/Z = 아래층
+;    NC/Z = 아래층
 ;----------------------------------------------------
 
 chkBajaEscalera:
@@ -4552,7 +4565,8 @@ chkBajaEscalera:
 								; HL이 가리키는 좌표 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	a, 0C1h		; Fila de patrones por debajo del personaje, justo bajo	sus pies
 						; #60 por fila * 2 (16 de altura) + 1 (8 pixeles) = justo bajo los pies
-; 캐릭터 바로 아래에 있는 행당 패턴 행 #60 * 2(높이 16) + 1(8픽셀) = 발 바로 아래
+						; 캐릭터 아래, 발 바로 아래에 있는 일련의 패턴
+						; 행당 #60 * 2(높이 16) + 1(8픽셀) = 발 바로 아래
 
 		call	ADD_A_HL
 		ld	a, (hl)		; Tile del mapa	bajo los pies
@@ -4569,7 +4583,7 @@ chkBajaEscalera:
 
 chkBajaEsc2:
 		ld	a, (modoSentEsc) ; Si es 0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
-							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = 	\, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "sentidoEscalera"에 저장합니다. 0 = 	\, 1 = /
 		and	a
 		jr	nz, chkBajaEsc3
 
@@ -4607,8 +4621,8 @@ chkBajaEsc3:
 ; 요소의 X가 8의 배수인 경우 회전문에 닿는지 확인합니다.
 ; X가 타일 오른쪽의 4픽셀에 있으면 벽을 확인하십시오.
 ; 출력:
-; Z = 충돌하지 않음
-; C = 충돌
+;    Z = 충돌하지 않음
+;    C = 충돌
 ;----------------------------------------------------
 
 chkChocaAndar:
@@ -4696,7 +4710,7 @@ noChocaAndar:
 ;----------------------------------------------------
 ;
 ; Sprite prota sin nada	en las manos
-; 손에 아무것도 없는 프로타 스프라이트
+; 손에 아무것도 없는 주인공 스프라이트
 ;
 ;----------------------------------------------------
 GFX_Prota:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Dh, 1,	2, 2, 1	; ...
@@ -4717,7 +4731,7 @@ GFX_Prota:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Dh, 1,	2, 2, 1	; ...
 ;----------------------------------------------------
 ;
 ; Sprite prota con cuchillo
-; 칼을 든 프로타 스프라이트
+; 칼을 든 주인공 스프라이트
 ;
 ;----------------------------------------------------
 GFX_ProtaKnife:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Ch, 1,	3, 3, 1	; ...
@@ -4748,7 +4762,7 @@ GFX_ProtaKnife:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Ch, 1,	3, 3, 1	; ...
 ;----------------------------------------------------
 ;
 ; Sprite prota con el pico
-; 곡괭이가 있는 프로타 스프라이트
+; 곡괭이가 있는 주인공 스프라이트
 ;
 ;----------------------------------------------------
 GFX_ProtaPico:	db 0, 18h, 96h,	0, 1, 3, 0, 67h, 4, 18h, 0Ch, 6, 1, 3
@@ -5655,7 +5669,7 @@ knifeEnd:
 	ENDIF
 ;----------------------------------------------------
 ; Reinicia el rebote del cuchillo
-; 나이프 바운스 재설정
+; 칼 바운스 재설정
 ;----------------------------------------------------
 
 setReboteKnife:
@@ -5701,8 +5715,8 @@ caeKnife4:
 ;
 ; 타일이 플랫폼, 보석, 칼 또는 보석인지 확인하십시오.
 ; 출력:
-; Z = 해당 요소 중 하나인 경우
-; B = 입력 타일
+;   Z = 해당 요소 중 하나인 경우
+;   B = 입력 타일
 ;----------------------------------------------------
 
 chkKnifeChoca:
@@ -5816,8 +5830,8 @@ knifeNextStatus:
 ; 현재 칼 데이터에 대한 포인터 가져오기
 ; 입력: A = 구조 변수에 대한 오프셋
 ; 출력:
-; HL = 나이프 데이터에 대한 포인터(A에 표시된 변수)
-; A = 변수 값
+;   HL = 나이프 데이터에 대한 포인터(A에 표시된 변수)
+;    A = 변수 값
 ;----------------------------------------------------
 
 getKnifeData:
@@ -5866,10 +5880,10 @@ getKnifeData:
 ;
 ; DE가 가리키는 이름 테이블의 주소를 계산합니다.
 ; 입력:
-; D = Y
-; E = X
+;   D = Y
+;   E = X
 ; 출력:
-; HL = VRAM 포인터
+;   HL = VRAM 포인터
 ;----------------------------------------------------
 
 coordVRAM_DE:
@@ -5915,8 +5929,8 @@ getKnifeAttib:
 ;
 ; 칼이 미라를 치는지 확인하십시오.
 ; 출력:
-; NC, Z = 충돌하지 않음
-; C = 충돌
+;   NC, Z = 충돌하지 않음
+;   C = 충돌
 ;----------------------------------------------------
 
 chkKnifeMomia:
@@ -6090,9 +6104,9 @@ chkCogeKnife4:
 ; 요소의 좌표를 가져와 주인공과 같은 방에 있는지 확인
 ; 입력: HL = Y, X, 방에 대한 포인터
 ; 출력:
-; Z = 주인공의 방에 있습니다.
-; D = Y
-; E = X
+;    Z = 주인공의 방에 있습니다.
+;    D = Y
+;    E = X
 ;----------------------------------------------------
 
 getLocationDE:
@@ -6353,7 +6367,7 @@ momiaMataProta:
 ; con el centro	de la momia
 ;
 ; X를 미라 중심으로 오프셋, 확인할 영역의 너비(너비 비례)
-; 미라 중심에 Y 오프셋, 면적 높이(프로타 높이)
+; 미라 중심에 Y 오프셋, 면적 높이(주인공 높이)
 ; 미라와의 충돌의 경우 미라 중심으로 주인공의 전체 면적을 확인합니다.
 ;----------------------------------------------------
 mummyHitArea:	db 5, 0Ah
@@ -6510,7 +6524,7 @@ tickScroll5:
 ;
 ; 현재 방 그리기
 ; 입력:
-; DE = 룸 맵에 대한 포인터
+;  DE = 룸 맵에 대한 포인터
 ;----------------------------------------------------
 
 drawRoom:
@@ -7073,10 +7087,10 @@ chkLastGema:
 ;
 ; HL에 보석 데이터에 대한 포인터를 반환하고 A에 표시된 변수를 반환합니다.
 ; 입력:
-; A = 구조 변수에 대한 오프셋
+;   A = 구조 변수에 대한 오프셋
 ; 출력:
-; HL = 처리 중인 보석의 표시된 변수에 대한 포인터
-; A = 변수 값
+;  HL = 처리 중인 보석의 표시된 변수에 대한 포인터
+;   A = 변수 값
 ;----------------------------------------------------
 
 
@@ -7595,7 +7609,7 @@ chkLastExit:
 ;
 ; 출구/입구 문 그리기
 ; 입력:
-; DE = 문을 형성하는 타일
+;  DE = 문을 형성하는 타일
 ;----------------------------------------------------
 
 drawPuerta:
@@ -7666,8 +7680,8 @@ drawPuerta4:
 ;
 ; 출구가 현재 방에 있는지 확인하고 좌표를 가져옵니다.
 ; 출력:
-; D = Y
-; E = X
+;  D = Y
+;  E = X
 ;----------------------------------------------------
 
 chkSameScreenS:
@@ -7699,10 +7713,10 @@ getAnimExit:
 ;
 ; Solo comprueba la parte de arriba del	prota. Asi parece que le da con	la mano	al saltar
 ;
-; 오프셋 X 좌표 레버, 확인할 프로타 너비
+; 오프셋 X 좌표 레버, 확인할 주인공 너비
 ; 오프셋 Y 레버, 확인할 전면 높이
 ;
-; 메인 캐릭터의 상단을 확인하십시오. 그래서 점프할 때 손으로 때리는 것 같다.
+; 주인공 캐릭터의 상단을 확인하십시오. 그래서 점프할 때 손으로 때리는 것 같다.
 ;----------------------------------------------------
 palancaArea:	db 8, 10h
 		db 3, 5
@@ -8007,9 +8021,9 @@ chkLastMuro:
 ;
 ; 주인공이 함정 벽에 짓눌렸는지 확인
 ; 입력:
-; BC = 주인공의 머리에 XY 오프셋
+;   BC = 주인공의 머리에 XY 오프셋
 ; 출력:
-; Carry = 찌그러졌다
+;   Carry = 찌그러졌다
 ;----------------------------------------------------
 
 chkAplastaMuro:
@@ -8302,7 +8316,7 @@ chkLastGirat:
 ;
 ; 진행 중인 회전문의 데이터에 대한 포인터를 HL에 가져옵니다.
 ; 출력:
-; A = 상태
+;   A = 상태
 ;----------------------------------------------------
 
 
@@ -8393,10 +8407,10 @@ quitaGiratoria3:
 ;
 ; HL이 가리키는 이름 테이블의 주소 계산
 ; 입력:
-; H = X
-; L = 예
+;   H = X
+;   L = 예
 ; 출력:
-; HL = VRAM 이름 테이블 주소
+;  HL = VRAM 이름 테이블 주소
 ;----------------------------------------------------
 
 coordVRAM_HL:
@@ -9609,13 +9623,13 @@ initDoorProta5:
 ; Contador movimiento,
 ; Frame
 ;
-; 단계 시작 시 다음 변수의 초기 값
+; 단계 시작 시 다음 변수들의 초기 값
 ;
-; 십진수 X 속도,
+; 소수 X 속도,
 ; 정수 X 속도,
-; 스피드엑스룸,
+; 방 X 속도,
 ; 이동 카운터,
-; 액자
+; 프레임
 ;----------------------------------------------------
 protaDataDoor:	db 0C8h, 0, 0, 1, 1
 
@@ -9624,7 +9638,7 @@ protaDataDoor:	db 0C8h, 0, 0, 1, 1
 ; Attributos de	la puerta de entrada
 ; x, y,	sprite,	color
 ;
-; 게이트웨이 속성 x, y, 스프라이트, 색상
+; 문 속성 x, y, 스프라이트, 색상
 ;----------------------------------------------------
 attribDoor:	db 0E0h,0B0h,0D8h,   1	; Dibujo ladrillos
 		db 0E0h,0B0h,0DCh,   3	; Relleno ladrillos
@@ -10336,7 +10350,7 @@ getVariableMomia:
 ; 미라는 무엇을 해야하는지 생각합니다.
 ; TIMER 가치만큼 옆을 봐
 ; 입력:
-; IX = 미라 데이터
+;    IX = 미라 데이터
 ;----------------------------------------------------
 
 momiaPiensa:
@@ -11428,6 +11442,7 @@ waitEnding:
 ; - Carga los sprites del porta	con el pico
 ; - Pone la musica del juego
 ; - Borra todo el mapa RAM
+;
 ; 끝을 보여주기 위해 모든 것을 준비
 ; - 스프라이트를 숨기고 와이프 표시
 ; - 곡괭이로 캐리어 스프라이트를 로드하세요.
@@ -11624,7 +11639,7 @@ starsLocations:	db 9, 16h, 38h,	67h, 74h, 8Eh, 0A9h
 ; Status, Control, sentido, Y, decimales, X, habitacion, speed decimales, speed	X, Speed room, movCnt, frame
 ; Andar, izquierda, izquierda, Y=#88, 0, X=#F0,	0, spd=#C0
 ; 엔딩의 주인공 데이터
-; 상태, 제어, 방향, Y, 소수점, X, 방, 속도 소수점, 속도 X, 속도 방, movCnt, 프레임
+; 상태, 제어, 방향, Y, 소수, X, 방, 속도 소수, 속도 X, 속도 방, movCnt, 프레임
 ; 걷기, 왼쪽, 왼쪽, Y=#88, 0, X=#F0, 0, spd=#C0
 ;----------------------------------------------------
 protaEndingDat:	db 0, 4, 1, 88h, 0, 0F0h, 0, 0C0h, 0, 0, 0, 0
@@ -12693,12 +12708,13 @@ MUS_SalirPiram2:db 0D4h, 0FCh, 3, 3, 0E1h, 40h,	0E0h, 0, 40h, 0, 40h, 0FFh
 ;    -01: N�mero RC7xx en formato BCD
 ;    -02: N�mero de bytes usados para el nombre
 ;    -03: Nombre en katakana (escrito al rev�s)
+;
 ; 코나미 게임 ID: OUKE NO TANI(수령 의 계곡)
 ;
-; -00: #AA(토큰)
-; -01: ​​BCD 형식의 ​RC7xx 숫자
-; -02: 이름에 사용된 바이트 수
-; -03: 가타카나로 된 이름(뒤로 쓰기)
+;    -00: #AA(토큰)
+;    -01: ​​BCD 형식의 ​RC7xx 숫자
+;    -02: 이름에 사용된 바이트 수
+;    -03: 가타카나로 된 이름(뒤로 쓰기)
 ;
 ;------------------------------------------------------------------------------
 		db 95h,	8Fh, 98h, 88h, 82h, 84h, 6, 27h, 0AAh
@@ -12839,11 +12855,12 @@ escaleraData:	# 45		; 사다리 데이터
 ; 4-5 =	Prota
 ; 6-9 =	Momias
 ; 15 = Cuchillo	o flecha mapa
+;
 ; RAM에 있는 스프라이트의 속성 테이블
 ; 스프라이트:
 ; 0-3 = 피라미드 문의 왼쪽 부분(주인공을 가리고 그가 뒤를 지나가고 있다는 인상을 주기 위해 사용됨)
 ; 3 = 지도에서 피라미드의 후광으로도 사용됨
-; 4-5 = 메인
+; 4-5 = 주인공
 ; 6-9 = 미라
 ; 15 = 칼 또는 지도 화살표
 ;----------------------------------------------------
@@ -12887,6 +12904,7 @@ protaStatus:	# 1			; 0 = Normal
 					; 4 = Lanzando un cuhillo
 					; 5 = Picando
 					; 6 = Pasando por un apuerta giratoria
+
 					; 0 = 정상
 					; 1 = 점프
 					; 2 = 떨어지는
@@ -12940,7 +12958,7 @@ agujeroDat:	# 4			; Y, X,	habitacion
 						; Y, X, 방
 
 modoSentEsc:	# 1			; Si es	0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
-							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "sentidoEscalera"에 저장합니다. 0 = \, 1 = /
 momiasPiramid:	# 3*6			; Datos	de las momias que hay en la piramide actual: y,	x (%xxxxx--p), tipo
 								; 현재 피라미드에 있는 미라 데이터: y, x(%xxxxx--p), 유형
 
@@ -13012,6 +13030,7 @@ pyramidDoors:	# 18h			; Y (FF	= Desactivado)
 					; Status (Nibble alto =	Status,	Nibble bajo = contador)
 					; Piramide destino
 					; Direccion por	la que se entra	/ Flecha del mapa
+
 					; Y (FF = 꺼짐)
 					; X 소수부
 					; X
@@ -13050,6 +13069,7 @@ numKnifes:	# 1
 ; Datos	de los cuchillos
 ; Numero maximo	de cuchillos 6
 ; Tama�o de la estructura 17 bytes
+;
 ; 칼 데이터
 ; 칼의 최대 수 6
 ; 구조 크기 17바이트 (6*17=102=66h)
@@ -13066,20 +13086,21 @@ knifesData:	# 66h			; 0 = Status (1	= suelo, 2 = Cogido, 4 = Lanzamiento?, 5= la
 					; 9 = Contador movimiento
 					; A = Tile backup 1 (fondo)
 					; B = Tile backup 2 (guarda dos	tiles al lanzarlo)
+
 					; 0 = 상태(1 = 땅, 2 = 잡힘, 4 = 시작?, 5= 던짐, 7 = 튕김)
 					; 1 = 방향(1 = 왼쪽, 2 = 오른쪽)
 					; 2 = Y
 					; 3 = X 소수
 					; 4 = X
 					; 5 = 방
-					; 6 = 십진법 속도
+					; 6 = 소수 속도
 					; 7 = 나이프 속도
 					; 8 = 방 변경 속도
 					; 9 = 이동 카운터
 					; A = 타일 백업 1(백그라운드)
 					; B = 타일 백업 2(시전 시 타일 2개 저장)
 idxPicoCogido:	# 1			; Indice del pico cogido por el	prota
-							; 주인공이 잡은 부리의 인덱스
+							; 주인공이 잡은 곡괭이의 인덱스
 numPicos:	# 1
 
 ; 5 bytes por entrada
@@ -13089,6 +13110,7 @@ picosData:	# 50h			; 0 = Status
 					; 2 = X	decimal
 					; 3 = X
 					; 4 = Habitacion
+
 					; 0 = 상태
 					; 1 = Y
 					; 2 = X 소수
@@ -13106,6 +13128,7 @@ doorGiraData:	# 0DFh			; 0 = Status (bit 0 = Girando, bits 2-1	= altura + 2)
 					; 4 = Habitacion
 					; 5 = Sentido giro
 					; 6 = Contador giro
+
 					; 0 = 상태(비트 0 = 회전, 비트 2-1 = 높이 + 2)
 					; 1 = Y
 					; 2 = X 소수
