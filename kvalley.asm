@@ -2879,7 +2879,7 @@ AI_Prota2:
 
 		inc	hl
 		ld	(hl), a		; Sentido del prota
-						; 주인공의 센스
+						; 주인공의 방향
 
 AI_Prota3:
 		ld	a, (protaStatus) ; Estado del prota
@@ -3071,11 +3071,14 @@ setAttribProta4:
 ; Pone el frame	del elemento segun su contador de movimientos
 ; Cada 4 movimientos se	incrementa en 1	el numero de frame
 ; El rango de valores es de 0 a	7
+; 이동 카운터에 따라 요소의 프레임을 설정합니다.
+; 4번 움직일 때마다 프레임 번호가 1씩 증가합니다.
+; 값의 범위는 0에서 7까지입니다.
 ;----------------------------------------------------
 
 calcFrame:
 		ld	hl, protaMovCnt	; Contador usado cada vez que se mueve el prota. (!?) No se usa	su valor
-
+							; 주인공이 움직일 때마다 사용하는 카운터. (!?) 값이 사용되지 않습니다.
 calcFrame2:
 		ld	a, (hl)
 		rra
@@ -3088,11 +3091,14 @@ calcFrame2:
 protaQuieto:
 		xor	a
 		ld	(accionWaitCnt), a ; Contador usado para controlar la animacion	y duracion de la accion	(lanzar	cuchillo, cavar, pasar puerta giratoria)
+								; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 		inc	a		; Pies juntos
+					; 함께 발
 		jr	setProtaFrame
 
 
 		ld	a, 2		; (!?) Esto no se ejecuta nunca!
+						; (!?) 이것은 실행되지 않습니다!
 
 setProtaFrame:
 		ld	(protaFrame), a
@@ -3101,6 +3107,7 @@ setProtaFrame:
 
 ;----------------------------------------------------
 ; Numero de sprite a usar en cada frame	del prota
+; 주인공의 각 프레임에서 사용할 스프라이트 수
 ;----------------------------------------------------
 framesProta:	db    8
 		db    0			; 1 = Pies juntos
@@ -3112,11 +3119,21 @@ framesProta:	db    8
 		db  10h			; 7 = Pies separados
 		db  18h			; 8 = Frame 1 accion (cavando, lanzando)
 		db  20h			; 9 = Frame 2 accion
-
+						; 1 = 함께 발
+						; 2 = 점프
+						; 3 = 걷기
+						; 4 = 함께 발
+						; 5 = 피트 간격
+						; 6 = 함께 발
+						; 7 = 피트 간격
+						; 8 = 프레임 1 작업(파기, 던지기)
+						; 9 = 프레임 2 작업
 
 ;----------------------------------------------------
 ; Se ha	pulsado	el boton de salto
 ; El prota intenta saltar
+; 점프 버튼을 눌렀다
+; 영웅은 점프를 시도
 ;----------------------------------------------------
 
 setProtaSalta:
@@ -3124,61 +3141,84 @@ setProtaSalta:
 		ld	a, (hl)
 		and	a
 		ret	z		; No salta. El prota esta en la	parte superior de la pantalla, pegado arriba del todo
+					; 점프하지 마십시오. 주인공은 화면 상단에 있으며 상단에 붙어 있습니다.
 
 		call	chkSaltar	; Comprueba si puede saltar o hay algun	obstaculo que se lo impide
+							; 그가 점프할 수 있는지 또는 그를 방해하는 장애물이 있는지 확인하십시오.
 		ret	nc		; Choca	contra algo. No	puede saltar
+					; 뭔가를 쳤다. 점프할 수 없다
 
 		ex	de, hl
 		ld	a, (hl)		; Puntero al mapa
+						; 지도에 대한 포인터
 		and	0F0h
 		cp	10h		; Es una plataforma o muro?
+					; 플랫폼인가, 벽인가?
 		ret	z		; Si
 
 setProtaSalta_:
 		ld	a, (KeyHold)	; 1 = Arriba, 2	= Abajo, 4 = Izquierda,	8 = Derecha, #10 = Boton A, #20	=Boton B
+							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 		ld	(sentidoEscalera), a ; Guarda el estado	de las teclas al saltar
+								; 점프 시 키 상태 저장
 		ld	hl, protaStatus	; Puntero a los	datos del prota
+							; 주인공의 데이터에 대한 포인터
 		jp	Salta
 
 ;----------------------------------------------------
 ; Prota	status 1: Saltar
 ; Actualiza sus	coordenadas y comprueba	si choca con al	al saltar
 ; Si choca, pasa al estado de cayendo
+; 주인공 상태 1: 점프
+; 좌표를 업데이트하고 점프할 때 충돌하는지 확인합니다.
+; 부딪히면 넘어지는 상태가 된다.
 ;----------------------------------------------------
 
 protaSalta:
 		ld	hl, sentidoProta ; 1 = Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 		call	doSalto		; Actualiza la posicion	del prota al saltar
+							; 점프 시 주인공 위치 업데이트
 		ld	hl, protaStatus	; Puntero a los	datos del prota
+							; 주인공의 데이터에 대한 포인터
 		push	hl
 		pop	ix
 		call	chkChocaSalto	; Comprueba si choca con algo en el salto
+								; 점프에서 무언가에 부딪히는지 확인하십시오.
 		ret	nz		; No ha	chocado	con nada
+					; 아무것도 충돌하지 않았습니다
 
 		ld	a, 3
 		ld	(protaStatus), a ; (!?)	Para que pone esto! Seguido se cambia a	estatus	cayendo
+							; (!?) 이걸 왜 넣어! 종종 떨어지는 상태로 변경됨
 		jr	protaCayendo
 
 ;----------------------------------------------------
 ; El prota ha llegado al suelo
 ; Pone estado de andar/normal y	reproduce efecto de aterrizaje
+; 영웅은 지상에 도달했습니다
+; 걷기/정상 상태 설정 및 착지 효과 재생
 ;----------------------------------------------------
 
 protaAterriza:
 		ld	a, 2		; SFX choca suelo
+						; sfx는 땅을 쳤다
 		call	setMusic
 		xor	a
 		ld	(protaStatus), a ; Pone	estado de andar
+							; 걷는 상태 설정
 		ret
 
 
 ;----------------------------------------------------
 ; Pone al prota	en estado de caida
+; 주인공을 타락의 상태에 빠트린다.
 ;----------------------------------------------------
 
 setProtaCae:
 		xor	a
 		ld	(flagSetCaeSnd), a ; Si	es 0 hay que inicializar los datos del sonido de caida
+								; 0이면 떨어지는 소리의 데이터 초기화가 필요하다
 		ld	a, 1
 		call	setMusic	; SFX caer
 
@@ -3187,12 +3227,19 @@ setProtaCae:
 ; Actualiza las	coordenadas del	prota debido a la caida
 ; Pone estado de caida
 ; Comprueba si llega al	suelo
+; 주인공 상태 2: 추락
+; 추락으로 인한 주인공의 좌표 업데이트
+; 충돌 상태를 넣어
+; 땅에 닿았는지 확인
 ;----------------------------------------------------
 
 protaCayendo:
 		ld	hl, protaStatus	; Puntero al estado del	prota
+							; 주인공의 상태를 가리키는 포인터
 		call	cayendo		; Pone estado de cayendo y comprueba si	llega al suelo
+							; 낙하 상태를 설정하고 지면에 닿는지 확인
 		jp	nc, protaAterriza ; Ha llegado al suelo
+								; 땅을 쳤다
 		ret
 
 
@@ -3200,35 +3247,48 @@ protaCayendo:
 ; Prota	status 3: Escaleras
 ; Mueve	al prota por las escaleras y comprueba si llega	al final
 ; Si llega al final pasa al estado de andar
+; 주인공 상태 3: 계단
+; 주인공을 계단으로 이동시키고 끝까지 도달했는지 확인하십시오.
+; 끝에 도달하면 걷는 상태가 된다.
 ;----------------------------------------------------
 
 protaEscaleras:
 		ld	hl, protaControl ; 1 = Arriba, 2 = Abajo, 4 = Izquierda, 8 = Derecha, #10 = Boton A, #20 =Boton	B
+							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 		ld	a, (hl)
 		and	0Ch
 		ret	z		; No esta pulsado DERECHA ni IZQUIERDA
+					; RIGHT 또는 LEFT를 누르지 않았습니다.
 
 		ld	b, 1		; Velocidad del	prota en las escaleras (mascara	aplicada al timer)
+						; 계단 위 주인공의 속도(타이머에 적용된 마스크)
 		xor	a
 		ld	(quienEscalera), a ; (!?) Se usa esto? Quien esta en una escalera 0 = Prota. 1 = Momia
+							; (!?) 이것은 사용됩니까? 사다리에 있는 사람 0 = 주인공. 1 = 미라
 		call	andaEscalera	; Mueve	al prota por la	escalera y comprueba si	llega al final
+								; 주인공을 사다리 위로 이동하고 그가 끝에 도달했는지 확인하십시오
 		jr	z, protaEscaleras2 ;  Ha llegado al final de las escaleras
+								; 당신은 계단의 바닥에 도달했습니다
 		jp	calcFrame	; Actualiaza el	frame de la animacion
+						; 애니메이션 프레임 업데이트
 
 protaEscaleras2:
 		xor	a		; Estado: andar
+					; 상태: 도보
 		jr	protaEscaleras3
 
 
 
 		ld	a, 3		; (!?) Este codigo no se ejecuta nunca!
-
+						; (!?) 이 코드는 실행되지 않습니다!
 protaEscaleras3:
 		ld	(protaStatus), a ; Esto	solo se	usa para poner al prota	en estado de andar al terminar una escalera
+							; 사다리를 완성할 때 주인공을 걷는 상태로 만들 때만 사용합니다.
 		ret
 
 ;----------------------------------------------------
 ; El prota lanza un cuchillo
+; 칼을 던지는 주인공
 ;----------------------------------------------------
 
 setLanzaKnife:
@@ -3240,75 +3300,104 @@ chkPuertaMov:
 		push	hl
 		ld	a,04
 		call	getExitDat	; Obtiene puntero al estatus de la puerta que se est� procesando
+							; 처리 중인 문의 상태에 대한 포인터 가져오기
 		and	#F0		; Se queda con el status (nibble alto)
+					; 상태 유지(높은 니블)
 		cp	#30		; Se esta abriendo?
+					; 개봉이야?
 		pop	hl
 		ret	z		; Impide lanzar el cuchillo mientras la puerta se abre para impedir que se corrompan los tiles al pasar el cuchillo sobre la puerta
+					; 문이 열린 상태에서 칼을 던지는 것을 방지하여 칼을 문 위로 넘길 때 타일이 손상되는 것을 방지합니다.
 		inc	(hl)
 		ld	a,04		; Numero m�ximo de cuchillos
+						; 칼의 최대 수
 		cp	(hl)
 		jr	nz,chkPuertaMov ; A�n quedan cuchillos por comprobar
+							; 아직 확인해야 할 칼이 있다
 	ENDIF
 
 		xor	a
 		ld	(lanzamFallido), a ; 1 = El cuchillo se	ha lanzado contra un muro y directamente sale rebotando
+								; 1 = 칼이 벽에 부딪혀 바로 튕겨져 나옴
 
 		ld	hl, sentidoProta ; 1 = Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 		ld	a, (hl)
 		inc	hl		; Apunta a la Y
+					; Y를 가리킴
 		rra
 		ld	bc, 0FF00h	; X-1
 		jr	c, setLanzaKnife2 ;  Lo	lanza a	la izquierda
+							; 왼쪽으로 던져
 		ld	b, 12h		; X+18
 
 setLanzaKnife2:
 		push	bc
 		call	chkTocaMuro	; Lo esta intentando lanzar pegado a un	muro?
+							; 벽에 던지려고 하는 건가요?
 		pop	bc
 		jr	z, setLanzaKnife4 ; Si,	asi no se puede	a no ser que haya un hueco un tile por encima
+							; 예, 한 타일 위에 구멍이 없으면 할 수 없습니다.
 
 	IF	(VERSION2)
 		push	bc
 		ld	a,(de)		; Tile del mapa contra el que ha chocado
+						; 충돌한 지도의 타일
 		call	chkKnifeChoca	; Comprueba el tipo de tile que es
+								; 타일의 종류를 확인하십시오.
 		pop	bc
 		jr	z,setLanzaKnife4 ; Es un muro, cuchillo, gema o pico
-
+							; 벽인가, 칼인가, 보석인가, 곡괭이인가
 	ENDIF
 
 setLanzaKnife3:
 		ld	a, 15h
 		ld	(accionWaitCnt), a ; Contador usado para controlar la animacion	y duracion de la accion	(lanzar	cuchillo, cavar, pasar puerta giratoria)
+								; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 		ld	a, 4
 		ld	(protaStatus), a ; Cambia el estado del	prota a	"lanzando cuchillo"
+							; 주인공의 상태를 "칼 던지기"로 변경
 		jp	setFrameLanzar	; Pone fotograma de lanzar cuchillo
+							; 투척 나이프 프레임 세트
 
 ; Comprueba si al lanzar un cuchillo contra un muro
 ; hay un hueco sobre este para que caiga el cuchillo
 ; Por ejemplo: el prota	esta en	un agujero pero	a los lados sobre su cabeza hay	sitio libre
+; 벽에 칼을 던지는지 확인
+; 칼을 넣을 수 있는 구멍이 위에 있어요
+; 예: 주인공은 구멍에 있지만 머리 위 측면에는 여유 공간이 있습니다.
 
 setLanzaKnife4:
 
 	IF	(VERSION2)
 		cp	#10		; Es un muro?
+					; 벽이야?
 		ret	nz		; No
 	ENDIF
 
 		dec	c		; El tile que esta una fila por	encima del prota
+					; 주인공보다 한 행 위에 있는 타일
 		ld	hl, ProtaX
 		ld	a, (hl)		; X prota
 		and	7
 		cp	4		; En medio de un tile?
+					; 타일 ​​한가운데?
 		ret	nz		; No
 
 		dec	hl
 		dec	hl		; Apunta a la Y
+					; Y를 가리킴
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		ld	a, c		; Tile comprobado
+						; 타일 ​​체크
 		or	a		; Es cero?
+					; 제로인가요?
 		ret	nz		; No esta libre
+					; 그것은 무료가 아니다
 
 		ld	hl, lanzamFallido ; 1 =	El cuchillo se ha lanzado contra un muro y directamente	sale rebotando
+							; 1 = 칼이 벽에 부딪혀 바로 튕겨져 나옴
 		inc	(hl)
 		jr	setLanzaKnife3
 
@@ -3317,61 +3406,85 @@ setLanzaKnife4:
 ; Aqui llega el	prota con el frame 1 de	lanzar puesto
 ; Tras unas iteraciones	pasa al	frame 2	de la animacion
 ; Al terminar la animacion/espera, se restaura el sprite normal	(sin objeto en las manos) y el estado de andar
+; 주인공 상태 4: 주인공이 칼을 던지고 있습니다.
+; 여기 던질 프레임 1의 주인공이옵니다.
+; 몇 번의 반복 후에 애니메이션의 프레임 2로 이동합니다.
+; 애니메이션/대기가 끝나면 일반 스프라이트(손에 물건이 없는 상태)와 걷기 상태가 복원됩니다.
 ;----------------------------------------------------
 
 protaLanzaKnife:
 		ld	hl, accionWaitCnt ; Contador usado para	controlar la animacion y duracion de la	accion (lanzar cuchillo, cavar,	pasar puerta giratoria)
+							; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 		bit	4, (hl)		; Es menor de #10?
+						; #10 미만인가요?
 		jr	z, chkLanzaEnd
 
 		dec	(hl)
 		ld	a, (hl)
 		and	0Fh		; Al llegar lanzaWaitCnt a #10 pone el segundo frame de	la animacion de	lanzar
+					; launchWaitCnt가 #10에 도달하면 시작 애니메이션의 두 번째 프레임을 설정합니다.
 		ret	nz
 
 		ld	hl, IDcuchilloCoge ; Cuchillo que coge el prota
+								; 주인공을 잡는 칼
 		ld	a, (hl)
 		inc	hl
 		ld	(hl), a		; Cuchillo en proceso
+						; 진행 중인 칼
 
 		xor	a
 		call	getKnifeData
 		ld	(hl), 4		; Estado: lanzamiento
+						; 상태: 릴리스
 
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 		and	3
 		inc	hl
 		ld	(hl), a		; Pone al cuchillo el mismo sentido que	tiene el prota
+						; 그는 칼에 주인공이 가지고 있는 것과 같은 감각을 준다.
 
 		ld	a, (lanzamFallido) ; 1 = El cuchillo se	ha lanzado contra un muro y directamente sale rebotando
+								; 1 = 칼이 벽에 부딪혀 바로 튕겨져 나옴
 		or	a		; Sale directamente rebotando contra el	muro?
+					; 벽에 직접 튕겨서 나오나요?
 		jr	z, setFrameLanzar2 ; Pone frame	2 del lanzamiento: brazo abajo
+								; 발사의 프레임 2를 설정합니다. 팔을 아래로 내립니다.
 
 
 ; El cuchillo directamente sale	rebotando para caer sobre el muro que esta delante
+; 칼이 직접 튀어나와 정면의 벽에 떨어집니다.
 
 		dec	hl
 		ld	(hl), 7		; estado: rebotando
+						; 상태: 튀는
 		inc	hl		; sentido
+					; 감각
 		inc	hl		; Y
 
 		ld	de, ProtaY
 		ld	a, (de)		; Y del	prota
 		sub	8
 		ld	(hl), a		; Y del	cuchillo 8 pixeles por encima del prota
+						; 그리고 주인공보다 8픽셀 위의 칼날
 
 		inc	hl		; X decimales
 		inc	hl		; X cuchillo
+					; X 나이프
 		inc	de		; X decimales
 		inc	de		; X prota
+					; X 주인공
 
 		ld	a, (de)		; X prota
 		add	a, 4
 		ld	(hl), a		; X del	cuchillo igual a X prota + 4
+						; 칼의 X는 X 주인공 + 4와 같습니다.
 		inc	hl
 		inc	de
 		ld	a, (de)		; Habitacion prota
+						; 주인공 룸
 		ld	(hl), a		; Habitacion cuchillo
+						; 칼방
 
 		ld	a, 4
 		call	ADD_A_HL
@@ -3379,10 +3492,12 @@ protaLanzaKnife:
 
 setFrameLanzar2:
 		ld	a, 9		; Frame	2 de lanzar cuchillo (accion frame 2)
+						; 프레임 2 투척 나이프(프레임 2 액션)
 		jp	setFrameProta
 
 setFrameLanzar:
 		ld	a, 8		; Frame	de lanzar cuchillo (accion frame 1)
+						; 칼 던지기 프레임(액션 프레임 1)
 
 setFrameProta:
 		ld	(protaFrame), a
@@ -3390,26 +3505,32 @@ setFrameProta:
 
 ;----------------------------------------------------
 ; Comprueba si termina el lanzamiento para restaurar el	sprite y el estado de andar
+; 스프라이트 및 걷기 상태를 복원하기 위해 실행이 완료되었는지 확인하십시오.
 ;----------------------------------------------------
 
 chkLanzaEnd:
 		ld	hl, accionWaitCnt ; Contador usado para	controlar la animacion y duracion de la	accion (lanzar cuchillo, cavar,	pasar puerta giratoria)
+		; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 		dec	(hl)
 		ret	nz
 
 		xor	a
 		ld	(protaStatus), a ; Pone	estado de andar
+		; 걷는 상태 설정
 		jr	quitaObjeto	; Carga	sprites	normales (sin objeto)
-
+		; 일반 스프라이트 로드(객체 없이)
 
 
 ;----------------------------------------------------
 ; Status 5: Prota picando
 ; Animacion del	prota picando y	rompiendo los ladrillos
+; 상태 5: 주인공 바이트
+; 벽돌을 자르고 부수는 주인공의 애니메이션
 ;----------------------------------------------------
 
 protaPicando:
 		ld	hl, accionWaitCnt ; Contador usado para	controlar la animacion y duracion de la	accion (lanzar cuchillo, cavar,	pasar puerta giratoria)
+							; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 		dec	(hl)
 		ld	a, (hl)
 		and	0Fh
@@ -3418,26 +3539,34 @@ protaPicando:
 		ld	a, (hl)
 		bit	4, a
 		ld	a, 9		; Frame	2 de la	accion de picar
+						; 자르기 작업의 프레임 2
 		jr	z, protaPicando2
 		dec	a		; Frame	1 de la	accion de picar
+					; 자르기 작업의 프레임 1
 
 protaPicando2:
 		jp	setProtaFrame
 
 protaPicando3:
 		ld	a, (hl)		; Contador de la accion	de picar
+						; 곡괭이 동작 카운터
 		bit	4, a		; Es multiplo de #20
+						; #20의 배수입니다.
 		ld	b, 4		; Frames con el	pico abajo
+						; 부리가 아래로 향하는 프레임
 		jr	nz, protaPicando4
 
 		ld	b, 8		; Frames con el	pico arriba
+						; 부리가 있는 프레임
 		push	bc
 		push	hl
 		ld	hl, agujeroCnt	; Al comenzar a	pica vale #15
+							; 곡괭이를 시작할 때 #15의 가치가 있습니다.
 		dec	(hl)
 		dec	(hl)
 		dec	(hl)
 		call	drawAgujero	; Dibuja la animacion de como se rompen	los ladrillos al picar y los borra del mapa
+							; 벽돌을 깨물었을 때 벽돌이 깨지는 애니메이션을 그리고 지도에서 삭제하세요.
 		pop	hl
 		pop	bc
 
@@ -3445,24 +3574,31 @@ protaPicando4:
 		ld	a, (hl)		; AccionWaitCnt
 		and	0F0h
 		or	b		; Numero de frames que se mantiene en la posicion actual
+					; 현재 위치에 있는 프레임 수
 		xor	10h
 		ld	(hl), a
 
 		ld	a, (agujeroCnt)	; Al comenzar a	pica vale #15
+							; 곡괭이를 시작할 때 #15의 가치가 있습니다.
 		and	a
 		ret	nz		; No ha	terminado de hacer el agujero
+					; 구멍 뚫기가 아직 끝나지 않았습니다.
 
 		call	chkIncrust	; Comprueba que	al terminar el agujero el prota	no este	incrustado (?)
+							; 구멍 끝에 주인공이 박혀있지 않은지(?)
 
 		ld	a, 1
 		call	setProtaFrame	; Pone frame con los pies juntos
-
+								; 프레임과 발을 함께 연결
 		xor	a
 		ld	(protaStatus), a ; Restaura estado de andar
+							; 보행 회복
 
 ;----------------------------------------------------
 ; Quita	el objeto que se tiene.
 ; Actualiza los	sprites	dependiendo de que se lleve en las manos
+; 가지고 있는 개체를 제거합니다.
+; 손에 있는 것에 따라 스프라이트 업데이트
 ;----------------------------------------------------
 
 quitaObjeto:
@@ -3470,7 +3606,9 @@ quitaObjeto:
 
 cogeObjeto:
 		ld	(objetoCogido),	a ; #10	= Cuchillo, #20	= Pico
+							; #10 = 칼, #20 = 곡괭이
 		jp	loadAnimation	; Actualiza los	sprites	del prota
+							; 주인공의 스프라이트 업데이트
 
 
 ;----------------------------------------------------
@@ -3479,64 +3617,87 @@ cogeObjeto:
 ; Para ello tiene que estar sobre suelo	firme (plataforma de piedra)
 ; y que	debajo de la plataforma	no haya	una puerta giratoria
 ; Tambien comprueba que	sobre el lugar del agujero no haya un cuchillo o una gema
+; 주인공는 곡괭이를 사용합니다.
+; 주인공이 곡괭이로 구멍을 뚫을 수 있는지 확인
+; 이렇게 하려면 단단한 바닥(돌 플랫폼)에 있어야 합니다.
+; 그리고 플랫폼 아래에는 회전문이 없습니다.
+; 또한 구멍 위치에 칼이나 보석이 없는지 확인하십시오.
 ;----------------------------------------------------
 
 chkProtaPica:
 		ld	hl, ProtaY
 		call	chkPisaSuelo
 		ret	nz		; El prota no esta sobre suelo firme
-
+					; 주인공은 확고한 입장이 아니다
 		dec	hl
 		push	hl		; Apunta al sentido
+						; 감각을 가리키다
 		call	chkChocaAndar3
 		pop	hl
 		jr	nc, chkProtaPica2 ; No choca
+								; 충돌하지 않는다
 
 		ld	a, (hl)		; Sentido
+						; 방향
 		xor	3		; Invierte el sentido
+					; 의미를 뒤집다
 		ld	b, a		; Lo guarda en B para pasarselo	a la funcion
+						; 함수에 전달하려면 B에 저장하십시오.
 		push	hl
 		call	chkChocaAndar4
 		pop	hl
 		jp	c, picaLateral	; Si esta atrapado en un agujero pica uno de los muros lateralmente
+							; 구멍에 갇히면 벽 중 하나를 옆으로 물어뜯습니다.
 
 chkProtaPica2:
 		ld	e, (hl)		; Sentido
+						; 방향
 		inc	hl
 		ld	a, (hl)		; Y prota
 		add	a, 10h		; Le suma el alto del prota
+						; 주인공의 키 추가
 		ld	d, a		; Guarda en D la Y del suelo bajo los pies
+						; 발 아래 땅의 Y를 D로 유지
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; X prota
 		ld	bc, 10h		; Offset X: izquierda =	0, derecha = 16
+						; 오프셋 X: 왼쪽 = 0, 오른쪽 = 16
 		and	7
 		cp	5		; Calcula la posicion relativa respecto	al tile
+					; 타일에 대한 상대 위치를 계산합니다.
 		jr	c, chkProtaPica3
 
 	IF	(VERSION2)
 		ld	b,#08
 	ELSE
 		ld	bc, 810h	; Offset: izquierda = 8, derecha = 16
+						; 오프셋: 왼쪽 = 8, 오른쪽 = 16
 	ENDIF
 
 chkProtaPica3:
 		ld	a, e		; Sentido
 		rra
 		ld	a, b		; Offset picando a la izquierda
+						; 왼쪽 클릭 오프셋
 		jr	c, chkProtaPica4
 		ld	a, c		; Offset picando a la derecha
+						; 오프셋 오른쪽으로 스냅
 
 chkProtaPica4:
 		add	a, (hl)		; Suma el desplazamiento a la X	del prota
+						; 주인공의 X에 변위 추가
 		ld	e, a
 		and	0F8h
 		ret	z		; Demasiado pegado a la	izquierda
+					; 너무 왼쪽에 가깝다
 
 		cp	0F8h
 		ret	z		; Demasiado pegado a la	derecha
+					; 오른쪽에 너무 가깝다
 
 		ld	hl, agujeroDat	; Y, X,	habitacion
+							; Y, X, 방
 		push	hl
 		ld	(hl), d		; Y agujero
 		inc	hl
@@ -3545,20 +3706,28 @@ chkProtaPica4:
 		inc	de
 		inc	hl
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		ld	(hl), a		; Habitacion del agujero
+						; 구멍 방
 		pop	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coordenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		and	0F0h		; Se queda con el tipo de tile
+						; 그것은 타일의 종류와 함께 유지
 		cp	10h		; Es una plataforma, ladrillo o	muro?
+					; 플랫폼입니까, 벽돌입니까, 아니면 벽입니까?
 		ret	nz		; No
 
 		ld	a, (hl)
 		and	0Fh		; Se queda con el tipo de ladrillo
+					; 벽돌 유형으로 유지
 		cp	4		; Es ladrillo de muro o	plataforma?
+					; 벽 벽돌입니까 아니면 플랫폼입니까?
 
 	IF	(VERSION2)
 		jr	c,chkProtaPica4b
 		cp	9		; Es un ladrillo de un muro trampa?
+					; 벽돌은 함정 벽입니까?
 		ret	nz
 	ELSE
 		ret	nc		; No
@@ -3566,74 +3735,105 @@ chkProtaPica4:
 
 chkProtaPica4b:
 		ld	a, 60h		; Desplazamiento a una fila inferior
+						; 낮은 행으로 이동
 		call	ADD_A_HL
 		ld	a, (hl)		; Tile del mapa	que esta por debajo del	anterior
+						; 이전 타일 아래에 있는 맵의 타일
 		and	0F0h		; Tipo de tile
+						; 타일 ​​종류
 		cp	50h		; Es una puerta	giratoria?
+					; 회전문인가요?
 		ret	z		; Si, aqui no se puede hacer un	agujero	(que nos cargamos la puerta!)
+					; 예, 여기에 구멍을 만들 수 없습니다 (우리가 문을 죽일 것입니다!)
 
 
 ; Esta comprobacion evita que se haga un agujero debajo	de un cuchillo, pico o una gema
+; 이 검사는 칼, 곡괭이 또는 보석 아래에 구멍이 뚫리는 것을 방지합니다.
 
 		ld	bc, -0C0h	; Desplazamiento 2 filas mas arriba. Justo un tile por encima del suelo
+						; 2행을 더 높게 오프셋합니다. 지상에서 단 하나의 타일
 		add	hl, bc
 		ld	a, (hl)		; Lee tile del mapa
+						; 지도 타일 읽기
 		and	0F0h		; Esta vacio?
+						; 비어 있습니까?
 		jr	z, chkProtaPica5+1 ; (!?) Esto salta y ejecuta "JR NZ,#4ED1" Claro que nunca sera NZ si salta siendo Z
+								; (!?) 점프해서 "JR NZ,#4ED1" 실행 물론 Z로 점프하면 결코 NZ가되지 않습니다.
 
 chkProtaPica5:
 		cp	20h		; Es una escalera?
+					; 사다리인가요?
 		ret	nz		; Si, se puede hacer un	agujero	a los pies de una escalera
+					; 네, 사다리 바닥에 구멍을 만들 수 있습니다.
 
 		ld	hl, protaStatus	; Puntero al estado del	prota
+							; 주인공의 상태를 가리키는 포인터
 		ld	(hl), 5		; Estado: Picando
+						; 상태: 클릭
 
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; Sentido del prota
+						; 주인공의 방향
 		rra
 		inc	hl
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; X
 		jr	nc, chkProtaPica7 ; Mira a la derecha
+								; 오른쪽을 봐
 
 		and	7		; Posicion relativa al tile
+					; 타일을 기준으로 한 위치
 		cp	5		; Esta en los 4	pixeles	derechos del tile?
+					; 타일의 오른쪽 4픽셀에 있습니까?
 		ld	a, (hl)		; X
 		jr	c, chkProtaPica6 ; No
 		add	a, 4		; Pasa al siguiente tile
+						; 다음 타일로 이동
 		and	0F8h		; Lo ajusta a la X del tile
+						; 타일의 X로 설정
 		add	a, 2		; Le suma 2
+						; 2를 더하다
 
 chkProtaPica6:
 		ld	(hl), a		; Actualiza la X del prota
+						; 주인공의 X 업데이트
 		jr	setPicarStatus
 
 ; El prota esta	haciendo el agujero hacia la derecha
+; 주인공은 오른쪽에 구멍을 만들고 있습니다
 
 chkProtaPica7:
 		and	7		; Posicion X relativa al tile
+					; 타일을 기준으로 X 위치
 		sub	1
 		cp	3		; Esta en la parte derecha o izquierda del tile?
+					; 타일의 왼쪽 또는 오른쪽에 있습니까?
 		ld	a, (hl)
 		jr	c, chkProtaPica8
 		and	0FCh		; Ajusta la X del prota	a la X del tile
+						; 주인공의 X를 타일의 X로 조정
 
 chkProtaPica8:
 		ld	(hl), a		; Actualiza la X del prota
+						; 주인공의 X 업데이트
 
 setPicarStatus:
 		ld	a, 15h
 		ld	(agujeroCnt), a	; Al comenzar a	pica vale #15
+							; Pica를 시작할 때 #15의 가치가 있습니다.
 		ld	a, 5
 		ld	(protaStatus), a ; Pone	estado de picando
+							; 클릭 상태를 넣는다.
 		ret
 
 
 ;----------------------------------------------------
 ; Cuando el prota esta atrapado	entre dos muros	en vez de
 ; picar	en el suelo, pica en la	pared
+; 주인공이 두 개의 벽 사이에 갇힌 경우
+; 바닥을 찌르다, 벽을 찌르다
 ;----------------------------------------------------
 
 picaLateral:
@@ -3641,57 +3841,75 @@ picaLateral:
 		inc	hl
 		ld	a, (hl)		; Y del	prota
 		ld	(de), a		; Y del	agujero
+						; Y 구멍
 		inc	hl
 		inc	de
 		inc	de
 		inc	hl
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+								; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		ld	a, (hl)		; X del	prota
 		jr	c, picaLateral2	; Va a pizar hacia la izquierda
+							; 왼쪽으로 갈거야
 		add	a, 10h		; Pica hacia la	derecha, asi que le suma a la X	el ancho del prota (16 pixeles)
+						; 오른쪽을 클릭하여 X(16픽셀)에 주인공의 너비를 추가합니다.
 
 picaLateral2:
 		ld	(de), a		; X del	agujero
 		and	0F8h
 		ret	z		; Esta picando el muro izquierdo que delimita la habitacion
+					; 방의 경계를 짓는 것은 왼쪽 벽을 깨물고 있다
 
 		cp	0F8h
 		ret	z		; Esta intentando picar	el muro	derecho	que delimita la	habitacion
+					; 방을 가르는 오른쪽 벽을 물어뜯으려 하고 있어
 
 		inc	hl
 		inc	de
 		ld	a, (hl)		; Habitacion prota
 		ld	(de), a		; Habitacion agujero
 		call	setPicarStatus	; Pone al prota	en estado de picar
+								; 주인공을 가려움증 상태에 빠뜨립니다.
 
 		ld	a, 2
 		ld	(accionWaitCnt), a ; Contador usado para controlar la animacion	y duracion de la accion	(lanzar	cuchillo, cavar, pasar puerta giratoria)
+								; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 		ld	hl, ProtaY
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		jr	c, picaLateral3	; Izquierda
+							; 왼쪽
 
 		inc	hl
 		inc	hl		; Apunta al tile que esta a la derecha del prota
+					; 주인공의 오른쪽에 있는 타일을 가리킵니다.
 
 picaLateral3:
 		ld	a, (hl)		; Tile del mapa
+						; 지도 타일
 		and	0F0h
 		cp	10h		; Es un	muro/plataforma?
+					; 벽/플랫폼입니까?
 		jr	z, picaLateral4	; Si
 
 
 ; Si a la altura de la cabeza del prota	no hay muro, comienza a	picar un tile mas abajo
+; 주인공 머리 높이에 벽이 없으면 아래 타일을 자르기 시작합니다.
 
 		ld	hl, agujeroDat	; Y, X,	habitacion
 		ld	a, (hl)
 		add	a, 8
 		ld	(hl), a		; Desplaza el orgigen del agujero un tile mas abajo
+						; 구멍의 원점을 한 타일 아래로 이동
 		ld	a, 9		; Como solo va a picar un tile la duracion es la mitad
+						; 타일에 맞을 뿐이므로 지속 시간은 반입니다
 		ld	(agujeroCnt), a	; Al comenzar a	pica vale #15
+							; Pica를 시작할 때 #15의 가치가 있습니다.
 
 picaLateral4:
 		ld	a, 45h		; SFX picar
@@ -3700,28 +3918,38 @@ picaLateral4:
 
 ;----------------------------------------------------
 ; Status 6: Prota pasando por una puerta giratoria
+; 상태 6: 회전문을 통과하는 주인공
 ;----------------------------------------------------
 
 protaGiratoria:
 		ld	a, (timer)
 		and	1
 		ret	nz		; Procesa uno de cada dos frames
+					; 두 프레임 중 하나를 처리
 
 		ld	hl, accionWaitCnt ; Contador usado para	controlar la animacion y duracion de la	accion (lanzar cuchillo, cavar,	pasar puerta giratoria)
+							; 동작의 애니메이션 및 지속 시간을 제어하는 ​​데 사용되는 카운터(칼 던지기, 파기, 회전문 통과)
 		dec	(hl)		; Ha terminado de pasar	la puerta?
+						; 문 통과를 마쳤습니까?
 		jr	z, setProtaAndar ; si
 
 		ld	hl, protaMovCnt	; Contador usado cada vez que se mueve el prota. (!?) No se usa	su valor
+							; 주인공이 움직일 때마다 사용하는 카운터. (!?) 값이 사용되지 않습니다.
 		inc	(hl)		; Incrementa contardor de movimiento y animacion
+						; 움직임 및 애니메이션 카운터 증가
 		jp	protaAnda4	; Mueve	y anima	al prota
+						; 주인공 이동 및 애니메이션
 
 setProtaAndar:
 		ld	(protaStatus), a ; Pone	el estado 0 (andar) en el prota
+							; 주인공에게 상태 0(걷기)을 둡니다.
 		ret
 
 ;----------------------------------------------------
 ; Comprueba si el prota	esta incrustado	despues	de hacer un agujero con	el pico
 ; (Por si le baja un muro trampa?)
+; 곡괭이로 구멍을 뚫어 주인공이 박혀 있는지 확인
+; (트랩 벽이 무너지면?)
 ;----------------------------------------------------
 
 chkIncrust:
@@ -3740,43 +3968,59 @@ chkIncrust2:
 		ld	hl, ProtaX
 		ld	a, (hl)		; X prota
 		add	a, b		; Le suma el desplazamiento
+						; 변위 추가
 		and	0FCh		; Ajusta la coordenada X del prota a multiplo de 4
+						; prota의 X 좌표를 4의 배수로 설정합니다.
 		ld	(hl), a		; Actualiza la X del prota
+						; 주인공의 X 업데이트
 		ret
 ;----------------------------------------------------
 ;
 ; Carga	los graficos y sprites del juego y
 ; crea copias invertidas de algunos de ellos
+; 게임의 그래픽과 스프라이트를 로드하고
+; 그들 중 일부의 거꾸로 된 사본 만들기
 ;
 ;----------------------------------------------------
 
 loadGameGfx:
 		ld	hl, statusEntrada
 		ld	de, lanzamFallido ; 1 =	El cuchillo se ha lanzado contra un muro y directamente	sale rebotando
+								; 1 = 칼이 벽에 부딪혀 바로 튕겨져 나옴
 		ld	bc, 500h
 		xor	a
 		ld	(hl), a
 		ldir			; Borra	RAM
+						; RAM 지우기
 
 		ld	hl, 2200h	; Destino = Patron #40 de la tabla
+						; 대상 = 테이블의 패턴 #40
 		ld	de, GFX_InGame
 		call	UnpackPatterns
 
 		ld	hl, 228h	; Tabla	de colores de los patrones del juego
+						; 게임 패턴 컬러 차트
 		ld	de, COLOR_InGame
 		call	UnpackPatterns
 
 		ld	hl, 2340h	; Origen = Patron #68 (Puerta)
+						; 원천 = 패턴 #68(문)
 		ld	de, 23B8h	; Destino = Patron #77
+						; 대상 = 패턴 #77
 		ld	c, 0Fh		; Numero de patrones a invertir
+						; 반전할 패턴의 수
 		call	FlipPatrones	; Invierte algunos graficos como las escaleras y las puertas
+								; 계단 및 문과 같은 일부 그래픽 반전
 
 		ld	de, COLOR_Flipped
 		ld	hl, 3B8h
 		call	UnpackPatterns	; Pone color a los patrones invertidos
+								; 색상 반전 패턴
 
 		ld	b, 6		; Numero de gemas
+						; 보석의 수
 		ld	hl, 2430h	; Destino = Patron #96 de la tabla (Gemas)
+						; 대상 = 테이블 패턴 #96(보석)
 
 UnpackGema:
 		ld	de, GFX_GEMA
@@ -3801,15 +4045,20 @@ UnpackGema:
 		call	unpackGFXset
 
 		ld	hl, 1940h	; Datos	GFX momia (Sprite generatos table address)
+						; GFX 데이터 미라(Sprite 생성기 테이블 주소)
 		ld	de, 1C50h	; Direccion SGT	de la momia invertida
+						; 미라 SGT 주소가 역전됨
 		ld	c, 3
 		call	flipSprites
 
 ; Carga	los sprites que	corresponden al	estado del personaje
 ; Nada en las manos, llevando un cuchillo o llevando un	pico
+; 캐릭터의 상태에 해당하는 스프라이트 로드
+; 손에 아무것도 없고 칼을 들고 곡괭이를 들고
 
 loadAnimation:
 		ld	a, (objetoCogido) ; #10	= Cuchillo, #20	= Pico
+							; #10 = 칼, #20 = 곡괭이
 		rra
 		rra
 		rra
@@ -3821,8 +4070,11 @@ loadAnimation:
 		push	hl
 		call	unpackGFXset
 		pop	hl		; Recupera la direccion	de los sprites en VRAM
+					; VRAM에서 스프라이트 주소 검색
 		ld	de, 1B10h	; Destino sprites invertidos (#60-#61)
+						; 대상 반전 스프라이트(#60-#61)
 		ld	c, 0Ah		; Numero de sprites a invertir
+						; 반전할 스프라이트 수
 		jp	flipSprites
 
 
@@ -3833,12 +4085,18 @@ IndexSprites:	dw GFX_Prota
 
 
 		ld	hl, ProtaY	; (!?) Este codigo no se ejecuta nunca!
+						; (!?) 이 코드는 실행되지 않습니다!
 
 ;----------------------------------------------------
 ; Comprueba si choca contra el suelo
 ; Out:
 ;   Z =	Ha chocado
 ;   C =	No ha chocado
+;
+; 땅에 닿았는지 확인
+; 출력:
+; Z = 충돌했습니다
+; C = 충돌하지 않음
 ;----------------------------------------------------
 
 chkChocaSuelo:
@@ -3847,16 +4105,23 @@ chkChocaSuelo:
 		ld	a, (hl)		; Sentido
 		inc	hl
 		ld	bc, 50Fh	; Parte	inferior izquierda
+						; 왼쪽 하단
 		rra
 		jr	c, chkChocaSuelo2 ; Va hacia la	izquierda
+								; 왼쪽으로 간다
 		ld	b, 0Bh		; Parte	inferior derecha
+						; 오른쪽 아래 부분
 
 chkChocaSuelo2:
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
+								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		pop	hl
 		and	0F0h		; Se queda con la familia de tiles
+						; 그는 타일 가족과 함께 있습니다.
 		cp	10h		; Es una plataforma?
+					; 플랫폼인가?
 		ret	z		; Si, ha chocado
+					; 네 충돌했습니다
 
 		scf
 		ret
