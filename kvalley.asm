@@ -4132,6 +4132,11 @@ chkChocaSuelo2:
 ; Out:
 ;    Z = Hay suelo
 ;    C = No hay	suelo
+;
+; 주인공의 발 밑에 땅이 있는지 확인
+; 출력:
+; Z = 접지가 있습니다
+; C = 접지 없음
 ;----------------------------------------------------
 
 chkProtaCae:
@@ -4140,20 +4145,27 @@ chkProtaCae:
 chkCae:
 		call	chkPisaSuelo
 		ret	z		; Esta pisando suelo
+					; 땅을 밟고있다
 
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; X del	elemento
+						; 요소의 X
 		and	7
 		cp	4		; Se encuentra en los 4	primeros pixeles de un tile?
+					; 타일의 처음 4픽셀에 있습니까?
 		ld	a, (hl)
 		jr	nc, chkCae2	; Dependiendo del lado por el que se cae, mueve	el elemento 4 pixeles en esa direccion para separarlo de la plataforma
+						; 어느 쪽에 착지하는지에 따라 해당 방향으로 항목을 4픽셀 이동하여 플랫폼에서 분리합니다.
 
 		add	a, 4		; Desplaza el elemento 4 pixeles a la derecha
+						; 요소를 오른쪽으로 4픽셀 이동
 
 chkCae2:
 		and	0FCh		; Ajusta la X a	multiplo de 4
+						; X를 4의 배수로 설정
 		ld	(hl), a		; Actualiza la X
+						; X 업데이트
 		scf
 		ret
 
@@ -4165,18 +4177,29 @@ chkCae2:
 ; Out:
 ;   DE = Puntero al tile del mapa
 ;    Z = Choca
+;
+; 현재 요소가 지상에 있는지 확인
+; 주인공과 미라 모두 키가 16이므로 키에 17을 더하면 발 바로 아래에 있는 것이 보입니다.
+; 출력:
+; DE = 지도 타일에 대한 포인터
+; Z = 충돌
 ;----------------------------------------------------
 
 chkPisaSuelo:
 		ld	bc, 611h	; Coordenadas X	+ 6, Y + 17
+						; 좌표 X + 6, Y + 17
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		ret	z		; Esta sobre una plataforma
+					; 플랫폼에 있습니다
 
 		ld	bc, 0A11h	; X + 10, Y + 17
 
 chkTocaMuro:
 		push	hl		; Z = choca
+						; Z = 충돌
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
+								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		ex	de, hl
 		pop	hl
 
@@ -4189,28 +4212,37 @@ chkTocaMuro:
 		inc	hl
 		inc	hl
 		and	0F0h		; Se queda con la familia a la que corresponde el tile del mapa
+						; 그는 지도 타일이 해당하는 가족과 함께 지냅니다.
 		ld	c, a
 		cp	10h		; Plataformas
+					; 플랫폼
 		ret	z		; Esta tocando una plataforma
+					; 플랫폼을 만지고 있다
 
 		ld	a, b		; Status
 		cp	2		; Cayendo?
+					; 넘어지다?
 		ld	a, c		; Recupera el tipo de tile que toca
+						; 닿는 타일의 유형을 검색합니다.
 		jr	z, noTocaMuro
 
 		cp	50h		; Puerta giratoria
+					; 회전문
 		ret
 
 noTocaMuro:
 		ld	a, c		; (!?) No hace falta
+						; (!?) 불필요
 		dec	b		; Set NZ
 		ret
 
 getMapOffset00:
 		push	de		; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+						; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		push	bc
 		ld	bc, 0
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
+								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		pop	bc
 		pop	de
 		ret
@@ -4226,16 +4258,28 @@ getMapOffset00:
 ; Out:
 ;  HL =	Puntero	a la posicion del mapa de esas coordenadas
 ;   A =	Patron del mapa	que hay	en esas	coordenadas
+;
+; HL이 가리키는 좌표에서 지도 타일을 가져옵니다.
+;
+; 입력:
+; HL = 좌표 포인터(Y, X 소수, X, 방)
+; B = 오프셋 X(음수 값을 가질 수 있음)
+; C = 오프셋 Y
+; 출력:
+; HL = 해당 좌표의 지도 위치에 대한 포인터
+; A = 해당 좌표에 있는 지도의 패턴
 ;----------------------------------------------------
 
 getMapOffset:
 		ld	a, (hl)		; Y
 		add	a, c		; Le suma el desplazamiento Y para poder comprobar un punto determinado
 					; del elemento distinto	de sus coordendas de origen
+						; 요소의 원점 좌표 이외의 특정 지점을 확인할 수 있도록 Y 변위를 추가합니다.
 		rra
 		rra
 		rra
 		and	1Fh		; Ajusta la coordenada Y a patrones (/8)
+					; Y 좌표를 패턴(/8)으로 설정
 
 		ld	e, a
 		ld	d, 0
@@ -4251,22 +4295,30 @@ getMapOffset:
 		ld	c, l
 		add	hl, hl
 		add	hl, bc		; x96 (#60) Tres pantallas en horizontal
+						; x96(#60) 가로로 3개의 화면
 		pop	bc
 
 		ex	de, hl		; DE = Desplazamiento en el mapa correspondiente a la Y	(Y * 96)
 					; HL = Datos del elemento (coordenadas)
+					; DE = Y에 해당하는 맵의 오프셋(Y * 96)
+					; HL = 요소 데이터(좌표)
 		inc	hl		; Decimales X
+					; 소수 X
 		inc	hl
 		ld	a, (hl)		; X
 		inc	hl
 		ld	h, (hl)		; Pantalla (0-2)
+						; 디스플레이(0-2)
 		ld	l, a		; HL = Coordenada X global (Pantalla + X local)
+						; HL = 글로벌 X 좌표(화면 + 로컬 X)
 		push	bc
 		ld	c, b
 		ld	b, 0
 		bit	7, c		; Es negativo el offset	X?
+						; 오프셋 X가 음수입니까?
 		jr	z, getMapOff2	; No
 		dec	b		; Convierte el valor en	negativo
+					; 값을 음수로 변환
 
 getMapOff2:
 		add	hl, bc		; Offset X
@@ -4279,13 +4331,19 @@ getMapOff2:
 		srl	h
 		rra
 		ld	l, a		; Divide HL entre 8 para ajustar a patrones
+						; 패턴에 맞게 HL을 8로 나눕니다.
 		add	hl, de		; Le suma el desplazamiento Y calculado	anteriormente
+						; 위에서 계산한 변위 Y를 더합니다.
 		ld	de, MapaRAMRoot	; La primera fila del mapa no se usa (ocupada por el marcador).	Tambien	usado como inicio de la	pila
+							; 지도의 첫 번째 행은 사용되지 않습니다(마커가 점유). 스택의 시작으로 사용됨
 		add	hl, de		; Calcula puntero a la posicion	de mapa
+						; 지도 위치에 대한 포인터 계산
 		ld	a, (hl)		; Lee el contenido actual de esas coordenadas
+						; 해당 좌표의 현재 내용 읽기
 		ret
 
 		scf			; (!?) Este codigo no se ejecuta nunca!
+					; (!?) 이 코드는 실행되지 않습니다!
 		ret
 
 ;----------------------------------------------------
@@ -4293,18 +4351,28 @@ getMapOff2:
 ; Out:
 ;   Z =	Ha llegado al final
 ;  NZ =	No ha llegado al final
+;
+; 사다리의 바닥에 도달했는지 확인하십시오.
+; 출력:
+; Z = 끝에 도달했습니다
+; NZ = 끝에 도달하지 않음
 ;----------------------------------------------------
 
 chkFinEscalera:
 		ld	a, (hl)
 		and	7
 		ret	nz		; La Y no es multiplo de 8
+					; Y는 8의 배수가 아닙니다.
 
 		push	bc
 		ld	bc, 810h	; Offset parte central abajo (8,16)
+						; 아래 중앙 부분 오프셋(8,16)
 		call	getMapOffset	; Obtiene el tile que esta en los pies
+								; 발에 있는 타일을 가져옵니다.
 		and	0F0h		; Se queda con la familia o tipo
+						; 가족 또는 남자와 함께 숙박
 		cp	10h		; Es una plataforma o incio de escalera?
+					; 플랫폼인가, 계단의 시작인가?
 		pop	bc
 		ret	z		; Si
 
@@ -4318,18 +4386,29 @@ chkFinEscalera:
 ; Luego	se mira	el tile	que hay	en los pies del	personaje y se compara con el tipo de escalera anterior
 ; Out:
 ;    NZ	= No la	coge
+;
+; 그가 사다리를 가지고 있는지 확인하십시오.
+; 가장 먼저 확인되는 것은 UP 또는 DOWN 컨트롤을 눌렀는지 여부입니다.
+; 지도 타일에 대한 상대 위치 X에 따라 오른쪽(0-3) 또는 왼쪽(4-7)으로 올라가는지 확인합니다.
+; 그런 다음 캐릭터의 발에 있는 타일을 보고 이전 유형의 사다리와 비교합니다.
+; 출력:
+; NZ = 픽업하지 않음
 ;----------------------------------------------------
 
 chkCogeEscalera:
 		ld	hl, protaControl ; 1 = Arriba, 2 = Abajo, 4 = Izquierda, 8 = Derecha, #10 = Boton A, #20 =Boton	B
+							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 
 chkCogeEsc2:
 		ld	a, (hl)		; Controles
+						; 통제 수단
 		and	3		; Arriba o abajo?
+					; 위 또는 아래?
 		jr	z, noCogeEscalera ; No
 
 		rra
 		jr	nc, chkBajaEscalera ; Abajo
+								; 아래
 
 		inc	hl
 		inc	hl
@@ -4338,31 +4417,43 @@ chkCogeEsc2:
 		ld	a, (hl)		; X
 		and	7
 		jr	z, noCogeEscalera ; No esta "dentro" del tile de escalera
+								; 계단 타일 "내부"가 아닙니다.
 
 		sub	5		; Dependiendo de la posicion relativa X	respecto al tile del mapa se compruba si sube a	la derecha (0-3) o a la	izquierda (4-7)
+					; 지도 타일에 대한 상대 위치 X에 따라 오른쪽(0-3) 또는 왼쪽(4-7)으로 올라가는지 확인합니다.
 		ld	b, 22h		; Escaleras suben derecha
+						; 오른쪽으로 올라가는 계단
 		jr	c, chkCogeEsc3
 		dec	b		; Escaleras suben izquierda
+					; 계단은 왼쪽으로 올라간다
 
 chkCogeEsc3:
 		dec	hl
 		dec	hl		; Apunta a la Y
+					; Y를 가리킴
 		push	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	a, 61h		; 3 pantallas +	1 (tile	abajo a	la derecha = Piernas del elemento)
+						; 화면 3개 + 1개(오른쪽 하단 타일 = 요소의 다리)
 		call	ADD_A_HL
 
 		ld	a, (hl)		; Tile del mapa	que esta en las	piernas	del elemento
+						; 요소의 다리에 있는 지도의 타일
 		ld	c, a
 		pop	hl		; Apunta a la Y
+					; Y를 가리킴
 		cp	b		; Es una escalera?
+					; 사다리인가요?
 		jr	z, chkSubeEsc2	; si
 
 ; Comprueba si hay un cuchillo sobre el	primer pelda�o de la escalera
+; 사다리의 첫 번째 단에 칼이 있는지 확인하십시오.
 
 		push	af
 		ld	a, b
 		add	a, 10h		; B = #32 o #31? (tiles	cuchillo sobre escalera)
+						; B = #32 또는 #31? (사다리에 타일 칼)
 		ld	b, a
 		pop	af
 		cp	b
@@ -4372,14 +4463,18 @@ chkSubeEsc2:
 		and	1
 		xor	1
 		ld	b, a		; 1 = Escaleras	a la derecha, 0	= A la izquierda
+						; 1 = 오른쪽 계단, 0 = 왼쪽 계단
 
 		ld	a, (modoSentEsc) ; Si es 0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = \, 1 = /
 		and	a
 		jr	nz, chkSubeEsc3	; No guarda en sentidoEscalera el sentido de la	escalera
+							; 사다리 방향의 계단 방향은 저장하지 않습니다.
 
 		ld	a, b
 		ld	(sentidoEscalera), a ; 0 = \, 1	= /
 					; Tambien usado	para saber si el salto fue en vertical (guarda el estado de las	teclas en el momento del salto.
+					; 또한 점프가 수직인지 확인하는 데 사용됩니다(점프 시 키의 상태를 저장합니다.
 
 chkSubeEsc3:
 		inc	hl
@@ -4387,16 +4482,21 @@ chkSubeEsc3:
 		ld	a, (hl)		; X
 		dec	hl
 		dec	hl		; Apunta a la Y
+					; Y를 가리킴
 		ld	de, distPeldano
 		and	7		; Se queda con la X relativa del personaje respecto al tile de la escalera
+					; 사다리의 타일에 대한 캐릭터의 상대적인 X를 유지합니다.
 		call	ADD_A_DE
 		ld	a, (de)		; Desplazamiento vertical
+						; 수직 변위
 		add	a, (hl)		; Se lo	suma a la Y
+						; Y에 추가
 		ld	(hl), a
 		dec	hl
 		dec	hl
 		dec	hl
 		ld	(hl), 3		; Status: subiendo o bajando escalera
+						; 상태: 계단 오르기 또는 내리기
 
 		xor	a
 		cp	0		; Set Z, NC
@@ -4406,6 +4506,7 @@ chkSubeEsc3:
 ; Tabla	con las	distancias al primer pelda�o dependiendo
 ; de la	posicion del personaje respecto	al tile	del pelda�o
 ;
+; 계단의 타일에 대한 캐릭터의 위치에 따른 첫 번째 계단까지의 거리 표
 ;----------------------------------------------------
 distPeldano:	db 0
 		db -1
@@ -4426,6 +4527,10 @@ noCogeEscalera:
 ; Comprueba si hay escaleras para bajar	bajo los pies del personaje
 ; Out:
 ;    NC/Z = Baja escaleras
+;
+; 캐릭터 발 아래로 내려가는 계단이 있는지 확인
+; 출력:
+; NC/Z = 아래층
 ;----------------------------------------------------
 
 chkBajaEscalera:
@@ -4437,25 +4542,34 @@ chkBajaEscalera:
 		and	7
 		cp	4
 		jr	nz, noCogeEscalera ; No	esta justo en la mitad del tile	de la escalera
+								; 계단 타일의 중앙에 바로 있지 않습니다.
 
 		dec	hl
 		dec	hl
 		push	hl		; Apunta a Y
+						; Y를 가리키다
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	a, 0C1h		; Fila de patrones por debajo del personaje, justo bajo	sus pies
-					; #60 por fila * 2 (16 de altura) + 1 (8 pixeles) = justo bajo los pies
+						; #60 por fila * 2 (16 de altura) + 1 (8 pixeles) = justo bajo los pies
+; 캐릭터 바로 아래에 있는 행당 패턴 행 #60 * 2(높이 16) + 1(8픽셀) = 발 바로 아래
+
 		call	ADD_A_HL
 		ld	a, (hl)		; Tile del mapa	bajo los pies
+						; 발밑의 지도 타일
 		ld	c, a
 		pop	hl
 		cp	16h		; Tile incio de	escaleras que bajan a la derecha
+					; 오른쪽으로 내려가는 계단의 타일 시작
 		jr	z, chkBajaEsc2
 
 		cp	17h		; Tile inicio de escaleras que bajan a la izquierda
+					; 왼쪽으로 내려가는 계단의 타일 시작
 		jr	nz, noCogeEscalera
 
 chkBajaEsc2:
 		ld	a, (modoSentEsc) ; Si es 0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "senseStair"에 저장합니다. 0 = 	\, 1 = /
 		and	a
 		jr	nz, chkBajaEsc3
 
@@ -4463,15 +4577,18 @@ chkBajaEsc2:
 		and	1		;  0 = \, 1 = /
 		ld	(sentidoEscalera), a ; 0 = \, 1	= /
 					; Tambien usado	para saber si el salto fue en vertical (guarda el estado de las	teclas en el momento del salto.
+					; 또한 점프가 수직인지 확인하는 데 사용됩니다(점프 시 키의 상태를 저장합니다.
 
 chkBajaEsc3:
 		ld	a, (hl)		; Y
 		add	a, 4
 		ld	(hl), a		; Desplaza al personaje	4 pixeles hacia	abajo
+						; 캐릭터를 4픽셀 아래로 이동
 		dec	hl
 		dec	hl
 		dec	hl
 		ld	(hl), 3		; Estado: Escaleras
+						; 상태: 계단
 		xor	a
 		cp	0		; Set Z, NC
 		ret
@@ -4484,59 +4601,87 @@ chkBajaEsc3:
 ; Out:
 ;    Z = No choca
 ;    C = Choca
+;
+; 걸을 때 벽이나 회전문에 부딪혔는지 확인
+; RIGHT 또는 LEFT를 누르지 않았는지 확인하지 않습니다.
+; 요소의 X가 8의 배수인 경우 회전문에 닿는지 확인합니다.
+; X가 타일 오른쪽의 4픽셀에 있으면 벽을 확인하십시오.
+; 출력:
+; Z = 충돌하지 않음
+; C = 충돌
 ;----------------------------------------------------
 
 chkChocaAndar:
 		ld	hl, protaControl ; 1 = Arriba, 2 = Abajo, 4 = Izquierda, 8 = Derecha, #10 = Boton A, #20 =Boton	B
+							; 1 = 위, 2 = 아래, 4 = 왼쪽, 8 = 오른쪽, #10 = 버튼 A, #20 = 버튼 B
 
 chkChocaAndar2:
 		ld	a, (hl)
 		and	1100b		; Esta pulsado DERECHA o IZQUIERDA?
+						; RIGHT 또는 LEFT를 눌렀습니까?
 		ret	z		; No
 
 		inc	hl
 
 chkChocaAndar3:
 		ld	b, (hl)		; Sentido
+						; 방향
 
 chkChocaAndar4:
 		inc	hl		; Y
 		ld	d, h
 		ld	e, l
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		inc	de
 		inc	de
 		ld	a, (de)		; X
 		and	7
 		ld	c, 50h		; Puerta giratoria (tipo de tiles)
+						; 회전문(타일식)
 		jr	z, chkChocaAndar5 ; Es multiplo	de 8
+								; 8의 배수이다.
 
 		cp	4
 		ld	c, 10h		; Plataformas (tipo de tiles)
+						; 플랫폼(타일 유형)
 		jr	nz, noChocaAndar
 
 chkChocaAndar5:
 		bit	0, b		; Sentido: 1 = Izquierda, 2 = derecha
+						; 방향: 1 = 왼쪽, 2 = 오른쪽
 		jr	nz, chkChocaAndar6 ; Va	a la izquierda
+								; 왼쪽으로 간다
 
 		inc	hl		; X tile mapa +	1
+					; X 타일 맵 + 1
 		and	a		; La coordenada	X del elemento es multiplo de 8
+					; 요소의 X 좌표는 8의 배수입니다.
 		jr	z, chkChocaAndar6
 
 		inc	hl		; Incrementa en	1 la X del tile	del mapa a comprobar
+					; 확인하고자 하는 지도의 타일의 X를 1만큼 증가
 
 chkChocaAndar6:
 		ld	a, (hl)		; Tile del mapa
+						; 지도 타일
 		and	0F0h		; Se queda con la familia o tipo de tile
+						; 가족 또는 타일 유형과 함께 유지
 		cp	c		; Es una puerta	giratoria o muro?
+					; 회전문인가 벽인가?
 		jr	z, chocaAndar	; Choca
+							; 충돌하다
 
 		ld	a, 60h		; Distancia al tile que	esta justo debajo (Y + 1)
+						; 바로 아래 타일까지의 거리(Y + 1)
 		call	ADD_A_HL
 		ld	a, (hl)		; Obtiene tile del mapa
+						; 지도 타일 가져오기
 		and	0F0h		; Se queda con el tipo de tile
+						; 그것은 타일의 종류와 함께 유지
 		cp	c
 		jr	nz, noChocaAndar ; No choca
+							; 충돌하지 않는다
 
 chocaAndar:
 		scf
@@ -4551,6 +4696,7 @@ noChocaAndar:
 ;----------------------------------------------------
 ;
 ; Sprite prota sin nada	en las manos
+; 손에 아무것도 없는 프로타 스프라이트
 ;
 ;----------------------------------------------------
 GFX_Prota:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Dh, 1,	2, 2, 1	; ...
@@ -4571,6 +4717,7 @@ GFX_Prota:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Dh, 1,	2, 2, 1	; ...
 ;----------------------------------------------------
 ;
 ; Sprite prota con cuchillo
+; 칼을 든 프로타 스프라이트
 ;
 ;----------------------------------------------------
 GFX_ProtaKnife:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Ch, 1,	3, 3, 1	; ...
@@ -4601,6 +4748,7 @@ GFX_ProtaKnife:	db 0, 18h, 86h,	0, 1, 3, 0, 7, 8, 3, 0,	8Ch, 1,	3, 3, 1	; ...
 ;----------------------------------------------------
 ;
 ; Sprite prota con el pico
+; 곡괭이가 있는 프로타 스프라이트
 ;
 ;----------------------------------------------------
 GFX_ProtaPico:	db 0, 18h, 96h,	0, 1, 3, 0, 67h, 4, 18h, 0Ch, 6, 1, 3
@@ -4630,6 +4778,7 @@ GFX_ProtaPico:	db 0, 18h, 96h,	0, 1, 3, 0, 67h, 4, 18h, 0Ch, 6, 1, 3
 
 ;----------------------------------------------------
 ; Graficos de la momia
+; 미라 그래픽
 ;----------------------------------------------------
 GFX_MOMIA:	db 40h,	19h, 82h, 0, 3,	4, 7, 86h, 3, 3, 7, 4, 7, 7, 4
 		db 3, 92h, 0, 0C0h, 0E0h, 40h, 0E0h, 0E0h, 0C0h, 80h, 0E0h
@@ -4645,6 +4794,8 @@ GFX_MOMIA:	db 40h,	19h, 82h, 0, 3,	4, 7, 86h, 3, 3, 7, 4, 7, 7, 4
 ; Sprites secundarios:
 ; Destello, muro, exploxion, cuchillo
 ;
+; 보조 스프라이트:
+; 플래시, 벽, 폭발, 칼
 ;----------------------------------------------------------------------------
 GFX_SPRITES2:	db 0A0h, 1Eh, 2, 0, 8Dh, 20h, 0, 8, 4, 0, 0, 0B0h, 0, 0	; ...
 		db 4, 8, 0, 20h, 3, 0, 8Dh, 82h, 0, 88h, 90h, 0, 0, 0Dh
@@ -4665,6 +4816,7 @@ GFX_SPRITES2:	db 0A0h, 1Eh, 2, 0, 8Dh, 20h, 0, 8, 4, 0, 0, 0B0h, 0, 0	; ...
 ;
 ; Graficos del juego (plataformas, escaleras, cuchillo,	gemas...)
 ;
+; 게임 그래픽(플랫폼, 계단, 칼, 보석...)
 ;----------------------------------------------------------------------------
 GFX_InGame:	db 3, 0FEh, 81h, 0, 3, 0EFh, 83h, 0, 0FFh, 0FFh, 6, 0
 		db 3, 0FFh, 5, 0, 84h, 80h, 0C1h, 63h, 0, 3, 0F7h, 82h
@@ -4700,6 +4852,8 @@ GFX_GEMA:	db 88h,	0, 3Ch,	7Eh, 0BFh, 9Fh,	0DFh, 7Eh, 3Ch,	0
 ;
 ; Colores de los patrones del juego
 ;
+; 게임 패턴 색상
+;
 ;----------------------------------------------------
 COLOR_InGame:	db 3, 0F0h, 5, 0A0h, 5,	0F0h, 3, 0A0h, 7, 0F0h,	4, 0A0h	; ...
 		db 5, 0F0h, 5, 0A0h, 3,	0F0h, 5, 0A0h, 3, 0F0h,	5, 0A0h
@@ -4712,6 +4866,7 @@ COLOR_InGame:	db 3, 0F0h, 5, 0A0h, 5,	0F0h, 3, 0A0h, 7, 0F0h,	4, 0A0h	; ...
 		db 0E0h, 3, 0F0h, 2, 0E0h, 0Bh,	0FEh
 ;----------------------------------------------------
 ; Colores de los patrones invertidos (el mismo que los normales)
+; 반전 패턴 색상(일반과 동일)
 ;----------------------------------------------------
 COLOR_Flipped:	db 8, 50h, 8, 0F0h, 8, 50h, 8, 0F0h, 38h, 30h, 82h, 0EAh
 		db 0F9h, 6, 0F0h, 82h, 0EAh, 0EFh, 16h,	0F0h, 0
@@ -4722,6 +4877,7 @@ COLOR_GEMAS:	db 8, 40h, 8, 70h, 8, 0D0h, 8, 0A0h, 8,	20h, 8,	0E0h, 0	; ...
 ;
 ; Logica de los	cuchillos
 ;
+; 칼의 논리
 ;--------------------------------------------------------------------------------------------------------
 
 AI_Cuchillos:
@@ -4731,9 +4887,12 @@ AI_Cuchillos:
 AI_Cuchillos2:
 		ld	hl, chkLastKnife
 		push	hl		; Mete en la pila la rutina que	comprueba si se	han procesado todos los	cuchillos
+						; 모든 나이프가 스택에서 처리되었는지 확인하는 루틴을 푸시합니다.
 
 		xor	a		; Offset al status del cuchillo
+					; 나이프 상태에 대한 오프셋
 		call	getKnifeData	; Obtiene el indice del	cuchillo que se	esta procesando
+								; 처리 중인 칼의 인덱스를 가져옵니다.
 		call	jumpIndex
 
 		dw initCuchillo		; 0 - Inicializacion del cuchillo. Guarda tile de fondo
@@ -4749,66 +4908,100 @@ AI_Cuchillos2:
 		dw updateKnifeAtt	; 9 - Actualiza	los atributos RAM del sprite del cuchillo
 	ENDIF
 
+		; 0 - 칼 초기화. 배경 타일 저장
+		; 1 - 땅에 있다
+		; 2 - 주인공이 손에 들고 있습니다.
+		; 4 - 칼을 던지다
+		; 5 - 공중의 칼
+		; 6 - 그냥 칼을 치다
+		; 7 - 튀는 중
+		; 8 - 떨어지는 중
+
+		; 9 - 나이프 스프라이트의 RAM 속성 업데이트
 
 ;----------------------------------------------------
 ; Knife	Status 0: Comprueba el tile que	tiene de fondo y lo guarda
 ; Si esta sobre	un pelda�o de escalera lo cambia por un	tile de	cuchillo especial que indica que hay escalera detras
 ; Pasa al siguiente estado (1)
+;
+; 나이프 상태 0: 배경 타일 확인 및 저장
+; 사다리 가로대에 있는 경우 뒤에 사다리가 있음을 나타내는 특수 칼 타일로 변경됩니다.
+; 다음 상태로 이동 (1)
 ;----------------------------------------------------
 
 initCuchillo:
 		xor	a
 		call	getKnifeData	; Obtiene puntero a los	datos del cuchillo
+								; 나이프 데이터에 대한 포인터 가져오기
 		inc	(hl)		; Lo pasa al status 1
+						; 상태 1로 전달합니다.
 		inc	hl
 		inc	hl		; Apunta a la Y	del cuchillo
+					; 칼의 Y를 가리킴
 		call	getMapOffset00	; Obtiene el tile del mapa sobre el que	esta el	cuchillo
+								; 칼이 있는 지도의 타일을 가져옵니다.
 		ex	de, hl
 		ld	a, 0Ah		; Offset tile backup
+						; 오프셋 타일 백업
 		call	getKnifeData
 		ld	a, (de)		; Tile que hay en el mapa RAM
+						; RAM 맵에 있는 타일
 		ld	b, a
 		and	0F0h
 		cp	30h		; Comprueba si se trata	de un cuchillo
+					; 칼인지 확인
 		jr	z, initCuchillo2
 		ld	(hl), b		; Guarda el tile que hay detras	del cuchillo
+						; 칼 뒤에 타일을 저장
 
 initCuchillo2:
 		ld	a, b
 	IF	(VERSION2)
 		sub	#31		; Cuchillo sobre pelda�o?
+					; 가로대에 칼?
 		cp	2		; Dos posibles direcciones de las escaleras (cuchillo sobre pelda�o hacia la derecha y sobre pelda�o a la izquierda)
+					; 계단의 두 가지 가능한 방향(오른쪽 가로대와 왼쪽 가로대에 칼)
 		ld	a,b
 		jr	c,initCuchillo5
 
 		ld	a,b		; (!?) No hace falta ponerlo! A ya es igual a B
+					; (!?) 넣을 필요 없어요! A는 이미 B와 같다
 		sub	#21		; Pelda�o de escalera que sube a la izquierda
+					; 왼쪽으로 올라가는 계단
 		cp	2		; Comprueba los dos tipos de pelda�o (derecha e izquierda)
+					; 2종류의 렁(좌우) 확인
 		jr	nc,initCuchillo4
 
 		ld	a,b
 	ELSE
 		cp	31h		; Cuchillo sobre pelda�o?
+					; 가로대에 칼?
 		jr	z, initCuchillo6
 
 		cp	21h		; Pelda�o escalera que sube a la izquierda
+					; 왼쪽으로 올라가는 사다리
 		jr	z, initCuchillo3
 
 		cp	22h		; Pelda�o escalera que sube a la derecha
+					; 오른쪽으로 올라가는 사다리
 		jr	nz, initCuchillo4
 	ENDIF
 initCuchillo3:
 		add	a, 10h		; Convierte el tile de cuchillo	en "cuchillo sobre pelda�o"
+						; 칼 타일을 "장대 위의 칼"으로 변환합니다.
 		jr	initCuchillo5
 
 initCuchillo4:
 		ld	a, 30h		; ID tile cuchillo suelo
+						; ID 타일 그라운드 나이프
 
 initCuchillo5:
 		ld	(de), a		; Actualiza el mapa RAM
+						; RAM 맵 업데이트
 		xor	a
 		call	getKnifeData
 		ld	a, 4Bh		; Patron de cuchillo posado
+						; 앉은 칼 패턴
 		jp	drawTile
 
 	IF	(!VERSION2)
