@@ -3442,7 +3442,7 @@ protaLanzaKnife:
 		and	3
 		inc	hl
 		ld	(hl), a		; Pone al cuchillo el mismo sentido que	tiene el prota
-						; 그는 칼에 주인공이 가지고 있는 것과 같은 감각을 준다.
+						; 그는 칼에 주인공이 가지고 있는 것과 같은 방향을 준다.
 
 		ld	a, (lanzamFallido) ; 1 = El cuchillo se	ha lanzado contra un muro y directamente sale rebotando
 								; 1 = 칼이 벽에 부딪혀 바로 튕겨져 나옴
@@ -3459,7 +3459,7 @@ protaLanzaKnife:
 		ld	(hl), 7		; estado: rebotando
 						; 상태: 튀는
 		inc	hl		; sentido
-					; 감각
+					; 방향
 		inc	hl		; Y
 
 		ld	de, ProtaY
@@ -3631,7 +3631,7 @@ chkProtaPica:
 					; 주인공은 확고한 입장이 아니다
 		dec	hl
 		push	hl		; Apunta al sentido
-						; 감각을 가리키다
+						; 방향을 가리키다
 		call	chkChocaAndar3
 		pop	hl
 		jr	nc, chkProtaPica2 ; No choca
@@ -3640,7 +3640,7 @@ chkProtaPica:
 		ld	a, (hl)		; Sentido
 						; 방향
 		xor	3		; Invierte el sentido
-					; 의미를 뒤집다
+					; 방향를 뒤집다
 		ld	b, a		; Lo guarda en B para pasarselo	a la funcion
 						; 함수에 전달하려면 B에 저장하십시오.
 		push	hl
@@ -5020,56 +5020,79 @@ doNothing_:
 ; Coloca el cuchillo en	las coordendas del prota
 ; Guarda los tiles del mapa sobre los que se pinta
 ;
+; 칼을 던지다
+; 던지는 소리를 재생
+; 칼을 주인공의 좌표에 놓는다
+; 그려진 지도의 타일을 저장합니다.
 ;--------------------------------------------------------------------------------------------------------
 
 lanzaCuchillo:
 		ld	a, 6
 		call	setMusic	; Sonido lanzar
+							; 소리 던지기
 
 		ld	a, 6
 		call	getKnifeData	; Obtiene puntero a la velocidad decimal
+								; 소수 속도에 대한 포인터 가져오기
 		ex	de, hl
 		ld	hl, knifeDataInicio
 		ld	bc, 0Bh
 		ldir			; Inicializa los valores de este cuchillo
+						; 이 칼의 값을 초기화
 
 		call	knifeNextStatus	; Pasa al siguiente estado
+								; 다음 상태로 이동
 		inc	hl
 		ld	de, sentidoProta ; 1 = Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 		ex	de, hl
 		ld	a, (hl)		; Sentido del lanzamiento
+						; 발사 방향
 		ld	bc, 5
 		ldir			; Copia	el sentido y coordenadas del prota
+						; 주인공의 방향과 좌표를 복사
 
 		dec	de
 		dec	de		; Cuchillo X
 		dec	hl
 		dec	hl		; Prota	X
 		ld	b, 8		; Desplazamiento X cuando se lanza a la	derecha
+						; 오른쪽으로 캐스팅할 때 X 오프셋
 		rr	a		; 1 = Izquierda, 2 = Derecha
+					; 1 = 왼쪽, 2 = 오른쪽
 		jr	nc, lanzaCuchillo2
 		ld	b, 0		; Desplazamiento cuando	se lanza a la izquierda
+						; 왼쪽으로 캐스팅할 때 오프셋
 
 lanzaCuchillo2:
 		ld	a, (hl)
 		add	a, b		; Suma desplazamiento a	la X
+						; X에 오프셋 추가
 		and	0F8h		; Lo ajusta a patrones (multiplo de 8)
+						; 패턴으로 설정합니다(8의 배수).
 		set	2, a		; Le suma 4
+						; 4 추가
 		ld	(de), a		; Actualiza X del cuchillo
+						; 칼의 업그레이드 X
 		dec	de
 		dec	de		; Y cuchillo
 		ex	de, hl		; HL apunta a las coordenadas del cuchillo
+						; HL은 칼의 좌표를 가리킵니다.
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표 맵에 대한 포인터를 HL에 가져옵니다.
 		ex	de, hl
 		ld	a, 0Ah		; Offset backup	fondo
+						; 배경 오프셋 백업
 		call	getKnifeData
 		ex	de, hl
 		ldi
 		ldi			; Guarda tiles del mapa	sobre los que se pinta el cuchillo
+					; 칼이 그려진 지도 타일 저장
 		ret
 
 ;----------------------------------------------------
 ; Obtiene el frame del cuchillo	segun su posicion X en pantalla
+; 화면의 X 위치에 따라 칼의 프레임을 가져옵니다.
 ;----------------------------------------------------
 
 getFrameKnife:
@@ -5078,6 +5101,7 @@ getFrameKnife:
 		rra
 		rra
 		and	3		; Cambia el frame cada cuatro pixeles
+					; 4픽셀마다 프레임 변경
 		ld	de, framesCuchillo
 		call	ADD_A_DE
 		ld	a, (de)
@@ -5086,6 +5110,7 @@ getFrameKnife:
 
 ;----------------------------------------------------
 ; Patrones usados para pintar el cuchillo
+; 칼을 칠하는 데 사용되는 패턴
 ;----------------------------------------------------
 framesCuchillo:	db 45h
 					; Girando NO
@@ -5093,96 +5118,141 @@ framesCuchillo:	db 45h
 		db 48h			; Girando SE
 		db 49h			; Girando SO
 		db 4Bh			; Clavado en el	suelo
+			; 북쪽으로 돌리다
+			; 북동쪽으로 돌리다
+			; 남동쪽으로 돌리다
+			; 남쪽으로 돌리다
+			; 땅에 못을 박았다
 
 ;--------------------------------------------------------------------------------------------------------
 ; Mueve	al cuchillo lanzado
 ; Comprueba si choca contra una	puerta giratoria
 ; Copia	y restaura el fondo sobre el que va pasando
+;
+; 던진 칼을 움직여
+; 회전문을 두드렸는지 확인
+; 통과하는 배경 복사 및 복원
 ;--------------------------------------------------------------------------------------------------------
 
 movKnife:
 		ld	a, 6		; Offset velocidad cuchillo
+						; 오프셋 나이프 속도
 		call	getKnifeData
 		ld	e, (hl)
 		inc	hl
 		ld	d, (hl)		; DE = velocidad del cuchillo
+						; DE = 나이프 속도
 		ld	a, 3		; Offset X decimales
 		call	getKnifeData
 		call	mueveElemento	; Actualiza coordenadas	del cuchillo segun su velocidad
+								; 속도에 따라 칼의 좌표 업데이트
 
 		ld	a, d		; X cuchillo
 		and	3
 		ret	nz		; No es	multiplo de 4
+					; 4의 배수가 아니다.
 
 		ld	a, d
 		and	7
 		jr	z, movKnife3	; Es multiplo de 8
+							; 8의 배수이다.
 
 ; Multiplo de 4
+; 4의 배수
 
 		ld	a, d
 		cp	8
 		ret	c		; Menor	de 8. Pegado al	limite izquierdo de la pantalla
+					; 8개 미만. 화면 왼쪽 가장자리에 부착
 
 		cp	252
 		ret	nc		; Mayor	o igual	a 252. Pegado al limite	derecho	de la pantalla
+					; 252 이상. 화면 오른쪽 가장자리에 부착
 
 		call	getFrameKnife	; Obtiene frame	actual de la animacion del cuchillo
+								; 칼 애니메이션의 현재 프레임 가져오기
 		dec	hl
 		dec	hl
 		dec	hl
 		dec	hl
 		call	drawTile	; Dibuja primer	tile del cuchillo
+							; 첫 번째 칼 타일 그리기
 
 	IF	(VERSION2)
 		jr	nz,movKnife1	; Si no esta en pantalla no lo pinta
+							; 화면에 없으면 그리지 마세요.
 	ENDIF
 
 		inc	a
 		inc	hl
 		call	WRTVRM		; segundo tile del cuchillo
+							; 두 번째 칼 타일
 movKnife1:
 		ld	a, 1		; Offset sentido
+						; 방향 오프셋
 		call	getKnifeData
 		push	hl		; Apunta al sentido
+						; 방향을 가리키다
 		ld	a, (hl)		; Sentido
+						; 방향
 		inc	hl		; Apunta a la Y
+					; Y 를 가리키다
 		push	af
 		call	getMapOffset00	; Obtiene un puntero HL	a la posicion del cuchillo en el mapa RAM
+								; RAM 맵에서 칼 위치에 대한 HL 포인터를 가져옵니다.
 		pop	af
 		rra
 		jr	c, movKnife2	; Izquierda
+							; 왼쪽
 		inc	hl		; Tile de la derecha
+					; 오른쪽 타일
 
 ; Restaura una puerta giratoria	si el cuchillo choca contra ella
+; 칼에 맞으면 회전문을 복원합니다.
 
 movKnife2:
 		ld	a, (hl)		; Tile del mapa
+						; 지도 타일
 		and	0F0h		; Se queda con la familia o tipo de tile
+						; 가족 또는 타일 유형과 함께 유지
 		cp	50h		; Puerta giratoria
+					; 회전문
 		pop	hl		; Apunta al sentido
+					; 방향을 가리키다
 		ret	nz		; No ha	chocado	con una	puerta
+					; 그는 문을 두드리지 않았다
 
 		dec	hl		; Apunta al estado
+					; 상태를 가리키다
 		inc	(hl)		; Pasa al siguiente estado del cuchillo	(5)
+						; 칼의 다음 상태로 이동 (5)
 		push	hl
 		ld	a, 0Ah		; Offset tile de fondo
+						; 배경 오프셋 타일
+
 		call	getKnifeData
 		ex	de, hl
 		pop	hl
 		push	de
 		call	getTileFromID
 		call	drawTile	; Restaura el tile de fondo 1
+							; 배경 타일 1을 복원합니다.
 		pop	de
 		ret	nz		; No esta en la	pantalla actual
+					; 현재 화면에 없습니다
 
 		inc	hl		; Siguiente posicion VRAM (ocupa dos tiles)
+					; 다음 VRAM 위치(2개의 타일을 차지함)
 		inc	de		; Siguiente tile backup	del cuchillo
+					; 다음 칼 백업 타일
 		ld	a, (de)
 		call	getTileFromID	; Identifica tile que le corresponde
+								; 해당 타일을 식별합니다.
 		jp	WRTVRM		; Lo pinta
+						; 페인트
 
 ; Multiplo de 8
+; 8의 배수
 
 movKnife3:
 		ld	a, 1		;  Offset sentido
@@ -5191,35 +5261,45 @@ movKnife3:
 		pop	ix
 
 		call	getFrameKnife	; Frame	que le corresponde al cuchillo
+								; 칼에 해당하는 프레임
 		ld	b, a
 
 		xor	a
 		call	getKnifeData	; Puntero a los	datos del cuchillo
+								; 나이프 데이터에 대한 포인터
 
 		ld	a, b		; Frame	del cuchillo
+						; 칼 프레임
 		call	drawTile
 
 		ld	a, 2		; Offset Y
 		call	getKnifeData
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 
 		ld	a, (ix+0)	; Sentido
 		inc	hl		; Tile de la derecha del cuchillo
+					; 칼 오른쪽 타일
 		rr	a
 		push	af
 		jr	nc, movKnife4	; Derecha
 		dec	hl
 		dec	hl		; Tile de la izquierda
+					; 왼쪽 타일
 
 movKnife4:
 		pop	af
 		ld	a, (hl)		; Tile del mapa	de fondo
+						; 배경 맵 ​​타일
 		jr	nc, movKnife5	; Derecha
 
 		ld	d, (ix+0Ah)	; tile de fondo	2
+						; 배경 타일 2
 		ld	c, (ix+9)	; tile de fondo	1
+						; 배경 타일 1
 		ld	(ix+0Ah), c
 		ld	(ix+9),	a	; Actualiza la copia de	los tiles de fondo
+						; 배경 타일의 복사본 업데이트
 		jr	movKnife6
 
 movKnife5:
@@ -5227,14 +5307,19 @@ movKnife5:
 		ld	c, (ix+0Ah)	; Tile backup 2
 		ld	(ix+9),	c
 		ld	(ix+0Ah), a	; Actualiza la copia de	los tiles de fondo
+						; 배경 타일의 복사본 업데이트
 
 movKnife6:
 		ld	b, (ix+4)	; Pantalla en la que esta el cuchillo (xHigh)
+						; 칼이 있는 화면(xHigh)
 		ld	a, (ProtaRoom)	; Pantalla del prota
+							; 주인공 화면
 		cp	b
 		jr	nz, movKnife8	; No estan en la misma,	no hace	falta pintarlo
+							; 그것들은 동일하지 않으며 페인트 할 필요가 없습니다.
 
 		ld	a, d		; Tile de fondo	a restaurar
+						; 복원할 배경 타일
 		call	getTileFromID
 		push	af
 		ld	a, 2		; Offset Y
@@ -5244,8 +5329,10 @@ movKnife6:
 		inc	hl		; X
 		ld	e, (hl)		; DE = YX
 		call	coordVRAM_DE	; Obtiene puntero a la VRAM correspondiente a las coordenadas del cuchillo
+								; 나이프 좌표에 해당하는 VRAM에 대한 포인터 가져오기
 
 		dec	hl		; Puntero VRAM
+					; VRAM 포인터
 		ld	a, (ix+0)	; Sentido
 		rra
 		jr	nc, movKnife7	; Derecha
@@ -5255,14 +5342,17 @@ movKnife6:
 movKnife7:
 		pop	af
 		call	WRTVRM		; Restaura fondo
+							; 배경 복원
 
 movKnife8:
 		push	ix
 		push	de
 		call	chkKnifeMomia	; Comprueba si choca con una momia
+								; 미라와 충돌하는지 확인
 		pop	de
 		pop	ix
 		jr	nc, movKnife9	;  No ha chocado contra	una momia
+							; 미라와 충돌하지 않았다
 
 		xor	a
 		call	getKnifeData
@@ -5273,6 +5363,7 @@ movKnife9:
 		call	getKnifeData
 		push	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		dec	hl
 		ld	a, (ix+0)	; Sentido
 		rra
@@ -5285,17 +5376,23 @@ movKnife10:
 		ld	b, a
 		pop	hl		; Y
 		call	chkKnifeChoca	; Comprueba si el tile es una plataforma, cuchillo, pico o gema
+							; 타일이 플랫폼, 칼, 곡괭이 또는 보석인지 확인하십시오.
 		jr	nz, knifeNoChoca ; No choca contra nada
+							; 그것은 아무것도 치지 않는다
 
 		ld	a, b
 		cp	40h		; Gemas
+					; 보석
 		jr	z, knifeNoChoca	; Contra las gemas no choca el cuchillo
+							; 칼이 치지 않는 보석에 대하여
 
 		dec	hl
 		dec	hl		; Apunta al status
+					; 지위를 노린다
 
 movKnife11:
 		inc	(hl)		; Pasa al siguiente estado del cuchillo: choca
+						; 칼의 다음 상태로 이동: 충돌
 		inc	hl
 		ld	b, (hl)		; Sentido
 		inc	hl
@@ -5305,11 +5402,15 @@ movKnife11:
 movKnife12:
 		inc	hl
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(hl)		; esta en la misma pantalla el cuchillo	y el prota?
+						; 칼과 주인공이 같은 화면에 있습니까?
 		ret	nz		; No esta en la	pantalla actual. No se ve
+					; 현재 화면에 없습니다. 본적이 없다
 
 		ld	a, 5
 		call	ADD_A_HL	; Puntero a los	tiles de backup	de fondo
+							; 배경 백업 타일에 대한 포인터
 		rr	b		; Sentido
 		jr	nc, knifeRestaura ; Derecha
 		inc	hl
@@ -5317,8 +5418,10 @@ movKnife12:
 knifeRestaura:
 		ld	a, (hl)		; Backup tile
 		call	getTileFromID	; Obtiene patron que le	corresponde
+								; 일치하는 패턴 가져오기
 		call	coordVRAM_DE	; D = Y, E = X
 		jp	WRTVRM		; Pinta	el patron en pantalla
+						; 화면에 패턴 칠하기
 
 knifeNoChoca:
 		dec	hl
@@ -5338,20 +5441,27 @@ knifeNoChoca:
 ;
 ; Cuchillo choca
 ; Pasa al estado de rebotando, invierte	el sentido y lo	mueve 4	pixeles	hacia atras
+;
+; 칼 충돌
+; 튀는 상태로 이동하여 방향을 반전하고 4픽셀 뒤로 이동합니다.
+;
 ;----------------------------------------------------
 
 knifeChoca:
 		call	knifeNextStatus	; Pasa al estado de rebotando
+								; 튀는 상태로 이동
 		inc	hl
 		ld	a, (hl)
 		xor	3
 		ld	(hl), a		; Invierte el sentido
+						; 방향를 뒤집다
 		inc	hl
 		inc	hl
 		inc	hl
 		rra
 		ld	a, (hl)		; X
 		jr	c, knifeChoca2	; Izquierda
+							; 왼쪽
 		add	a, 4
 
 knifeChoca2:
@@ -5368,12 +5478,18 @@ knifeChoca2:
 ; Realiza una parabola que simula un rebote.
 ; Comprueba si choca contra algo mientras rebota.
 ; Al terminar pasa al siguiente	estado:	caer
+;
+; 튀는 칼
+; 리바운드를 시뮬레이션하는 포물선을 만듭니다.
+; 튀는 동안 무언가에 부딪히는지 확인하십시오.
+; 완료되면 다음 상태인 추락으로 이동합니다.
 ;----------------------------------------------------
 
 knifeRebota:
 		ld	a, (timer)
 		and	3
 		jp	nz, updateKnifeAtt ; Actualiza las coordenadas 1 de cada 4 frames. El resto los	atributos del sprite
+								; 4 프레임마다 좌표 1을 업데이트합니다. 나머지는 스프라이트의 속성
 
 		ld	a, 1		; Offset sentido
 		call	getKnifeData
@@ -5383,48 +5499,66 @@ knifeRebota:
 		inc	hl
 		inc	hl
 		inc	(hl)		; Incrementa la	X
+						; X 증가
 		rra
 		jr	nc, knifeRebota2 ; Derecha
+							; 오른쪽
 
 		dec	(hl)
 		dec	(hl)		; Decrementa la	X (rebota hacia	la izquierda)
+						; X 감소(왼쪽으로 바운스)
 
 knifeRebota2:
 		pop	hl
 		call	chkPasaRoom	; Comprueba si pasa a otra habitacion
+							; 다른 방으로 넘어가는지 확인
 
 		ld	a, 9
 		call	getKnifeData
 		ld	a, (hl)		; Contador de movimiento
+						; 이동 카운터
 
 		ld	hl, parabolaKnife
 		call	ADD_A_HL
 		ld	b, (hl)		; Desplazamiento Y del rebote para simular una parabola
+						; 포물선을 시뮬레이션하기 위한 바운스의 오프셋 Y
 
 		ld	a, 2		; Y
 		call	getKnifeData
 		ld	a, (hl)		; Y del	cuchillo
+						; 칼의 Y
 		add	a, b		; Le suma el desplazamiento de la parabola
+						; 포물선의 변위 추가
 		ld	(hl), a		; Actualiza la Y del cuchillo
+						; 칼의 Y 업데이트
 
 		push	hl
 		ld	bc, 408h	; Offset X+4, Y+8
 		call	getMapOffset	; Lee tile del mapa
+								; 지도 타일 읽기
 		ld	a, (hl)		; Obtiene el tile que hay justo	debajo del cuchillo
+						; 칼 바로 아래에 타일을 가져옵니다.
 		call	chkKnifeChoca	; Comprueba si el tile es una plataforma, cuchillo, pico o gema
+								; 타일이 플랫폼, 칼, 곡괭이 또는 보석인지 확인하십시오.
 		pop	hl
 		jr	nz, knifeRebota3 ; No choca con	nada
+							; 어떤 것과도 충돌하지 않는다
 
 		ld	a, b		; Tile del mapa
+						; 지도 타일
 		cp	41h		; Brillo gema izquierda
+					; 왼쪽 보석 광택
 		jr	z, knifeRebota3
 
 		cp	42h		; Brillo gema derecha
+					; 오른쪽 보석 광택
 		jr	z, knifeRebota3
 
 		and	0F0h
 		cp	10h		; Es una plataforma, muro o ladrillo?
+					; 플랫폼입니까, 벽입니까, 아니면 벽돌입니까?
 		jr	nz, setReboteKnife ; Da	otro rebote para no caer sobre el objeto
+								; 물체에 떨어지지 않도록 다시 바운스하십시오.
 
 		jr	knifeEnd
 
@@ -5432,15 +5566,19 @@ knifeRebota3:
 		ld	a, 7
 		call	ADD_A_HL
 		inc	(hl)		; Incrementa contador de movimiento
+						; 이동 카운터 증가
 
 		ld	a, (hl)
 		cp	8		; Ha terminado la parabola del rebote? (8 frames)
+					; 바운스 비유가 끝났습니까? (8 프레임)
 		jp	z, knifeNextStatus ; Si, pasa a	estado de caer
+								; 네, 떨어지는 상태가 됩니다.
 		jp	updateKnifeAtt
 
 
 ;----------------------------------------------------
 ; Valores de la	parabola del rebote del	cuchillo
+; 나이프 리바운드 포물선의 값
 ;----------------------------------------------------
 parabolaKnife:	db -5
 		db -2
@@ -5453,41 +5591,55 @@ parabolaKnife:	db -5
 
 ;----------------------------------------------------
 ; Status cuchillo = Caer
+; 칼 상태 = 추락
 ;----------------------------------------------------
 
 knifeCae:
 		ld	a, (timer)
 		and	3
 		jp	nz, updateKnifeAtt ; Actualiza las coordenadas 1 de cada 4 frames
+								; 4 프레임마다 좌표 1 업데이트
 
 		ld	a, 2		; Offset Y
 		call	getKnifeData
 		ld	a, (hl)		; Y del	cuchillo
 		and	0FCh		; Lo ajusta a multiplo de 4
+						; 4의 배수로 설정
 		ld	(hl), a
 
 		ld	d, (hl)		; (!?) Por que no hace un LD D,A
 		ld	a, d
 		and	3		; (!?) Si acaba	de hacer un AND	#FC como va a haber un NZ con un AND 3?
+					; (!?) AND #FC만 하면 AND 3이 있는 NZ가 어떻게 될까요?
 		jp	nz, caeKnife4
 
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	a, 60h		; Offset al tile que esta debajo del cuchillo
+						; 칼 아래에 있는 타일에 오프셋
 		call	ADD_A_HL
 		ld	a, (hl)		; Tile del mapa	bajo el	cuchillo
+						; 칼 아래 지도의 타일
 		call	chkKnifeChoca	; Comprueba si el tile es una plataforma, cuchillo, pico o gema
+								; 타일이 플랫폼, 칼, 곡괭이 또는 보석인지 확인하십시오.
 		jp	nz, caeKnife4	; No choca con nada
+							; 어떤 것과도 충돌하지 않는다
 
 		ld	a, b
 		cp	41h		; Brillo izquierdo
+					; 왼쪽 밝기
 		jp	z, caeKnife4
 
 		cp	42h		; Brillo derecho
+					; 오른쪽 밝기
 		jp	z, caeKnife4	; Si cae sobre los brillos no pasa nada
+							; 반짝이 위에 떨어지면 아무 일도 일어나지 않아
 
 		and	0F0h
 		cp	10h		; Es ladrillo?
+					; 벽돌이야?
 		jr	nz, setReboteKnife ; Rebota si cae sobre un obstaculo que no es	un brillo o ladrillo
+								; 반짝이나 벽돌이 아닌 장애물에 떨어지면 튕깁니다.
 
 knifeEnd:
 		call	hideKnifeSpr
@@ -5496,26 +5648,31 @@ knifeEnd:
 
 	IF	(VERSION2)
 		jr	setReboteKnife2	; Apa�o para ahorrar un byte
+							; 바이트 저장 수정
 	ELSE
 		ld	(hl), 0
 		ret
 	ENDIF
 ;----------------------------------------------------
 ; Reinicia el rebote del cuchillo
+; 나이프 바운스 재설정
 ;----------------------------------------------------
 
 setReboteKnife:
 		xor	a
 		call	getKnifeData
 		ld	(hl), 7		; Status 7 = Rebote
+						; 상태 7 = 바운스
 		ld	a, 9
 		call	ADD_A_HL
 setReboteKnife2:
 		ld	(hl), 0		; Contador de movimiento/rebote	= 0
+						; 이동/바운스 카운터 = 0
 		ret
 
 ;----------------------------------------------------
 ; Le suma 4 a la Y del cuchillo	y lo ajusta a multiplo de 4
+; 칼의 Y에 4를 더하고 4의 배수로 조정합니다.
 ;----------------------------------------------------
 
 caeKnife4:
@@ -5541,34 +5698,48 @@ caeKnife4:
 ; Out:
 ;   Z =	Si es uno de esos elementos
 ;   B =	Tile de	entrada
+;
+; 타일이 플랫폼, 보석, 칼 또는 보석인지 확인하십시오.
+; 출력:
+; Z = 해당 요소 중 하나인 경우
+; B = 입력 타일
 ;----------------------------------------------------
 
 chkKnifeChoca:
 		ld	b, a		; Comprueba si el tile es una plataforma, cuchillo, pico o gema
+						; 타일이 플랫폼, 칼, 곡괭이 또는 보석인지 확인하십시오.
 		and	0F0h
 		cp	10h		; Plataformas
+					; 플랫폼
 		ret	z
 
 		cp	30h		; Cuchillo
+					; 칼
 		ret	z
 
 		cp	80h		; Pico
+					; 곡괭이
 		ret	z
 
 		cp	40h		; Gemas
+					; 보석
 		ret
 
 
 ;----------------------------------------------------
 ; Actualiza los	atributos RAM del sprite del cuchillo
+; 칼 스프라이트의 RAM 속성 업데이트
 ;----------------------------------------------------
 
 updateKnifeAtt:
 		ld	a, 5		; Offset pantalla en la	que esta el cuchillo
+						; 칼이 있는 오프셋 화면
 		call	getKnifeData
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(hl)
 		jr	nz, hideKnifeSpr ; No esta en la pantalla actual, asi que lo oculta
+							; 현재 화면에 없으니 숨기세요.
 
 		dec	hl
 		dec	hl
@@ -5587,15 +5758,20 @@ updateKnifeAtt:
 		inc	de
 		ld	a, (timer)
 		and	0Ch		; Se queda con 4 sprites de 16x16 (0, 4, 8, 12)
+					; 16x16(0, 4, 8, 12)의 4개의 스프라이트가 남습니다.
 		add	a, 0F0h		; Primer sprite	del cuchillo
+						; 칼 퍼스트 스프라이트
 		ex	de, hl
 		ld	(hl), a		; Sprite del cuchillo
+						; 칼 스프라이트
 		inc	hl
 		ld	(hl), 0Fh	; Color	blanco
+						; 흰색
 		ret
 
 ;----------------------------------------------------
 ; Comprueba si se han procesado	todos los cuchillos
+; 모든 칼이 가공되었는지 확인
 ;----------------------------------------------------
 
 chkLastKnife:
@@ -5609,6 +5785,7 @@ chkLastKnife:
 
 ;----------------------------------------------------
 ; Quita	al cuchillo del	area visible
+; 보이는 부분에서 칼을 빼주세요
 ;----------------------------------------------------
 
 hideKnifeSpr:
@@ -5619,6 +5796,7 @@ hideKnifeSpr:
 
 ;----------------------------------------------------
 ; Pasa el cuchillo al siguiente	estado
+; 칼을 다음 상태로 넘기기
 ;----------------------------------------------------
 
 knifeNextStatus:
@@ -5634,6 +5812,12 @@ knifeNextStatus:
 ; Out:
 ;   HL = Puntero a los datos del cuchillo (variable indicada en	A)
 ;    A = Valor de la variable
+;
+; 현재 칼 데이터에 대한 포인터 가져오기
+; 입력: A = 구조 변수에 대한 오프셋
+; 출력:
+; HL = 나이프 데이터에 대한 포인터(A에 표시된 변수)
+; A = 변수 값
 ;----------------------------------------------------
 
 getKnifeData:
@@ -5650,6 +5834,19 @@ getKnifeData:
 					; 9 = Contador movimiento
 					; A = Tile backup 1 (fondo)
 					; B = Tile backup 2 (guarda dos	tiles al lanzarlo)
+
+					; 0 = 상태(1 = 땅, 2 = 잡힘, 4 = 시작?, 5= 던짐, 7 = 튕김)
+					; 1 = 방향(1 = 왼쪽, 2 = 오른쪽)
+					; 2 = 그리고
+					; 3 = X 소수 자릿수
+					; 4 = X
+					; 5 = 방
+					; 6 = 십진법 속도
+					; 7 = 나이프 속도
+					; 8 = 방 변경 속도
+					; 9 = 이동 카운터
+					; A = 타일 백업 1(백그라운드)
+					; B = 타일 백업 2(시전 시 타일 2개 저장)
 		call	ADD_A_HL
 		ld	a, (knifeEnProceso)
 		ld	b, a
@@ -5666,6 +5863,13 @@ getKnifeData:
 ;   E =	X
 ; Out:
 ;   HL = Puntero VRAM
+;
+; DE가 가리키는 이름 테이블의 주소를 계산합니다.
+; 입력:
+; D = Y
+; E = X
+; 출력:
+; HL = VRAM 포인터
 ;----------------------------------------------------
 
 coordVRAM_DE:
@@ -5684,6 +5888,7 @@ coordVRAM_DE:
 		rr	l
 		and	3
 		add	a, 38h		; Tabla	de nombre en #3800
+						; #3800의 이름표
 		ld	h, a
 		pop	af
 		ret
@@ -5691,6 +5896,7 @@ coordVRAM_DE:
 
 ;----------------------------------------------------
 ; Obtiene un puntero a los atributos del cuchillo en proceso
+; 처리 중인 칼의 속성에 대한 포인터 가져오기
 ;----------------------------------------------------
 
 getKnifeAttib:
@@ -5706,21 +5912,32 @@ getKnifeAttib:
 ; Out:
 ;   NC,	Z = No ha chocado
 ;   C =	Ha chocado
+;
+; 칼이 미라를 치는지 확인하십시오.
+; 출력:
+; NC, Z = 충돌하지 않음
+; C = 충돌
 ;----------------------------------------------------
 
 chkKnifeMomia:
 		ld	c, 0		; Primera momia	a procesar = 0
+						; 처리할 첫 번째 미라 = 0
 
 chkKnifeMomia2:
 		ld	a, c		; Momia	a procesar
+						; 처리할 미라
 		call	getMomiaDat
 
 		ld	a, (ix+ACTOR_STATUS) ; Status de la momia
+								; 미라 상태
 		cp	4		; Esta en el limbo, apareciendo	o explotando?
+					; 림보에 있습니까, 나타나거나 폭발합니까?
 		jr	c, chkKnifeMomia3
 
 		cp	7		; Esta pensando?
+					; 그는 생각하고 있습니까?
 		jr	nz, chkKnifeMomia4 ; Esta en un	estado que no hay que comprobar	la colision
+								; 충돌 확인이 필요 없는 상태입니다
 
 chkKnifeMomia3:
 		ld	a, 2		; Offset Y
@@ -5733,6 +5950,7 @@ chkKnifeMomia3:
 		ld	a, (hl)		; habitacion
 		cp	(ix+ACTOR_ROOM)
 		jr	nz, chkKnifeMomia4 ; No	estan en la misma habitacion
+								; 그들은 같은 방에 있지 않다
 
 		push	bc
 		ld	c, (ix+ACTOR_Y)	; Y momia
@@ -5747,6 +5965,7 @@ chkKnifeMomia4:
 		ld	hl, numMomias
 		ld	a, c
 		cp	(hl)		; Ha comprobado	todas las momias?
+						; 미라를 모두 확인하셨나요?
 		jp	nz, chkKnifeMomia2
 		and	a
 		ret
@@ -5757,6 +5976,7 @@ chkKnifeMomia5:
 		ld	de, 100h
 		call	SumaPuntos
 		ld	a, 8		; SFX explota momia
+						; SFX 미라 폭발
 		call	setMusic
 		pop	ix
 	ELSE
@@ -5766,10 +5986,13 @@ chkKnifeMomia5:
 		call	setMusic
 	ENDIF
 		ld	(ix+ACTOR_STATUS), 6 ; Estado: Destello
+								; 상태: 플래시
 		ld	(ix+ACTOR_CONTROL), 4 ;	Control: IZQUIERDA
+								; 컨트롤: 왼쪽
 		ld	a, (ix+ACTOR_Y)	; Y momia
 		and	0F8h
 		ld	(ix+ACTOR_Y), a	; Ajusta la Y a	multiplo de 8
+							; Y를 8의 배수로 설정
 		ld	(ix+ACTOR_TIMER), 22h ;	Timer
 		scf
 		ret
@@ -5777,6 +6000,7 @@ chkKnifeMomia5:
 
 ;----------------------------------------------------
 ; Area a comprobar el impacto del cuchillos
+; 칼날의 충격을 확인하는 영역
 ;----------------------------------------------------
 areaSizeMomia:	db 8, 18h
 		db 8, 18h
