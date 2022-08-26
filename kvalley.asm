@@ -6009,6 +6009,9 @@ areaSizeMomia:	db 8, 18h
 ;----------------------------------------------------
 ; Comprueba si el prota	coge un	cuchillo
 ; En caso de cogerlo, restaura en el mapa y en pantalla	el tile	sobre el que estaba el cuchillo
+;
+; 주인공이 칼을 집는지 확인
+; 잡으면 맵과 화면에서 칼이 있던 타일을 복원해줍니다.
 ;----------------------------------------------------
 
 chkCogeKnife:
@@ -6083,6 +6086,13 @@ chkCogeKnife4:
 ;    Z = Esta en la habitacion del prota
 ;    D = Y
 ;    E = X
+;
+; 요소의 좌표를 가져와 주인공과 같은 방에 있는지 확인
+; 입력: HL = Y, X, 방에 대한 포인터
+; 출력:
+; Z = 주인공의 방에 있습니다.
+; D = Y
+; E = X
 ;----------------------------------------------------
 
 getLocationDE:
@@ -6108,6 +6118,9 @@ getLocationDE3:
 ;----------------------------------------------------
 ; Dibuja un cuchillo
 ; In: HL = Puntero a status, sentido, Y, X, habitacion
+;
+; 칼을 뽑다
+; 입력: HL = 상태, 방향, Y, X, 방에 대한 포인터
 ;----------------------------------------------------
 
 drawTile:
@@ -6127,6 +6140,8 @@ drawTile:
 ;----------------------------------------------------
 ;
 ; Comprueba si el prota	coge una gema
+;
+; 주인공이 보석을 가져가는지 확인
 ;
 ;----------------------------------------------------
 
@@ -6175,6 +6190,10 @@ chkCogeGema3:
 ; Offset Y al centro del objeto, alto area (parte superior del prota)
 ; Para colisiones con objetos se comprueba la parte superior del prota
 ; con el centro	superior del objeto
+;
+; X 오프셋을 개체 중심, 확인할 영역 너비(너비 비례)
+; 객체의 중심에 Y 오프셋, 높이 영역(본체 상단)
+; 물체와의 충돌의 경우 주인공의 상단이 물체의 상단 중앙에 대해 확인됩니다.
 ;----------------------------------------------------
 itemHitArea:	db 5, 11h
 		db 1, 9
@@ -6182,6 +6201,8 @@ itemHitArea:	db 5, 11h
 
 ;----------------------------------------------------
 ; Comprueba si el prota	coge un	pico
+;
+; 주인공이 곡괭이를 들고 있는지 확인
 ;----------------------------------------------------
 
 chkCogePico:
@@ -6246,6 +6267,8 @@ chkLastPico:
 
 ;----------------------------------------------------
 ; Obtiene un puntero a los datos del pico en proceso
+;
+; 처리 중인 피크 데이터에 대한 포인터 가져오기
 ;----------------------------------------------------
 
 getPicoData:
@@ -6259,6 +6282,10 @@ getPicoData:
 ; Comprueba si el prota	toca a una momia
 ; La momia tiene que estar viva	y en un	estado activo
 ; Si el	prota o	la momia esta en una escalera, ambos tendran que estar en escaleras para que se	compruebe la colision
+;
+; 주인공이 미라를 만지는지 확인
+; 미라는 살아 있고 활동적인 상태여야 합니다.
+; 주인공이나 미라가 사다리 위에 있는 경우 충돌을 확인하려면 둘 다 사다리 위에 있어야 합니다.
 ;----------------------------------------------------
 
 chkTocaMomia:
@@ -6324,6 +6351,10 @@ momiaMataProta:
 ; Offset Y al centro de	la momia, alto del area	(alto prota)
 ; Para colisiones con momias se	comprueba el area total	del prota
 ; con el centro	de la momia
+;
+; X를 미라 중심으로 오프셋, 확인할 영역의 너비(너비 비례)
+; 미라 중심에 Y 오프셋, 면적 높이(프로타 높이)
+; 미라와의 충돌의 경우 미라 중심으로 주인공의 전체 면적을 확인합니다.
 ;----------------------------------------------------
 mummyHitArea:	db 5, 0Ah
 		db 8, 10h
@@ -6332,6 +6363,8 @@ mummyHitArea:	db 5, 0Ah
 ;----------------------------------------------------
 ; Comprueba si el prota	esta tocando las coordenadas
 ; del objeto DE
+;
+; 주인공이 DE 객체의 좌표를 만지고 있는지 확인하십시오.
 ;----------------------------------------------------
 
 chkAreaItem:
@@ -6368,6 +6401,24 @@ chkTocaProta:
 ; +2 = Offset Y1
 ; +3 = Alto area
 ;
+; DE 좌표가 특정 영역 내에 있는지 확인
+;
+; DE는 확인할 점의 좌표를 나타냅니다.
+; E = X 포인트
+; D = Y 포인트
+; DE에 오프셋을 적용하여 검사할 요소의 정확한 지점(예: 미라의 중심)을 나타냅니다.
+;
+; BC는 확인할 영역의 좌표를 초기화합니다.
+; B = X 영역
+; C = Y 영역
+; 영역의 크기는 HL+1 및 HL+3으로 표시됩니다.
+
+; HL:
+; +0 = 오프셋 X1
+; +1 = 면적 너비
+; +2 = 오프셋 Y1
+; +3 = 높은 지역
+;
 ;----------------------------------------------------
 
 chkArea:
@@ -6393,6 +6444,10 @@ chkArea2:
 ; Mueve	el scroll 4 posiciones dependiendo del sentido del protagonista
 ;
 ; Si ha	movido una pantalla completa o cambia el 'flagScrolling' termina.
+;
+; 주인공의 센스에 따라 스크롤을 4단 이동
+;
+; 전체 화면을 이동하거나 변경하면 'flagScrolling'이 종료됩니다.
 ;
 ;----------------------------------------------------
 
@@ -6452,6 +6507,10 @@ tickScroll5:
 ; Dibuja la habitacion actual
 ; In:
 ;  DE =	Puntero	al mapa	de la habitacion
+;
+; 현재 방 그리기
+; 입력:
+; DE = 룸 맵에 대한 포인터
 ;----------------------------------------------------
 
 drawRoom:
@@ -6485,6 +6544,10 @@ drawRoom3:
 ; Obtiene el patron/tile que corresponde al "ID" del mapa
 ; In:  A = Map ID
 ; Out: A = Tile	ID
+;
+; 지도의 "ID"에 해당하는 패턴/타일 가져오기
+; 입력: A = 지도 ID
+; 출력: A = 타일 ID
 ;
 ;----------------------------------------------------
 
@@ -6642,6 +6705,8 @@ halfMap4:	db 0, 3, 0, 1, 0, 1, 0,	1, 7, 0FFh, 0, 1, 0, 1,	0, 1, 0, 1, 0FFh, 0FFh
 ;----------------------------------------------------
 ;
 ; Mapas: Piramides 1-15
+;
+; 지도: 피라미드 1-15
 ;
 ;----------------------------------------------------
 MapStage1:	db 0, 33h, 0FFh, 0FFh, 0FFh, 48h, 78h, 24h, 2, 48h, 48h	; ...
@@ -6821,6 +6886,10 @@ MapStage14:	db 1, 12h, 21h,	33h, 0FFh, 98h,	71h, 0F1h, 38h,	0D8h, 0D8h
 ; Marca	la piramide como pasada
 ; HL = Piramides pasadas
 ; DE = Mascara de la piramide actual
+;
+; 피라미드를 과거로 표시
+; HL = 과거 피라미드
+; DE = 현재 피라미드의 마스크
 ;----------------------------------------------------
 
 setPiramidClear:
@@ -6839,6 +6908,8 @@ setPiramidClear:
 
 ;----------------------------------------------------
 ; Devuelve en DE el bit	activo que corresponde a la piramide actual
+;
+; 현재 피라미드에 해당하는 활성 비트를 DE로 반환
 ;----------------------------------------------------
 
 calcBitMask:
@@ -6880,6 +6951,10 @@ gemaDoNothing:
 ; Borra	la gema	y los brillos tanto de la pantalla como	del mapa
 ; Incrementa el	numero de gemas	cogidas
 ; Indica a los cuchillos que tienen que	actualizar el fondo sobre el que estan
+;
+; 화면과 지도 모두에서 보석과 반짝이를 제거합니다.
+; 수집한 보석의 수를 늘립니다.
+; 나이프에 배경을 업데이트해야 한다고 알려줍니다.
 ;----------------------------------------------------
 
 gemaCogida:
@@ -6925,6 +7000,9 @@ gemaCogida:
 ;----------------------------------------------------
 ; Valores iniciales del	cuchillo al lanzarse
 ; Velocidad decimal, velocidad X...
+;
+; 던질 때 칼의 초기 값
+; 소수 속도, X 속도...
 ;----------------------------------------------------
 knifeDataInicio:db    0
 		db    2			; Velocidad del	cuchillo
@@ -6940,6 +7018,12 @@ eraseData:	db 0, 0, 0
 ; Este contador	se decrementa de 3 en 3	y empieza en #15
 ; El primer valor que se usa es	#12 (tile = #43)
 ; La animacion es #43, #44, 0, #43, #44, 0, 0
+;
+; 곡괭이로 구멍을 만드는 방법을 그리는 데 사용되는 패턴
+; 인덱스를 계산하려면 이 목록에 애니메이션 카운터 값을 추가하십시오.
+; 이 카운터는 3에서 3으로 감소하고 #15에서 시작합니다.
+; 사용된 첫 번째 값은 #12(타일 = #43)입니다.
+; 애니메이션은 #43, #44, 0, #43, #44, 0, 0입니다.
 ;----------------------------------------------------
 tilesAnimCavar:	db 0
 		db 0, 0, 0
@@ -6951,6 +7035,8 @@ tilesAnimCavar:	db 0
 
 ;----------------------------------------------------
 ; Comprueba si ha procesado todas las gemas
+;
+; 모든 보석을 처리했는지 확인하십시오.
 ;----------------------------------------------------
 	IF	(VERSION2)
 
@@ -6984,6 +7070,13 @@ chkLastGema:
 ; Out:
 ;  HL =	Puntero	a la variable indicada de la gema en proceso
 ;   A =	Valor de la variable
+;
+; HL에 보석 데이터에 대한 포인터를 반환하고 A에 표시된 변수를 반환합니다.
+; 입력:
+; A = 구조 변수에 대한 오프셋
+; 출력:
+; HL = 처리 중인 보석의 표시된 변수에 대한 포인터
+; A = 변수 값
 ;----------------------------------------------------
 
 
@@ -7017,6 +7110,10 @@ getIndexX4_masB:
 ; B = Alto
 ; C = Ancho
 ;
+; DE가 가리키는 데이터를 VRAM으로 보냅니다.
+; B = 높음
+; C = 너비
+;
 ;----------------------------------------------------
 
 DEtoVRAM_NXNY:
@@ -7034,6 +7131,10 @@ DEtoVRAM_NXNY:
 ; Pone en el mapa los destellos	de una gema
 ; HL = Puntero a la posicion de	la gema	en el mapa
 ; DE = Puntero a patrones para brillos
+;
+; 보석의 반짝임을 지도에 표시
+; HL = 지도상의 보석 위치에 대한 포인터
+; DE = 하이라이트 패턴에 대한 포인터
 ;----------------------------------------------------
 
 
@@ -7062,6 +7163,16 @@ putBrillosMap:
 ; Anima	las puertas al entrar y	salir de la piramide
 ; Comprueba si se toca la palanca que abre la salida al	terminar una fase
 ; Si la	piramide ya se ha visitado, no oculta la salida
+;
+; 피라미드 입구와 출구의 논리
+;
+; 피라미드로 들어가는 문은 상태 1(#10)입니다.
+; 이전에 피라미드를 통과하지 않은 경우 나가는 문은 상태 0입니다.
+; 보석을 이미 가져간 경우 문 상태는 8(#80)입니다.
+; 보석을 모두 가져갔는지 확인
+; 피라미드에 들어가고 나갈 때 문 애니메이션
+; 페이즈 종료 시 출구를 여는 레버가 터치되었는지 확인
+; 피라미드는 이미 방문한 적이 있는 경우 출구를 숨기지 않습니다.
 ;
 ;----------------------------------------------------------------
 
@@ -7114,6 +7225,17 @@ chkNextExit:
 ; - suena la musica de "stage clear"
 ; - quita las puertas giratorias
 ; - pasa la puerta al status 1 (#10)
+;
+; 단계의 모든 보석을 가져갔는지 확인하십시오.
+;
+; 이 검사는 각 기존 도어(일반적으로 입력 및 출력)에서 수행됩니다.
+; 이 단계를 통과하면 두 문이 상태 1로 이동합니다.
+;
+; 모두 잡혔을 때:
+; - 단계가 완료된 것으로 표시됩니다.
+; - "무대 클리어" 음악 재생
+; - 회전문 제거
+; - 문을 상태 1(#10)로 전달
 ;----------------------------------------------------------------
 
 chkAllGemas:
@@ -7143,6 +7265,10 @@ doNothing3:
 ; Dibuja la puerta abierta si se esta entrando en la piramide
 ; o cerrada si acaba de	aparecer tras coger las	gemas
 ; Pasa la puerta al status 2 (#20) que comprueba si el prota toca la palanca que abre la puerta
+;
+; 피라미드에 들어가는 경우 문을 열고 보석을 가져온 직후에 나타난 경우 닫힌 문을 그립니다.
+; 문을 여는 레버에 주인공이 닿았는지 확인하는 상태 2(#20)로 문을 전달
+;
 ;----------------------------------------------------------------
 
 paintEntrada:
@@ -7170,6 +7296,9 @@ paintEntrada2:
 ; Fuerza a los cuchillos para que guarden el fondo sobre el que	estan
 ; Asi se evita que se corrompa el fondo	mientras se abre o cierra una puerta
 ; o cuando se coge una gema
+;
+; 칼이 있는 바닥을 강제로 저장합니다.
+; 이것은 문을 열거나 닫거나 보석을 집는 동안 배경이 손상되는 것을 방지합니다.
 ;----------------------------------------------------
 
 knifeUpdateBack:
@@ -7196,6 +7325,10 @@ status0Knife3:
 ; Comprueba si toca la palanca que abre	la salida
 ; El prota tiene que estar saltando y tocando la palanca con la	parte superior de su cuerpo (mano?)
 ; Al abrir la puerta esta pasa al estado 3 (#30) = Abriendo la puerta
+;
+; 출구를 여는 레버에 닿는지 확인
+; 주인공은 점프해서 상체(손?)로 레버를 터치해야 합니다.
+; 문이 열리면 상태 3(#30) = 문 열림
 ;----------------------------------------------------------------
 
 chkOpenExit:
@@ -7238,6 +7371,16 @@ chkOpenExit:
 ; Al terminar de cerrarse:
 ; - cuando se entra en la piramide pasa	al estado 7 (#70) = puede dejar	la puerta cerrada si ya	se han cogido las gemas	o quitarla si aun no esta pasada la fase
 ; - cuando se sale pasa	al estado 6 (#60) = espera a la	cortinilla negra
+;
+; 피라미드의 문을 열거나 닫습니다.
+;
+; 레버를 활성화한 후 열기가 끝나면:
+; - 상태 4로 이동 = 주인공이 피라미드에서 나올 때까지 기다립니다.
+;
+; 종료 완료 시:
+; - 피라미드에 들어갈 때 상태 7(#70)이 됩니다. = 보석을 이미 가져간 경우 문을 닫은 상태로 두거나 단계가 아직 통과하지 않은 경우 제거할 수 있습니다.
+; - 종료 시 상태 6(#60)으로 이동 = 검은색 커튼을 기다립니다.
+;
 ;----------------------------------------------------------------
 
 openCloseExit:
@@ -7309,6 +7452,14 @@ pintaSalida:
 ; La puerta/direccion por la que se entra en la	piramide es la opuesta a la que	se ha salido en	la anterior
 ; (Ej: Si se sale por la puerta	norte de una piramide, se entra	por la sur de la siguiente)
 ; Pone 4 sprites en parejas solapadas (16x32) para dibujar la parte derecha de la puerta y que el prota	pase por detras
+;
+; 문이 열리고 주인공이 피라미드에서 나올 준비가 되었습니다.
+; 내가 나가기 위해 계단을 밟을 때까지 기다려
+; 나가는 문에 따라 방향(북쪽, 남쪽, 동쪽 또는 서쪽)으로 이동합니다.
+; 피라미드로 들어가는 문/방향은 이전 피라미드에서 나온 문/방향과 반대입니다.
+; (예: 피라미드의 북쪽 문으로 나가면 다음 피라미드의 남쪽으로 들어갑니다.)
+; 4개의 스프라이트를 겹치는 쌍(16x32)으로 넣어 문의 오른쪽 부분을 그리고 주인공이 뒤에 지나가도록 그립니다.
+;
 ;----------------------------------------------------------------
 
 chkSalePiram:
@@ -7396,6 +7547,9 @@ setSprPuerta2:
 ; Al entrar en una piramide nueva, quita la puerta
 ; Si ya	ha estado la deja para poder salir
 ;
+; 새로운 피라미드에 들어갈 때 문을 제거하십시오
+; 그가 이미 있었다면 떠날 수 있도록 떠난다.
+;
 ;----------------------------------------------------
 
 finAnimEntrar:
@@ -7416,6 +7570,7 @@ borraSalida:
 
 ;----------------------------------------------------
 ; Obtiene un puntero a la estructura de	la salida que se esta procesando
+; 처리 중인 출력의 구조에 대한 포인터를 가져옵니다.
 ;----------------------------------------------------
 
 getExitDat:
@@ -7437,6 +7592,10 @@ chkLastExit:
 ; Dibuja una puerta de salida/entrada
 ; In:
 ;  DE =	Tiles que forman la puerta
+;
+; 출구/입구 문 그리기
+; 입력:
+; DE = 문을 형성하는 타일
 ;----------------------------------------------------
 
 drawPuerta:
@@ -7504,6 +7663,11 @@ drawPuerta4:
 ; Out:
 ;  D = Y
 ;  E = X
+;
+; 출구가 현재 방에 있는지 확인하고 좌표를 가져옵니다.
+; 출력:
+; D = Y
+; E = X
 ;----------------------------------------------------
 
 chkSameScreenS:
@@ -7517,6 +7681,8 @@ chkSameScreenS:
 ;----------------------------------------------------
 ; Devuelve en DE un puntero a los patrones que forman
 ; el framde la puerta indicado en A
+;
+; A에 표시된 문의 프레임을 형성하는 패턴에 대한 포인터를 DE로 반환합니다.
 ;----------------------------------------------------
 
 getAnimExit:
@@ -7532,12 +7698,19 @@ getAnimExit:
 ; Offset Y palanca, alto del prota a comprobar
 ;
 ; Solo comprueba la parte de arriba del	prota. Asi parece que le da con	la mano	al saltar
+;
+; 오프셋 X 좌표 레버, 확인할 프로타 너비
+; 오프셋 Y 레버, 확인할 전면 높이
+;
+; 메인 캐릭터의 상단을 확인하십시오. 그래서 점프할 때 손으로 때리는 것 같다.
 ;----------------------------------------------------
 palancaArea:	db 8, 10h
 		db 3, 5
 
 ;----------------------------------------------------
 ; Punto	que se comprueba para saber si se ha salido de la piramide
+;
+; 피라미드를 떠났는지 확인하는 포인트
 ;----------------------------------------------------
 salidaArea:	db 1, 2
 		db 4, 6
@@ -7566,6 +7739,13 @@ animExitOpen:	db  78h, 60h, 66h, 67h,	61h
 ; El muro baja de 4 en 4 pixeles por lo	que pinta ladrillos completos o	solo la	parte de arriba	dependiendo de su posicion
 ; Si choca contra un objeto, se	detiene	hasta que puede	continuar
 ; Si choca contra un muro, se da por terminada la trampa
+;
+; 함정 벽 논리
+; 함정이 활성화되지 않았을 때, 주인공이 함정을 활성화하기 위해 자신의 위치를 ​​통과하는지 확인합니다.
+; 활성화되면 벽이 닫히기 시작하는 천장이 검색됩니다.
+; 벽은 4x4픽셀 아래로 내려가므로 위치에 따라 전체 벽돌 또는 상단 부분만 페인트합니다.
+; 물체에 부딪히면 계속할 수 있을 때까지 멈춥니다.
+; 벽에 부딪히면 함정이 끝난다.
 ;----------------------------------------------------
 
 MurosTrampa:
@@ -7642,6 +7822,10 @@ trampaMataProta:
 ; Comprueba si el muro choca contra una	plataforma o contra un objeto
 ; Si choca contra un objeto se detiene hasta que este desaparece
 ; Si choca contra una plataforma, se da	por terminada la trampa
+;
+; 벽이 플랫폼이나 물체에 부딪히는지 확인하십시오.
+; 물체에 부딪히면 사라질 때까지 멈춥니다.
+; 플랫폼에 닿으면 트랩이 종료됩니다.
 ;----------------------------------------------------
 
 trampaChoca:
@@ -7668,6 +7852,9 @@ trampaChoca:
 ;----------------------------------------------------
 ; Si el	muro choca contra el limite inferior de	la pantalla pinta el tile de ladrillo "limite inferior"
 ; Si choa contra una plataforma	o muro,	pinta el tile de ladrillo normal
+;
+; 벽이 화면의 하단 가장자리에 닿으면 "하단 가장자리" 벽돌 타일을 칠합니다.
+; 플랫폼이나 벽에 부딪히면 일반 벽돌 타일을 칠합니다.
 ;----------------------------------------------------
 
 trampaLimite:
@@ -7704,6 +7891,11 @@ drawTrampa:
 ; En ese momento se hace una busqueda vertical desde esa posicion
 ; hasta	que se encuentra un muro o el limite superior de la pantalla
 ; Ese punto es el que se toma como inicio del muro que se cierra
+;
+; 주인공이 함정벽을 발동하는지 확인
+; 주인공이 함정의 위치를 ​​지날 때 발동
+; 그 순간 그 위치에서 벽이나 화면의 상한선을 찾을 때까지 수직 탐색을 한다.
+; 그 점은 닫히는 벽의 시작점으로 간주되는 점입니다.
 ;----------------------------------------------------
 
 chkActivaTrampa:
@@ -7784,6 +7976,8 @@ trampaOrigen2:
 
 ;----------------------------------------------------
 ; Obtiene un puntero a los datos del muro trampa en proceso
+;
+; 처리 중인 트랩 월 데이터에 대한 포인터 가져오기
 ;----------------------------------------------------
 
 getMuroDat:
@@ -7810,6 +8004,12 @@ chkLastMuro:
 ;   BC = Offset	XY a la	cabeza del prota
 ; Out:
 ;   Carry = Es aplastado
+;
+; 주인공이 함정 벽에 짓눌렸는지 확인
+; 입력:
+; BC = 주인공의 머리에 XY 오프셋
+; 출력:
+; Carry = 찌그러졌다
 ;----------------------------------------------------
 
 chkAplastaMuro:
@@ -7830,6 +8030,10 @@ chkAplastaMuro:
 ; Esta variable	tiene un valor inicial y se decrementa en 3 a cada
 ; golpe	del pico. Sus valores son #12, #0F, #0C, #09, #06, #03
 ; y los	tiles de la animacion son #44 (semiroto), #43 (roto), #00 (vacio), #44,	#43, #00
+;
+; RAM 맵에서 깨진 벽돌을 자르고 삭제할 때 벽돌이 어떻게 부서지는지 애니메이션을 그립니다. 물릴 것이 플랫폼인지 확인하십시오.
+; 애니메이션을 제어하려면 "holeCnt"를 사용하십시오.
+; 이 변수는 초기 값을 가지며 각 피크 히트에서 3씩 감소합니다. 값은 #12, #0F, #0C, #09, #06, #03이고 애니메이션 타일은 #44(반썩음), #43(깨짐), #00(빈), #44, #43 , #00
 ;----------------------------------------------------
 
 drawAgujero:
@@ -7911,6 +8115,10 @@ endAgujero:
 ; Puertas giratorias
 ; Si estan en movimiento la anima (5 frames)
 ; Dependiendo del sentido de giro hara la animacion hacia un lado o el otro
+;
+; 회전문
+; 움직이는 경우 애니메이션을 적용합니다(5개 프레임).
+; 회전 방향에 따라 애니메이션을 한쪽으로 또는 다른 쪽으로 만듭니다.
 ;----------------------------------------------------
 
 spiningDoors:
@@ -7986,6 +8194,8 @@ spiningDoorEnd:
 
 ;----------------------------------------------------
 ; Pone un apuerta giratoria en el mapa
+;
+; 지도에 회전문을 놓으십시오.
 ;----------------------------------------------------
 
 putGiratMap:
@@ -8027,6 +8237,8 @@ putGiratMap3:
 
 ;----------------------------------------------------
 ; Comprueba cual es la puerta que esta empujando el prota
+;
+; 주인공이 어떤 문을 밀고 있는지 확인
 ;----------------------------------------------------
 
 chkGiratorias:
@@ -8087,6 +8299,10 @@ chkLastGirat:
 ; Obtiene en HL	el puntero a los datos de la puerta giratoria en proceso
 ; Out:
 ;   A =	Estado
+;
+; 진행 중인 회전문의 데이터에 대한 포인터를 HL에 가져옵니다.
+; 출력:
+; A = 상태
 ;----------------------------------------------------
 
 
@@ -8115,6 +8331,9 @@ getHL_Ax7:
 ;
 ; Quita	las puertas giratorias del mapa
 ; Si estan en la misma habitacion que el prota las borra de la pantalla
+;
+; 지도에서 회전문 제거
+; 주인공과 같은 방에 있다면 화면에서 삭제
 ;
 ;----------------------------------------------------
 
@@ -8171,6 +8390,13 @@ quitaGiratoria3:
 ;   L =	Y
 ; Out:
 ;  HL =	Direccion VRAM de la tabla de nombres
+;
+; HL이 가리키는 이름 테이블의 주소 계산
+; 입력:
+; H = X
+; L = 예
+; 출력:
+; HL = VRAM 이름 테이블 주소
 ;----------------------------------------------------
 
 coordVRAM_HL:
@@ -8188,6 +8414,10 @@ coordVRAM_HL:
 ; Patrones usados para pintar una puerta giratoria en movimiento
 ; Tiene	5 posiciones posibles y	una altura maxima de 32	pixeles	(4 patrones)
 ; El ancho es de 16 pixeles (2 patrones)
+;
+; 움직이는 회전문을 그리는 데 사용되는 패턴
+; 5개의 가능한 위치와 최대 32픽셀(4개 패턴)의 높이가 있습니다.
+; 너비는 16픽셀(2 패턴)입니다.
 ;----------------------------------------------------
 tilesGiroDoor:	db 68h,	69h, 68h, 69h, 68h, 69h, 68h, 69h
 		db 6Ah,	6Bh, 6Ah, 6Bh, 6Ah, 6Bh, 6Ah, 6Bh ; Azul/Blanco	girado ->
@@ -8201,6 +8431,9 @@ tilesGiroDoor:	db 68h,	69h, 68h, 69h, 68h, 69h, 68h, 69h
 ; Descomprime la piramide actual y sus elementos:
 ; Plataformas, salidas,	momias, gemas, cuchillos,
 ; picos, puertas giratorias, muros trampa y escaleras
+;
+; 현재 피라미드와 해당 요소의 압축을 풉니다.
+; 플랫폼, 출구, 미라, 보석, 칼, 곡괭이, 회전문, 함정 벽 및 계단
 ;
 ;----------------------------------------------------
 
@@ -8268,6 +8501,9 @@ unpackMap:
 ; 22 filas x 16	columnas (media	pantalla)
 ; Cada bit indica si hay ladrillo o esta vacio
 ;
+; 맵 청크 22행 x 16열 압축 풀기(절반 화면)
+; 각 비트는 벽돌이 있는지 또는 비어 있는지 여부를 나타냅니다.
+;
 		ld	b, 16h		; Numero de filas por pantalla (22)
 
 unpackMap2:
@@ -8318,6 +8554,12 @@ unpackMap5:
 ; La puerta por	la que se entra	a la piramide la pone a	status #10 (1)
 ; Si ya	se han cogido las gemas	de esta	piramide mantiene las puertas visibles y cerradas (status #80)
 ; Si no	se han cogido, deja la puerta en status	0 (comprobando si se cogen todas las gemas)
+;
+; 피라미드의 출구 문을 확인하십시오
+; Y(첫 번째 바이트)가 #FF이면 출력이 존재하지 않습니다.
+; 피라미드에 들어가는 문은 상태 #10(1)입니다.
+; 이 피라미드의 보석을 이미 가져간 경우에는 문이 계속 표시되고 닫힙니다(상태 #80).
+; 가져가지 않았다면 문을 상태 0으로 둡니다(모든 보석을 가져갔는지 확인)
 ;----------------------------------------------------
 
 getDoors:
@@ -8390,6 +8632,8 @@ chkLastDoor:
 
 ;----------------------------------------------------
 ;Actualiza momias de la	piramide
+;
+; 피라미드 미라 업데이트
 ;----------------------------------------------------
 		exx
 		ld	a, (hl)
@@ -8406,6 +8650,8 @@ chkLastDoor:
 
 ;----------------------------------------------------
 ; Actualiza gemas
+;
+; 보석 업데이트
 ;----------------------------------------------------
 		ld	de, gemasTotales
 		ld	a, (hl)		; Numero de gemas de la	piramide
@@ -8480,6 +8726,8 @@ chkLastGema_:
 
 ;----------------------------------------------------
 ; Actualiza cuchillos
+;
+; 칼 업데이트
 ;----------------------------------------------------
 		ld	de, numKnifes
 		ld	a, (hl)		; Numero de cuchillos
@@ -8503,6 +8751,8 @@ setKnifeCoords:
 
 ;----------------------------------------------------
 ; Actualiza picos
+;
+; 곡괭이 업데이트
 ;----------------------------------------------------
 
 getPicos:
@@ -8546,6 +8796,8 @@ getPicos3:
 
 ;----------------------------------------------------
 ; Actualiza puertas giratorias
+;
+; 회전문 업데이트
 ;----------------------------------------------------
 
 getGiratorias:
@@ -8612,6 +8864,8 @@ getGiratorias3:
 
 ;----------------------------------------------------
 ; Actualiza muros trampa
+;
+; 트랩 벽 업데이트
 ;----------------------------------------------------
 
 getMuroTrampa:
@@ -8633,6 +8887,8 @@ getMuroTrampa2:
 
 ;----------------------------------------------------
 ; Procesa escaleras
+;
+; 계단 처리
 ;----------------------------------------------------
 
 getStairs:
@@ -8721,6 +8977,7 @@ putPeldanoMap2:
 ;
 ; Pinta	la pantalla, los sprites, cuchillos y coloca las momias
 ;
+; 화면, 스프라이트, 칼을 칠하고 미라를 배치하세요.
 ;----------------------------------------------------
 
 setupRoom:
@@ -8759,6 +9016,13 @@ initMomias:
 ; Pone el estado 4 que es el de	aparecer
 ; Fija su velocidad y color dependiendo	del tipo de momia
 ; El tipo de momia se ve incrementado por el numero de veces que se ha terminado el juego
+;
+; 진행 중인 미라 초기화
+;
+; 미라에서 구조로 데이터 전달
+; 그것은 나타날 상태 4를 넣습니다.
+; 미라의 종류에 따라 속도와 색상을 설정합니다.
+; 미라 유형은 게임이 끝난 횟수만큼 증가합니다.
 ;----------------------------------------------------
 
 initMomia:
@@ -8837,6 +9101,10 @@ initMomia2:
 ; Tipos	de momia
 ; Nibble bajo =	Color
 ; Nibble alto =	Velocidad
+;
+; 미라 유형
+; 낮은 니블 = 색상
+; 높은 니블 = 속도
 ;----------------------------------------------------
 tiposMomia:	db 5Fh
 		db 59h
@@ -8850,6 +9118,12 @@ tiposMomia:	db 5Fh
 ; In: HL = Index pointer
 ;      A = Index
 ; Out: HL = (HL	+ A)
+;
+; 인덱스 HL, A 가져오기
+;
+; 입력: HL = 인덱스 포인터
+;       A = 인덱스
+; 출력: HL = (HL + A)
 ;----------------------------------------------------
 
 getIndexHL_A:
@@ -8865,6 +9139,10 @@ getIndexHL_A:
 ; Comprueba si la piramide actual ya ha	sido terminada
 ; Out: NZ = Pasada
 ;	Z = No pasada
+;
+; 현재 피라미드가 이미 완료되었는지 확인하십시오.
+; 출력: NZ = 통과
+;   Z = 통과되지 않음
 ;----------------------------------------------------
 
 chkPiramPasada:
@@ -8885,6 +9163,10 @@ chkPiramPasada:
 ; Transfiere coordenadas desde HL a DE (Y, X)
 ; In:
 ;   HL = Y, X (XXXXXxxP) X = Coordenada	X, P = Pantalla
+;
+; HL에서 DE(Y, X)로 좌표 전송
+; 입력:
+;   HL = Y, X(XXXXXxxP) X = X 좌표, P = 화면
 ;----------------------------------------------------
 
 transfCoords:
@@ -8906,6 +9188,8 @@ transfCoords:
 
 ;----------------------------------------------------
 ; Mapas	de las piramides
+;
+; 피라미드 지도
 ;----------------------------------------------------
 indexPiramides:	dw MapStage1
 		dw MapStage2
@@ -8931,6 +9215,7 @@ indexHalfMap:	dw halfMap1
 
 ;----------------------------------------------------
 ; Patrones que forman el destello de las gemas
+; 보석의 반짝임을 구성하는 패턴
 ;----------------------------------------------------
 brillosGema:	db 40h			; Superior
 		db 41h			; Izquierda
@@ -8940,6 +9225,7 @@ brillosGema:	db 40h			; Superior
 
 ;----------------------------------------------------
 ; Borra	el mapa	de la RAM
+; RAM에서 맵 지우기
 ;----------------------------------------------------
 
 BorraMapaRAM:
@@ -8953,6 +9239,8 @@ BorraMapaRAM:
 ;----------------------------------------------------
 ;
 ; Cambia el color de los ladrillos cada	4 fases
+;
+; 4단계마다 벽돌 색상 변경
 ;
 ;----------------------------------------------------
 
@@ -8984,6 +9272,9 @@ ChgStoneColor2:
 ;----------------------------------------------------
 ; Colores de los ladrillos
 ; Formato: numero de filas, color
+;
+; 벽돌색
+; 형식: 행 수, 색상
 ;----------------------------------------------------
 ColoresPiedra:	db    2,0A0h,	2, 60h,	  2,0A0h,   2, 60h,   0
 		db    2, 40h,	2, 70h,	  2, 40h,   2, 70h,   0
@@ -8996,6 +9287,10 @@ ColoresPiedra:	db    2,0A0h,	2, 60h,	  2,0A0h,   2, 60h,   0
 ; Logica del prota en las escaleras cuando entra o sale	de la piramide
 ; Comprueba si las sube	o las baja y actualiza las coordenadas del prota
 ; Si sale, comprueba si	hay que	dar un bonus
+;
+; 피라미드에 들어가거나 나올 때 계단에 있는 주인공의 논리
+; 업로드 또는 다운로드가 되는지 확인하고 주인공의 좌표를 업데이트 합니다.
+; 나오면 보너스를 줘야하는지 확인
 ;
 ;----------------------------------------------------
 
@@ -9071,6 +9366,8 @@ finEntraSale:
 ;----------------------------------------------------
 ; El prota ha llegado al final de las escaleras
 ; al entrar o al salir de la piramide
+;
+; 피라미드에 들어가거나 나올 때 주인공이 계단의 바닥에 도달했습니다.
 ;----------------------------------------------------
 
 quietoFinEsc:
@@ -9097,6 +9394,9 @@ quietoFinEsc:
 ;----------------------------------------------------
 ; Ya esta dentro de la piramide	y la puerta se ha cerrado.
 ; Pasa al siguiente substado que inicia	la fase
+;
+; 그것은 이미 피라미드 안에 있고 문이 닫혀 있습니다.
+; 단계를 시작하는 다음 하위 상태로 이동
 ;----------------------------------------------------
 
 estaDentro:
@@ -9110,6 +9410,9 @@ estaDentro:
 ;
 ; Comprueba si hay que dar un bonus por	pasarse	la piramide
 ; Si ya	se ha pasado no	hay bonus
+;
+; 피라미드 통과에 대한 보너스가 있는지 확인하십시오.
+; 이미 통과한 경우에는 보너스가 없습니다.
 ;
 ;----------------------------------------------------
 
@@ -9141,6 +9444,9 @@ chkBonusStage2:
 ;----------------------------------------------------
 ; Vida extra
 ; Suma una vida	y reproduce un SFX para	indicarlo
+;
+; 보너스 라이프
+; 생명을 추가하고 SFX를 재생하여 표시
 ;----------------------------------------------------
 
 VidaExtra:
@@ -9154,6 +9460,7 @@ VidaExtra:
 ;----------------------------------------------------
 ; Ha salido de la piramide
 ;
+; 피라미드에서 나왔다
 ;----------------------------------------------------
 
 haSalido:
@@ -9179,6 +9486,12 @@ haSalido:
 ; Cambia el estado de la puerta	a "cerrandose"
 ; Coloca los sprites que forman	la hoja	derecha	de la puerta que solapa	al prota
 ; Cuatro sprites en total (dos parejas solapadas)
+;
+; 주인공의 스프라이트와 출입문 초기화
+; 계단 우측 상단에 주인공을 배치하고 의복과 피부색을 표시
+; 문 상태를 "닫힘"으로 변경
+; 주인공과 겹치는 문의 오른쪽 잎사귀를 형성하는 스프라이트를 배치
+; 총 4개의 스프라이트(겹치는 두 쌍)
 ;----------------------------------------------------
 
 setSprDoorProta:
@@ -9295,6 +9608,14 @@ initDoorProta5:
 ; Velocidad X habitacion,
 ; Contador movimiento,
 ; Frame
+;
+; 단계 시작 시 다음 변수의 초기 값
+;
+; 십진수 X 속도,
+; 정수 X 속도,
+; 스피드엑스룸,
+; 이동 카운터,
+; 액자
 ;----------------------------------------------------
 protaDataDoor:	db 0C8h, 0, 0, 1, 1
 
@@ -9302,6 +9623,8 @@ protaDataDoor:	db 0C8h, 0, 0, 1, 1
 ;----------------------------------------------------
 ; Attributos de	la puerta de entrada
 ; x, y,	sprite,	color
+;
+; 게이트웨이 속성 x, y, 스프라이트, 색상
 ;----------------------------------------------------
 attribDoor:	db 0E0h,0B0h,0D8h,   1	; Dibujo ladrillos
 		db 0E0h,0B0h,0DCh,   3	; Relleno ladrillos
@@ -9315,6 +9638,11 @@ attribDoor:	db 0E0h,0B0h,0D8h,   1	; Dibujo ladrillos
 ; Dependiendo del tipo de momia, estas dudan mas o menos al tomar una decision
 ; y van	mas rapidas o lentas por las escaleras.
 ; Itentan acercarse al prota y se aseguran de no aparecer por sorpresa por un lado de la pantalla cuando el prota esta cerca del borde
+;
+; AI 미라
+; 미라의 지능
+; 미라의 종류에 따라 결정을 내릴 때 다소 주저하고 계단을 더 빨리 또는 느리게 내려갑니다.
+; 그들은 주인공에게 더 가까이 다가가려고 노력하고 주인공이 가장자리에 가까울 때 화면 측면으로 몰래 들어오지 않도록 합니다.
 ;----------------------------------------------------
 
 AI_Momias:
@@ -9361,6 +9689,13 @@ nextMomia:
 ; Cada vez que consigue	andar un rato sin chocarse, el nivel de	stress disminuye.
 ; Cuando se estresa mucho, la momia acaba explotando.
 ; De esta forma	se evita que se	quede trabada en un agujero o en una ruta sin salida
+;
+; 미라 산책
+; 미라의 타이머가 0이면 생각상태로 들어가 몇 번을 망설일지 설정하고 결정한다.
+; 미라가 벽에 부딪히면 스트레스 수준이 높아집니다.
+; 그가 잠시 동안 충돌하지 않고 걸을 때마다 스트레스 수준이 감소합니다.
+; 너무 스트레스를 받으면 미라가 폭발합니다.
+; 이렇게 하면 구멍이나 막다른 길에 끼는 것을 방지할 수 있습니다.
 ;----------------------------------------------------
 
 momiaAnda:
@@ -9451,6 +9786,7 @@ momiaDecStress:
 
 ;----------------------------------------------------
 ; Actualiza la posicion	y frame	de la momia
+; 미라의 위치와 프레임 업데이트
 ;----------------------------------------------------
 
 momiaUpdate:
@@ -9465,6 +9801,9 @@ momiaUpdate:
 ;----------------------------------------------------
 ; Tras chocar contra un	muro la	momia salta o se da la vuelta
 ; Si es	la mas tonta y se queda	entre dos muro se para a pensar
+;
+; 벽에 부딪힌 후 미라가 점프하거나 돌아갑니다.
+; 그녀가 가장 멍청하고 두 벽 사이에 있으면 생각을 멈춘다.
 ;----------------------------------------------------
 
 momiaHaChocado:
@@ -9490,6 +9829,7 @@ momiaHaChocado:
 
 ;----------------------------------------------------
 ; La momia salta si puede. Si no, se da	la vuelta
+; 미라는 그가 할 수 있으면 점프합니다. 그렇지 않으면 뒤집어진다.
 ;----------------------------------------------------
 
 saltaOVuelve:
@@ -9508,6 +9848,7 @@ daLaVuelta:
 
 ;----------------------------------------------------
 ; Incrementa el	contador de movimientos	y actualiza el numero de frame
+; 이동 카운터를 늘리고 프레임 수를 업데이트합니다.
 ;----------------------------------------------------
 
 momiaCalcFrame:
@@ -9520,6 +9861,10 @@ momiaCalcFrame:
 ; Guarda el sentido de las escaleras dentro de la estructura de	la momia
 ; In:
 ;   C =	tile mapa (escaleras)
+;
+; 미라 구조물 내부의 계단 감각을 살리다
+; 입력:
+;   C = 타일 맵(계단)
 ;----------------------------------------------------
 
 setSentEsc:
@@ -9547,6 +9892,8 @@ setSentEsc3:
 ;----------------------------------------------------
 ; Numero de veces que duda (mira a los lados) cada momia
 ; cuando esta decidiendo el siguiente movimiento
+;
+; 다음 행동을 결정할 때 각 미라가 주저하는 횟수(옆을 쳐다본다)
 ;----------------------------------------------------
 vecesDudaMomia:	db    3
 		db    3
@@ -9558,6 +9905,9 @@ vecesDudaMomia:	db    3
 ;----------------------------------------------------
 ; Actualiza los	atributos RAM de una momia
 ; Su posicion y	frame. La oculta si esta en otra habitacion
+;
+; 미라의 RAM 속성 업그레이드
+; 당신의 위치와 프레임. 다른 방에 있으면 숨김
 ;----------------------------------------------------
 
 updateMomiaAtr:
@@ -9624,6 +9974,9 @@ framesMomia:	db 2Ch			; Pie atras
 ;----------------------------------------------------
 ; Intenta saltar
 ; Salta	si no esta muy arriba y	no hay obstaculos
+;
+; 점프를 시도
+; 높이가 높지 않고 장애물이 없으면 점프
 ;----------------------------------------------------
 
 tryToJump:
@@ -9638,6 +9991,9 @@ tryToJump:
 ;----------------------------------------------------
 ; Pone estado de salto
 ; Guarda puntero a los valores de desplazamientos Y del	salto
+;
+; 점프 상태 설정
+; 점프의 Y 오프셋 값에 대한 포인터 저장
 ;----------------------------------------------------
 
 momiaSetSalta:
@@ -9667,6 +10023,9 @@ Salta:
 ; Actualiza las	coordenadas de la momia	y comprueba si choca
 ; contra algo para quitar el estado de salto y
 ; poner	el de andar o caida.
+;
+; 점프 미라
+; 미라의 좌표를 업데이트하고 점프 상태를 제거하고 걷거나 넘어지는 것으로 돌아가기 위해 무언가와 충돌하는지 확인하십시오.
 ;----------------------------------------------------
 
 momiaSaltando:
@@ -9700,6 +10059,11 @@ momiaSaltando:
 ; Out:
 ;   Z =	Pasa a otra habitacion
 ;  NZ =	No pasa
+;
+; 요소가 화면의 한계에 도달하고 방에서 통과하는지 확인
+; 출력:
+;   Z = 다른 방으로 이동
+;  NZ = 실패
 ;----------------------------------------------------
 
 chkPasaRoom:
@@ -9729,6 +10093,8 @@ chkPasaRoom2:
 ;----------------------------------------------------
 ; Cuando la momia llega	al borde de una	plataforma
 ; puede	saltar o dejarse caer
+;
+; 미라는 플랫폼 가장자리에 도달하면 점프하거나 떨어질 수 있습니다.
 ;----------------------------------------------------
 
 momiaSinSuelo:
@@ -9756,6 +10122,9 @@ momiaSinSuelo:
 ;----------------------------------------------------
 ; Procesa la caida de la momia y comprueba si llega al suelo
 ; Al llegar al suelo pone el estado de andar
+;
+; 미라의 낙하를 처리하고 지면에 닿는지 확인
+; 지면에 닿으면 걷는 상태로 설정
 ;----------------------------------------------------
 
 
@@ -9806,6 +10175,9 @@ setMomiaStatus:
 ; Frames que los tipos de momia	se paran en cada paso
 ; que dan por las escaleras
 ; 0 = Muy rapido, 3 = lento
+;
+; 미이라가 계단을 올라갈 때마다 멈추는 프레임
+; 0 = 매우 빠름, 3 = 느림
 ;----------------------------------------------------
 pausaEscalera:	db    3
 		db    0
@@ -9817,6 +10189,10 @@ pausaEscalera:	db    3
 ; Estado por defecto de	la momia al empezar una	partida
 ; Espera un tiempo antes de aparecer
 ; El timer vale	#10 para que no	aparezca nada mas empezar
+;
+; 게임 시작 시 미라의 기본 상태
+; 잠시만 기다려주세요
+; 타이머는 시작하자마자 나타나지 않도록 #10의 가치가 있습니다.
 ;----------------------------------------------------
 
 momiaLimbo:
@@ -9840,6 +10216,11 @@ momiaLimbo:
 ; Decrementa el	tiempo de aparicion. Al	llegar al final	pasa al	estado 0
 ; Si faltan menos de 8 iteraciones muestra la momia con	las piernas abiertas mirando a la izquierda
 ; Cada 32 frames anima la nube que indica que va a aparecer una	momia
+;
+; 미라가 출현하는 과정
+; 스폰 시간을 줄입니다. 끝에 도달하면 상태 0이 됩니다.
+; 8회 미만의 반복이 누락된 경우 왼쪽을 향한 다리를 벌린 미라를 표시합니다.
+; 32개의 프레임마다 미라가 나타날 것임을 나타내는 구름에 애니메이션 효과를 줍니다.
 ;----------------------------------------------------
 
 momiaAparece:
@@ -9895,6 +10276,10 @@ mataMomia:
 ; Manda	una momia al limbo.
 ; Quita	su sprite de la	pantalla.
 ; Tras explotar	una momia se va	al limbo un rato
+;
+; 미라를 림보로 보냅니다.
+; 화면에서 스프라이트를 제거합니다.
+; 미라를 폭발시킨 후 잠시 림보 상태가 됩니다.
 ;----------------------------------------------------
 
 quitaMomia:
@@ -9908,6 +10293,9 @@ quitaMomia:
 ;----------------------------------------------------
 ; Obtiene un puntero a los atributos RAM de la momia en	proceso
 ; HL = Puntero
+;
+; 처리 중인 미라의 RAM 속성에 대한 포인터를 가져옵니다.
+; HL = 포인터
 ;----------------------------------------------------
 
 getMomiaAtrib:
@@ -9926,6 +10314,10 @@ getYMomia:
 ; Devuelve el valor A de la estructura de la momia actual
 ; In: A	= Valor	a leer
 ; Out: A = Valor leido
+;
+; 현재 미라 구조의 값 A를 반환합니다.
+; 입력: A = 읽을 값
+; 출력: A = 읽은 값
 ;----------------------------------------------------
 
 getVariableMomia:
@@ -9940,6 +10332,11 @@ getVariableMomia:
 ; Mira a los lados tantas veces	como vale TIMER
 ; In:
 ;    IX	= Datos	momia
+;
+; 미라는 무엇을 해야하는지 생각합니다.
+; TIMER 가치만큼 옆을 봐
+; 입력:
+; IX = 미라 데이터
 ;----------------------------------------------------
 
 momiaPiensa:
@@ -10023,6 +10420,9 @@ quitaACTOR_:
 ; habitacion contigua, y el prota esta en el lateral adyacente
 ; se cambia el sentido de la momia para	que no aparezca	'por sorpresa'
 ; y sin	tiempo a reaccionar para poder esquivarla
+;
+; 주인공이 가까이 있을 때 옆에서 미라가 나타나는 것을 방지
+; 옆방 옆에 미라가 있고 옆방에 주인공이 있을 경우 미라의 방향을 바꿔서 '놀라게' 나타나지 않게 하고 반응할 시간 없이 회피 가능
 ;----------------------------------------------------
 
 evitaSorpresa:
@@ -10092,6 +10492,9 @@ evitaSorpresa6:
 ;----------------------------------------------------
 ; La momia toma	una decision
 ; Busca	al prota y se mueve hacia el
+;
+; 미라는 결정을 내린다
+; 주인공을 찾아 그에게로 이동
 ;----------------------------------------------------
 
 momiaDecide:
@@ -10192,6 +10595,12 @@ setOrdenSubir:
 ;   0 =	Estan casi a la	misma altura
 ;   1 =	La momia esta por encima
 ;   2 =	La momia esta por debajo
+;
+; 주인공에 대한 미라의 상대적 위치 계산
+; 출력: A와 B
+;   0 = 거의 같은 높이에 있습니다.
+;   1 = 미라가 위에 있음
+;   2 = 미라가 아래에 있습니다.
 ;----------------------------------------------------
 
 buscaProta:
@@ -10232,6 +10641,9 @@ buscaProta3:
 ; Busca	en las cercanias de la momia para ver si hay
 ; escaleras que	suben, bajan o un muro
 ; Dependiendo de lo que	encuentre guardara las ordenes de subir	o bajar
+;
+; 올라가는 계단, 내려가는 계단, 벽이 있는지 확인하기 위해 미라 주변을 검색합니다.
+; 찾은 항목에 따라 올라가거나 내려가는 명령을 저장합니다.
 ;----------------------------------------------------
 
 buscaCercanias:
@@ -10356,6 +10768,11 @@ guardaOrden:
 ; Out:
 ; IX = Datos momia
 ; (pMomiaData) = Puntero datos momia
+;
+; 처리 중인 미라로부터 데이터 획득
+; 출력:
+; IX = 미라 데이터
+; (pMomiaData) = 미라 데이터 포인터
 ;----------------------------------------------------
 
 getMomiaProcDat:
@@ -10390,6 +10807,13 @@ getMomiaDat:
 ; Out:
 ;  A,D = Coordenada X
 ;  E = Decimales X
+;
+; 속도 X에 따라 요소의 좌표를 업데이트합니다.
+; 입력:
+;  DE = 속도. D = 정수 부분, E = 소수 부분
+; 출력:
+;  A,D = X 좌표
+;  E = 소수 X
 ;----------------------------------------------------
 
 
@@ -10445,6 +10869,12 @@ mueveElemento2:
 ; (y si	el techo es mazizo?)
 ; Out:
 ;   NC = No puede saltar
+;
+; 점프가 수직 인 경우에만 요소 위에 천장이 있는지 확인하여 점프를 수행 할 수 있는지 확인합니다.
+; 스크롤하는 경우 앞에 벽이 있는지 확인하십시오.
+; (그리고 지붕이 단단한 경우?)
+; 출력:
+;   NC = 점프할 수 없음
 ;----------------------------------------------------
 
 chkSaltar:
@@ -10459,6 +10889,9 @@ chkSaltar:
 ;---------------------------------------
 ; El salto es con desplazamiento lateral
 ; Comprueba si tiene un	muro delante
+;
+; 점프는 측면 이동입니다
+; 앞에 벽이 있는지 확인
 ;---------------------------------------
 		call	chkChocaTecho
 		ret	nc		; Ha chocado
@@ -10501,6 +10934,9 @@ chkTechoMazizo:
 ;----------------------------------------------------
 ; Comprueba si choca mientras salta
 ; Out: Carry = No choca
+;
+; 점프 중 충돌 여부 확인
+; 출력: 캐리 = 충돌하지 않음
 ;----------------------------------------------------
 
 chkChocaTecho:
@@ -10530,6 +10966,10 @@ chkTocaY_8:
 ; sube o mientras cae
 ; Out:
 ;   Z =	Ha chocado con algo al saltar. Termina el salto
+;
+; 점프 중, 상승 중 또는 낙하 중 무언가에 부딪히는지 확인하십시오.
+; 출력:
+;   Z = 점프하는 동안 무언가와 충돌했습니다. 점프를 끝내다
 ;----------------------------------------------------
 
 chkChocaSalto:
@@ -10549,6 +10989,7 @@ chkChocaSalto1:
 
 ;------------------------------
 ; Comprueba si choca por arriba
+; 위에서 충돌하는지 확인하십시오.
 ;------------------------------
 		ld	a, d		; Sentido
 		rra
@@ -10564,6 +11005,7 @@ chkChocaSalto2:
 
 ;----------------------------------------
 ; Comprueba si choca con la parte central
+; 중앙부와 충돌 여부 확인
 ;----------------------------------------
 
 chkChocaSalto3:
@@ -10581,6 +11023,7 @@ chkChocaSalto4:
 
 ;------------------------------------------
 ; Comprueba si choca con la parte de abajo
+; 바닥과 충돌하는지 확인
 ;------------------------------------------
 
 		ld	a, d		; Sentido
@@ -10624,6 +11067,8 @@ setNZ:
 ;----------------------------------------------------
 ; Se llama a esta funcion si al	saltar ha chocado con algo por la parte	superior
 ; Comprueba si bajo los	pies hay suelo y ajusta	la Y en	ese caso
+; 점프가 위에서 무엇인가와 충돌하면 이 함수가 호출됩니다.
+; 발 밑에 그라운드가 있는지 확인하고 그 경우 Y를 조정하십시오.
 ;----------------------------------------------------
 
 ajustaPasillo:
@@ -10649,6 +11094,12 @@ ajustaPasillo2:
 ; Recorre la tabla de desplazamientos hasta llegar al final. Entonces
 ; indica que hay que recorrerla	al reves para caer de la misma forma que se subio
 ; Si llega al final nuevamente (inicio), cae a velocidad maxima	y continua asi
+;
+; 도약
+; 엔딩이 달리고 있다면 점프값이 4배가 된다
+; 누르는 방향에 따라 오른쪽이나 왼쪽으로 점프
+; 끝에 도달할 때까지 변위 테이블을 통해 이동합니다. 그런 다음 그것은 당신이 오른 것과 같은 방식으로 떨어지기 위해 그것을 거꾸로 통과해야 함을 나타냅니다.
+; 다시 끝(시작)에 도달하면 최대 속도로 떨어지고 이렇게 계속
 ;----------------------------------------------------
 
 doSalto:
@@ -10747,6 +11198,8 @@ saltoUpdateY:
 
 ;----------------------------------------------------
 ; Desplazamientos aplicados a la Y del elemento	cuando salta
+;
+; 점프할 때 요소의 Y에 적용된 오프셋
 ;----------------------------------------------------
 		db 0FFh			; Fin del salto. Cae a maxima velocidad
 valoresSalto:	db 4
@@ -10769,6 +11222,12 @@ valoresSalto:	db 4
 ; Out:
 ;   C =	Cae
 ;  NC =	Esta sobre suelo
+;
+; 떨어지는 상태를 둔다
+; 추락으로 인한 Y좌표 업데이트 및 지면에 닿는지 확인
+; 출력:
+;   C = 추락
+;  NC = 지상에 있다
 ;----------------------------------------------------
 
 cayendo:
@@ -10799,6 +11258,10 @@ cayendo:
 ; Mueve	a un personaje por las escaleras
 ; Out:
 ;    Z = Ha llegado al final de	las escaleras
+;
+; 캐릭터를 계단 위로 이동
+; 출력:
+;    Z = 계단 바닥에 도달했습니다.
 ;----------------------------------------------------
 
 andaEscalera:
@@ -10865,6 +11328,7 @@ andaEscalera4:
 
 ;----------------------------------------------------
 ; Muestra el final del juego
+; 게임의 끝을 보여주세요
 ;----------------------------------------------------
 
 ShowEnding:
@@ -10893,6 +11357,7 @@ controlsEnding:	db 4, 1Bh
 
 ;----------------------------------------------------
 ; Anda hasta el	centro de la pantalla y	salta
+; 화면 중앙으로 이동하여 점프
 ;----------------------------------------------------
 
 showEnding2:
@@ -10916,6 +11381,7 @@ showEnding2:
 
 ;----------------------------------------------------
 ; Espera a que termine el salto
+; 점프가 끝날 때까지 기다리십시오.
 ;----------------------------------------------------
 
 showEnding3:
@@ -10928,6 +11394,7 @@ showEnding3:
 
 ;----------------------------------------------------
 ; Muestra texto	de CONGRATULATIONS, SPECIAL BONUS y suma 10.000	puntos
+; 축하 텍스트, 특별 보너스 표시 및 10,000포인트 추가
 ;----------------------------------------------------
 
 showSpecialBonus:
@@ -10941,6 +11408,8 @@ showSpecialBonus:
 ;----------------------------------------------------
 ; Espera un rato mientras esta el texto	en pantalla
 ; Pasa a estado	"Stage clear"
+; 텍스트가 화면에 표시되는 동안 잠시 기다리십시오.
+; "스테이지 클리어" 상태로 전환
 ;----------------------------------------------------
 
 waitEnding:
@@ -10959,6 +11428,11 @@ waitEnding:
 ; - Carga los sprites del porta	con el pico
 ; - Pone la musica del juego
 ; - Borra todo el mapa RAM
+; 끝을 보여주기 위해 모든 것을 준비
+; - 스프라이트를 숨기고 와이프 표시
+; - 곡괭이로 캐리어 스프라이트를 로드하세요.
+; - 게임의 음악을 넣어
+; - 모든 RAM 맵 지우기
 ;----------------------------------------------------
 
 setupEnding:
@@ -11042,6 +11516,13 @@ nextSubstatus2:
 ;  HL =	VRAM address name table
 ;   C =	Patron diagonal	piramide / o \.	(C+1)= Patron relleno
 ;   A =	Lado de	la piramide que	pinta (0 = izquierdo, 1	= derecho)
+;
+; 반 피라미드(직각 삼각형)를 그립니다.
+; 정점의 높이에서 지면에 도달할 때까지 피라미드를 페인트하여 각 선의 너비를 늘립니다.
+; 입력:
+;  HL = VRAM 주소 이름 테이블
+;   C = 대각선 피라미드 패턴 / 또는 \. (C+1)= 채워진 패턴
+;   A = 페인트하는 피라미드의 측면(0 = 왼쪽, 1 = 오른쪽)
 ;----------------------------------------------------
 
 drawHalfPiram:
@@ -11099,6 +11580,14 @@ drawVertice:
 ;   - Lateral izdo. arenisca oscura, relleno arenisca oscura
 ;   - Arena del	suelo
 ;   - Estrella del cielo
+;
+; 최종 단계를 그리는 데 사용되는 타일
+; 타일:
+; - 오른쪽. 벽돌, 벽돌 채우기(근처 피라미드)
+; - 오른쪽. 사암, 사암 채우기(먼 피라미드)
+; - 왼쪽. 어두운 사암, 어두운 사암 채우기
+; - 땅 모래
+; - 스카이 스타
 ;----------------------------------------------------
 endingTiles:	db 88h,	0, 2, 6, 0, 0Fh, 2Fh, 6Fh, 0, 3, 0FEh, 81h, 0
 		db 3, 0EFh, 88h, 0, 1, 3, 7, 0Fh, 1Fh, 3Fh, 7Fh, 9, 0FFh
@@ -11108,6 +11597,7 @@ endingTiles:	db 88h,	0, 2, 6, 0, 0Fh, 2Fh, 6Fh, 0, 3, 0FEh, 81h, 0
 
 ;----------------------------------------------------
 ; Tabla	de colores de los tiles	de fondo anteriores
+; 이전 배경 타일의 색상 표
 ;----------------------------------------------------
 endingColors:	db 88h,	60h, 60h, 0A0h,	0A0h, 60h, 60h,	0A0h, 0A0h, 2
 		db 60h,	2, 0A0h, 2, 60h, 2, 0A0h, 10h, 80h, 10h, 60h, 4
@@ -11116,12 +11606,15 @@ endingColors:	db 88h,	60h, 60h, 0A0h,	0A0h, 60h, 60h,	0A0h, 0A0h, 2
 
 ;----------------------------------------------------
 ; Patrones que forman la puerta	de la piramide del final del juego
+; 게임 종료 시 피라미드의 문을 형성하는 패턴
 ;----------------------------------------------------
 tilesEndDoor:	db 63h,	64h, 0,	65h, 66h, 67h
 
 ;----------------------------------------------------
 ; Bytes	bajos de la direccion VRAM de la tabla de nombres donde	se pintan las estrellas
 ; El byte alto es fijo = #39
+; 별이 그려진 이름 테이블의 VRAM 주소의 낮은 바이트
+; 상위 바이트 고정 = #39
 ;----------------------------------------------------
 starsLocations:	db 9, 16h, 38h,	67h, 74h, 8Eh, 0A9h
 
@@ -11130,12 +11623,16 @@ starsLocations:	db 9, 16h, 38h,	67h, 74h, 8Eh, 0A9h
 ; Datos	del prota para el ending
 ; Status, Control, sentido, Y, decimales, X, habitacion, speed decimales, speed	X, Speed room, movCnt, frame
 ; Andar, izquierda, izquierda, Y=#88, 0, X=#F0,	0, spd=#C0
+; 엔딩의 주인공 데이터
+; 상태, 제어, 방향, Y, 소수점, X, 방, 속도 소수점, 속도 X, 속도 방, movCnt, 프레임
+; 걷기, 왼쪽, 왼쪽, Y=#88, 0, X=#F0, 0, spd=#C0
 ;----------------------------------------------------
 protaEndingDat:	db 0, 4, 1, 88h, 0, 0F0h, 0, 0C0h, 0, 0, 0, 0
 
 
 ;----------------------------------------------------
 ; Setup	pergamino
+; 양피지 설정
 ;----------------------------------------------------
 
 setupPergamino:
@@ -11199,6 +11696,8 @@ setFlechaMap2:
 ;
 ; Coloca la flecha en la casilla "GOAL" del mapa
 ;
+; 지도의 "목표" 상자에 화살표를 놓습니다.
+;
 ;----------------------------------------------------
 
 setFlechaGoal:
@@ -11218,6 +11717,9 @@ setFlechaGoal:
 ; Actualiza las	coordenadas y los sprites del mapa de piramides
 ; Sprites: flecha y silueta de piramide
 ;
+; 피라미드 맵의 좌표와 스프라이트 업데이트
+; 스프라이트: 화살표와 피라미드 실루엣
+;
 ;----------------------------------------------------
 
 setDestinoMap:
@@ -11232,6 +11734,8 @@ setFlechaInvert:
 ;----------------------------------------------------
 ;
 ; Logica del mapa de piramides
+;
+; 피라미드 지도 논리
 ;
 ;----------------------------------------------------
 
@@ -11300,6 +11804,8 @@ setEndingStat:
 ;----------------------------------------------------
 ; Muestra texto	de "CONGRATULATIONS" "SPECIAL BONUS"
 ; Y suma 10.000	puntos
+; "축하합니다" "특별 보너스" 텍스트 표시
+; 그리고 10,000포인트 추가
 ;----------------------------------------------------
 
 specialBonus:
@@ -11322,6 +11828,7 @@ specialBonus:
 
 ;----------------------------------------------------
 ; Pone las coordenadas de la silueta de	la piramide actual
+; 현재 피라미드의 실루엣 좌표를 넣어
 ;----------------------------------------------------
 
 setPiramidMap:
@@ -11338,6 +11845,7 @@ setPiramidMap:
 
 ;----------------------------------------------------
 ; Graficos del pergamino con el	mapa de	piramides
+; 피라미드 지도가 있는 양피지 그래픽
 ;----------------------------------------------------
 gfxMap:		db 0A0h, 1, 3, 7, 0Fh, 1Fh, 3Fh, 0Fh, 3, 80h, 0C0h, 0E0h
 		db 0F0h, 0F8h, 0FCh, 0F0h, 0C0h, 1, 3, 7, 0Fh, 1Fh, 3Fh
@@ -11365,6 +11873,8 @@ colorTableMap:	db 5, 8Fh, 3, 6Fh, 5, 9Fh, 8, 8Fh, 83h,	61h, 6Fh, 6Fh
 ;----------------------------------------------------
 ; Sprites usados en el mapa de piramides
 ; Silueta piramide, flecha arriba, derecha, abajo, izquierda
+; 피라미드 맵에 사용된 스프라이트
+; 피라미드 실루엣, 위쪽, 오른쪽, 아래쪽, 왼쪽 화살표
 ;----------------------------------------------------
 gfxSprMapa:	dw 1F20h		; Direccion VRAM sprite	#E4
 		db 88h,	6, 9, 10h, 20h,	40h, 0C0h, 30h,	0Fh, 0Ah, 0, 85h
@@ -11409,6 +11919,9 @@ coloresFlecha:	db 1, 6, 6, 0Ah, 0Ah, 6, 6, 6	; Colores usados para resaltar la f
 ;
 ; Coordenadas en pantalla de las piramides del mapa
 ; Y, X
+;
+; 지도상의 피라미드의 화면 좌표
+; Y, X
 ;----------------------------------------------------
 coordPiramMap:	db 3Fh,	4Ah
 		db 3Fh,	6Ah
@@ -11433,6 +11946,7 @@ offsetFlechas:	db 0F9h, 2
 
 ;----------------------------------------------------
 ; Numero de sprites de las flechas
+; 화살 스프라이트의 수
 ;----------------------------------------------------
 numSprFlechas:	db 0E8h
 		db 0F0h			; Abajo
@@ -11441,6 +11955,7 @@ numSprFlechas:	db 0E8h
 
 ;----------------------------------------------------
 ; Numero de sprites de las flechas invertidas
+; 거꾸로 된 화살표의 스프라이트 수
 ;----------------------------------------------------
 numSprFlechInv:	db 0F0h
 		db 0E8h			; Arriba
@@ -11464,6 +11979,10 @@ TXT_ENDING:
 ; Set music
 ; In:
 ;   A =	Numero de musica o efecto
+;
+; 세트 음악
+; 입력:
+;   A = 음악 또는 효과의 수
 ;----------------------------------------------------
 
 setMusic:
@@ -11551,6 +12070,11 @@ setChanData:
 ; Comando = #FE	xx
 ;  xx =	Numero de veces	a repetir el pattern musical
 ;  FF =	Loop infinito
+;
+; 패턴 루프
+; 명령 = #FE xx
+;  xx = 음악 패턴 반복 횟수
+;  FF = 무한 루프
 ;----------------------------------------------------
 
 patternLoop:
@@ -11591,6 +12115,13 @@ contProcessSnd:
 ;   D:
 ;    1 = Activa	tono canal 3 y desactiva ruido
 ;    0 = Desactiva tono	canal 3	y activa ruido
+;
+; 채널 3 톤 또는 노이즈 간 전환
+; 입력:
+;   C = 진행 중인 채널 1, 3, 5(1-3)
+;   D:
+;    1 = 채널 3 톤 활성화 및 노이즈 비활성화
+;    0 = 채널 3 톤 비활성화 및 노이즈 활성화
 ;----------------------------------------------------
 
 switchCh3OnOff:
@@ -11616,6 +12147,7 @@ SetPSGMixer:
 
 ;----------------------------------------------------
 ; Actualiza el driver de sonido
+; 사운드 드라이버 업데이트
 ;----------------------------------------------------
 
 updateSound:
@@ -11830,6 +12362,11 @@ decVolume:
 ; In:
 ;   C =	Canal 1-3 (1,3,5)
 ;   H =	Volumen
+;
+; PSG 채널의 볼륨 설정
+; 입력:
+;   C = 채널 1-3(1,3,5)
+;   H = 볼륨
 ;----------------------------------------------------
 
 setVolume:
@@ -11956,6 +12493,7 @@ incMusicPoint:
 
 ;----------------------------------------------------
 ; Frecuencias de las notas (segunda octava)
+; 음 주파수(두 번째 옥타브)
 ;----------------------------------------------------
 freqNotas:	db 6Ah
 		db 64h
@@ -12437,6 +12975,7 @@ momiaDat:	# 16h*4			; 0 = Andando
 					; +#0b = Frame
 					; +#11 = Timer
 					; +#14 = Tipo momia
+
 					; 0 = 걷기
 					; 1 = 점프
 					; 2 = 떨어지는
