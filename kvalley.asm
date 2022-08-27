@@ -9100,26 +9100,36 @@ unpackMap5:
 getDoors:
 		ld	hl, numPuertas
 		ld	(hl), 4		; Maximo numero	de puertas que puede haber
+						; 할 수 있는 최대 도어 수
 		inc	hl
 		ex	de, hl
 		exx
 		ld	b, 0		; Contador de salidas
+						; 출력 카운터
 
 getNextDoor:
 		exx
 		ld	a, (hl)		; Y de la puerta
+						; 문 Y
 		inc	a		; Es #FF (Existe esta salida?)
+					; #FF입니다(이 출력이 존재합니까?)
 		jr	nz, getDoors3	; Si, existe
+							; 네 존재합니다
 
 		dec	a
 		ld	(de), a		; Marca	salida como no disponible
+						; 출력을 사용할 수 없는 것으로 표시
 		inc	hl
 		ld	a, 7		; Tama�o de la estructura de cada salida
+						; 각 출력의 구조 크기
 		call	ADD_A_DE	; DE apunta al buffer de la siguiente salida
+							; DE는 다음 출력 버퍼를 가리킵니다.
 		jr	chkLastDoor	; Comprueba si ya se han procesado todas las puertas
+						; 모든 문이 이미 처리되었는지 확인하십시오.
 
 getDoors3:
 		call	transfCoords	; Transfiere coordenadas desde HL a DE (Y, X)
+								; HL에서 DE(Y, X)로 좌표 전송
 
 		ld	a, (puertaEntrada)
 		srl	a
@@ -9130,15 +9140,20 @@ getDoors3:
 getDoors4:
 		exx
 		cp	b		; Esta puerta es por la	que se entra en	la piramide?
+					; 이 문은 피라미드로 들어가는 문입니까?
 		exx
 		ld	a, 10h		; Status: Dibuja la puerta de entrada
+						; 상태: 현관문 그리기
 		jr	z, getDoors6
 
 		push	de
 		call	chkPiramPasada	; Comprueba si la piramide ya ha sido pasada para dejar	o quitar la puerta de salida
+								; 피라미드가 이미 통과했는지 확인하여 출구 문을 나가거나 제거하십시오.
 		ld	a, 0		; Quita	la puerta y deja el estado que comprueba si se cogen todas las gemas
+						; 문을 제거하고 모든 보석을 가져갔는지 확인하는 상태로 둡니다.
 		jr	z, getDoors5
 		ld	a, 80h		; Mantiene la puerta cerrada visible
+						; 닫힌 문을 볼 수 있도록 유지
 
 getDoors5:
 		pop	de
@@ -9152,9 +9167,11 @@ getDoors6:
 							; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 		ld	a, b
 		ld	(de), a		; Piramide a la	que lleva esta puerta
+						; 이 문이 이어지는 피라미드
 		inc	de
 		ld	a, c
 		ld	(de), a		; Direccion de la flecha del mapa / puerta de entrada /	direccion de la	salida
+						; 지도 화살표 방향 / 입구 문 / 출구 방향
 		inc	de
 		inc	hl
 
@@ -9162,9 +9179,10 @@ chkLastDoor:
 		exx
 		inc	b
 		ld	a, 4		; Numero maximo	de salidas
+						; 최대 출력 수
 		cp	b
 		jr	nz, getNextDoor	; Aun quedan puertas por comprobar
-
+							; 아직 확인해야 할 문이 있습니다
 
 
 ;----------------------------------------------------
@@ -9179,9 +9197,11 @@ chkLastDoor:
 		ld	b, a
 		add	a, a
 		add	a, b		; 3 bytes por momia (y,	x, tipo)
+						; 미라당 3바이트(y, x, 유형)
 		ld	b, 0
 		ld	c, a
 		ld	de, momiasPiramid ; Datos de las momias	que hay	en la piramide actual: y, x (%xxxxx--p), tipo
+								; 현재 피라미드에 있는 미라 데이터: y, x(%xxxxx--p), 유형
 		ldir
 
 
@@ -9192,16 +9212,20 @@ chkLastDoor:
 ;----------------------------------------------------
 		ld	de, gemasTotales
 		ld	a, (hl)		; Numero de gemas de la	piramide
+						; 피라미드의 보석 수
 		ldi
 		inc	de
 		ld	b, a		; Numero de gemas
+						; 보석의 수
 
 readGemas:
 		push	bc
 		ld	a, (hl)		; Color
 		and	0F0h
 		or	1		; Activa gema
+					; 보석 활성화
 		ld	(de), a		; Tipo / color de la gema
+						; 보석 유형/색상
 
 		inc	hl
 		inc	de
@@ -9210,9 +9234,11 @@ readGemas:
 
 		inc	de
 		call	transfCoords	; Transfiere coordenadas desde HL a DE (Y, X)
+								; HL에서 DE(Y, X)로 좌표 전송
 		inc	de
 		inc	de
 		inc	de		; 9 bytes por gema
+					; 보석당 9바이트
 		pop	bc
 		djnz	readGemas
 
@@ -9220,18 +9246,24 @@ readGemas:
 		push	hl
 		xor	a
 		ld	(ElemEnProceso), a ; Empezamos a pintar	las gemas desde	la primera
+								; 우리는 처음부터 보석을 그리기 시작합니다.
 
 putNextGema:
 		xor	a
 		call	getGemaDat	; Puntero a la gema en proceso
+							; 처리 중인 보석에 대한 포인터
 		call	chkPiramPasada	; Hay que poner	las gemas de esta piramide o ya	se han cogido antes?
+								; 이 피라미드의 보석을 넣어야 합니까, 아니면 이미 가져간 적이 있습니까?
 		jr	z, putNextGema2	; Hay que ponerlas
+							; 당신은 그들을 넣어야합니다
 
 		ld	a, (hl)
 		and	0F0h
 		ld	(hl), a		; Desactiva gema
+						; 보석 비활성화
 		inc	hl
 		ld	(hl), 3		; Status 3 de la gema
+						; 보석 상태 <- 3
 		jr	chkLastGema_
 
 putNextGema2:
@@ -9241,25 +9273,33 @@ putNextGema2:
 								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		push	hl
 		ld	de, brillosGema	; Patrones que forman los destellos de la gema
+							; 보석의 반짝임을 형성하는 패턴
 		call	putBrillosMap	; Pone los destellos de	la gema	en el mapa
+								; 지도에 보석 반짝임을 놓으십시오
 
 		xor	a
 		call	getGemaDat
 		call	AL_C__AH_B	; Copia	el nibble alto de A en B y el bajo en C
 							; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 		ld	a, b		; Color	de la gema
+						; 보석 색상
 		add	a, 40h		; Map ID gemas
+						; 보석 지도 ID
 		pop	hl
 		ld	(hl), a		; Pone gema
+						; 보석을 넣다
 
 chkLastGema_:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
 								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		inc	(hl)		; siguiente gema
+						; 다음 보석
 		ld	a, (hl)
 		dec	hl
 		cp	(hl)		; Numero total de gemas
+						; 총 보석 수
 		jr	nz, putNextGema	; Faltan gemas por procesar
+							; 처리할 보석 누락
 		pop	hl
 
 
@@ -9271,7 +9311,9 @@ chkLastGema_:
 ;----------------------------------------------------
 		ld	de, numKnifes
 		ld	a, (hl)		; Numero de cuchillos
+						; 칼의 수
 		ld	(de), a		; Actualiza el numero de cuchillos de la piramide
+						; 피라미드의 칼 수 업데이트
 		inc	hl
 		inc	de
 		or	a
@@ -9285,6 +9327,7 @@ setKnifeCoords:
 		inc	de
 		inc	de
 		call	transfCoords	; Transfiere coordenadas desde HL a DE (Y, X)
+								; HL에서 DE(Y, X)로 좌표 전송
 		ld	a, 0Bh
 		call	ADD_A_DE
 		pop	bc
@@ -9299,7 +9342,9 @@ setKnifeCoords:
 getPicos:
 		ld	de, numPicos
 		ld	a, (hl)		; Numero de picos
+						; 곡괭이의 수
 		ld	(de), a		; Actualiza el numero de picos de esta piramide
+						; 이 피라미드의 곡괭이 수 업데이트
 		inc	de
 		inc	hl
 		and	a
@@ -9307,6 +9352,7 @@ getPicos:
 							; 스파이크 없음
 
 		ld	b, a		; Numero de picos
+						; 곡괭이의 수
 
 getPicos2:
 		push	bc
@@ -9314,14 +9360,17 @@ getPicos2:
 		ld	(de), a		; Status = 1
 		inc	de
 		call	transfCoords	; Transfiere coordenadas desde HL a DE (Y, X)
+								; HL에서 DE(Y, X)로 좌표 전송
 		pop	bc
 		djnz	getPicos2
 
 		push	hl
 		ld	hl, numPicos
 		ld	b, (hl)		; Numero de picos que hay en el	mapa
+						; 지도의 곡괭이 수
 		inc	hl
 		inc	hl		; Apunta a la Y	del pico
+					; 곡괭이의 Y를 조준
 
 getPicos3:
 		push	bc
@@ -9329,9 +9378,11 @@ getPicos3:
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
 								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	(hl), 80h	; Pone pico en el mapa
+						; 지도에 곡괭이 표시
 		pop	hl
 		ld	a, 5
 		call	ADD_A_HL	; Pasa datos del pico para apuntar a las coordenadas del siguiente
+							; 곡괭이에서 다음 좌표로 데이터를 전달합니다.
 		pop	bc
 		djnz	getPicos3
 		pop	hl
@@ -9345,9 +9396,11 @@ getPicos3:
 
 getGiratorias:
 		ld	a, (hl)		; Numero de puertas giratorias
+						; 회전문의 수
 		inc	hl
 		ld	de, numDoorGira
 		ld	(de), a		; Actualiza numero de puertas giratorias de la piramide
+						; 피라미드의 회전문의 수 업데이트
 		or	a
 		jr	z, getMuroTrampa ; No hay puertas giratorias
 							; 회전문이 없다
@@ -9358,12 +9411,16 @@ getGiratorias:
 getGiratorias2:
 		push	bc
 		ldi			; Altura puerta	(luego se divide entre 2 y se le suma 2)
+					; 문 높이(2로 나누고 2 더하기)
 		ldi			; Y
 		inc	de		; Pasa decimales X
+					; 소수 X를 전달
 
 		ld	a, (hl)		; Coordenada X
+						; X 좌표
 		and	0F8h		; bits 7-3
 		ld	(de), a		; X ajustada a patrones
+						; 패턴에 맞게 조정된 X
 
 		inc	de
 		ld	a, (hl)
@@ -9413,7 +9470,9 @@ getGiratorias3:
 		ld	a, (hl)
 		inc	hl
 		cp	(hl)		; Comprueba si estan todas puestas
+						; 모두 설정되었는지 확인
 		jr	nz, getGiratorias3 ; Aun quedan	puertas	giratorias por poner en	el mapa
+								; 지도에 놓을 회전문이 아직 남아 있습니다.
 		pop	hl
 
 
@@ -9425,17 +9484,22 @@ getGiratorias3:
 
 getMuroTrampa:
 		ld	de, numMuroTrampa ; Numero de muros trampa que hay en la piramide
+								; 피라미드의 트랩 벽 수
 		ld	a, (hl)
 		ldi			; Copia	el numero de muros trampa que hay en esta piramide
+					; 이 피라미드에 있는 함정 벽의 수를 복사하십시오.
 		or	a
 		jr	z, getStairs	;  No hay muros	trampa
+							; 함정 벽이 없다
 
 		ld	b, a
 
 getMuroTrampa2:
 		push	bc		; Numero de muros trampa
+						; 트랩 벽의 수
 		inc	de
 		call	transfCoords	; Transfiere coordenadas desde HL a DE (Y, X)
+								; HL에서 DE(Y, X)로 좌표 전송
 		pop	bc
 		djnz	getMuroTrampa2
 
@@ -9449,10 +9513,12 @@ getMuroTrampa2:
 getStairs:
 		ex	de, hl
 		ld	a, (de)		; Numero de escaleras
+						; 계단의 수
 		ld	b, a
 		inc	de
 		and	a
 		ret	z		; No hay escaleras
+					; 계단 없음
 
 getStairs2:
 		push	bc
@@ -9460,16 +9526,20 @@ getStairs2:
 		ex	de, hl
 		push	de
 		ldi			; Y escalera
+					; 계단 Y
 
 		xor	a
 		ld	(de), a		; Decimales X
+						; 소수 X
 
 		inc	de
 		ld	a, (hl)		; X
 		and	0F8h
 		ld	(de), a		; Ajusta la X a	multiplo de 8
+						; X를 8의 배수로 설정
 
 		ld	a, (hl)		; Bit 0	= Sentido. Bit 1 = Habitacion
+						; 비트 0 = 방향. 비트 1 = 방
 		and	1
 		ld	b, a		; Sentido
 						; 방향
@@ -9482,6 +9552,7 @@ getStairs2:
 						; 방
 
 		pop	de		; Datos	escaleras
+					; 계단 데이터
 		ex	de, hl
 		push	de
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
@@ -9489,8 +9560,10 @@ getStairs2:
 
 getStairs3:
 		ld	a, (hl)		; Hay algo en ese lugar	del mapa?
+						; 지도의 그 장소에 뭔가가 있습니까?
 		and	a
 		jr	nz, getStairs5	; Si, la escalera ha llegado a una plataforma
+							; 예, 사다리가 플랫폼에 도달했습니다.
 
 		ld	c, 20h
 		call	putPeldanoMap
@@ -9498,9 +9571,11 @@ getStairs3:
 					; 방향?
 		push	bc
 		ld	bc, -62h	; Desplazamiento a la fila superior del	mapa si	la escalera que	sube hacia la izquierda
+						; 사다리가 왼쪽으로 올라가면 지도의 맨 윗줄로 스크롤
 		jr	z, getStairs4
 		inc	bc
 		inc	bc		; Hacia	la derecha
+					; 오른쪽으로
 
 getStairs4:
 		add	hl, bc
@@ -9510,6 +9585,7 @@ getStairs4:
 getStairs5:
 		ld	c, 15h
 		call	putPeldanoMap	; Pone pelda�o especial	de inicio/fin escalera
+								; 특별한 시작/끝 계단 단계를 넣습니다.
 		pop	de
 		inc	de
 		pop	bc
@@ -9523,6 +9599,7 @@ putPeldanoMap:
 		jr	z, putPeldanoMap2
 		inc	c
 		inc	c		; Pelda�os hacia la izquierda
+					; 왼쪽으로 단계
 
 putPeldanoMap2:
 		ld	(hl), c
@@ -9544,16 +9621,22 @@ setupRoom:
 		ld	a, 1
 		ld	(flagScrolling), a
 		ld	a, (ProtaRoom)	; Habitacion del prota (xHigh)
+							; 주인공의 방(xHigh)
 		add	a, a
 		add	a, a
 		add	a, a
 		add	a, a
 		add	a, a		; x32 (ancho de	una pantalla)
+						; x32(화면 너비)
 		ld	de, MapaRAM
 		call	ADD_A_DE	; DE = Puntero a la pantalla en	la que se encuentra el prota (puede haber 3 en horizontal)
+							; DE = 주인공이 있는 화면에 대한 포인터(가로 3개가 있을 수 있음)
 		call	drawRoom	; Dibuja la habitacion en la que se encuentra el prota
+							; 주인공이 있는 방을 그립니다.
 		call	updateSprites	; Pone los sprites
+								; 스프라이트 처리
 		call	AI_Cuchillos	; Pone los cuchillos
+								; 칼 처리
 		xor	a
 		ld	(momiaEnProceso), a
 
@@ -9564,6 +9647,7 @@ initMomias:
 		ld	a, (hl)
 		dec	hl
 		cp	(hl)		; Se han procesado todas las momia?
+						; 미라가 모두 처리되었습니까?
 		jr	nz, initMomias
 		ret
 
@@ -9589,66 +9673,86 @@ initMomia:
 		call	getMomiaProcDat
 		push	ix
 		pop	hl		; Puntero a la estructura de la	momia
+					; 미라 구조에 대한 포인터
 		ld	(hl), 4		; Accion momia aparecer
+						; 액션 미라 등장
 		inc	hl
 		inc	hl
 		inc	hl
 		ld	de, momiasPiramid ; Datos de las momias	que hay	en la piramide actual: y, x (%xxxxx--p), tipo
+								; 현재 피라미드에 있는 미라 데이터: y, x(%xxxxx--p), 유형
 		ld	a, (momiaEnProceso)
 		ld	c, a
 		add	a, a
 		add	a, c		; x3
 		call	ADD_A_DE
 		ex	de, hl		; HL apunta a la definicion de momia
+						; HL은 미라의 정의를 가리킨다.
 
 	IF	(VERSION2)
 		call	transfCoords	; Transfiere coordenadas de la momia
+								; 미라 좌표 전송
 	ELSE
 		ldi			; Copia	la Y
+					; Y 복사
 
 		inc	de		; Pasa decimales X
+					; 소수 X를 전달
 
 		ld	a, (hl)
 		and	0F8h		; Ajusta la coordenada X a multiplo de 8
+						; X 좌표를 8의 배수로 설정
 		ld	(de), a		; X
 
 		inc	de
 		ld	a, (hl)
 		and	1
 		ld	(de), a		; Habitacion de	inicio (xHigh)
+						; 시작 방(xHigh)
 
 		inc	de
 		inc	hl
 	ENDIF
 
 		ld	a, (hl)		; Tipo de momia
+						; 미라 유형
 		ld	c, a
 		ld	a, (numFinishGame) ; Numero de veces que se ha terminado el juego
+								; 게임이 끝난 횟수
 		add	a, c		; Suma al tipo de momia	las veces que se ha terminado el juego
+						; 미라 유형에 게임 종료 횟수 추가
 		cp	5		; Comprueba si se sale del rango de tipos de momias existentes
+					; 기존 미라 유형의 범위를 벗어나는지 확인
 		jr	c, initMomia2
 
 		ld	a, 4		; Tipo de momia	mas inteligente
+						; 가장 똑똑한 미라 유형
 
 initMomia2:
 		ld	c, a		; Tipo de momia
+						; 미라 유형
 		ex	de, hl
 		ld	de, tiposMomia	; Caracteristicas de cada tipo de momia	(color y velocidad)
+							; 미라 종류별 특성(색상 및 속도)
 		call	ADD_A_DE
 		ld	a, (de)
 		ld	b, a
 		and	0F0h		; El nibble alto indica	la velocidad de	la momia
+						; 높은 니블은 미라의 속도를 나타냅니다
 		ld	(hl), a		; Velocidad
-
+						; 속도
 		ld	a, 0Ah
 		call	ADD_A_HL
 		ld	(hl), 10h	; Timer	(tiempo	que tarda en aparecer)
+						; 타이머(표시되는 데 걸리는 시간)
 		inc	hl
 		inc	hl
 		inc	hl
 		ld	(hl), c		; Tipo de momia
+						; 미라 유형
 		inc	de
 		call	getMomiaAtrib	; Attributos del sprite	de la momia
+								; 미라 스프라이트 속성
 		inc	hl
 		inc	hl
 		inc	hl
@@ -9708,6 +9812,7 @@ getIndexHL_A:
 
 chkPiramPasada:
 		ld	bc, (PiramidesPasadas) ; Cada bit indica si la piramide	correspondiente	ya esta	pasada/terminada
+									; 각 비트는 해당 피라미드가 이미 통과/완료되었는지 여부를 나타냅니다.
 		push	bc
 		call	calcBitMask	; Devuelve en DE el bit	activo que corresponde a la piramide actual
 							; 현재 피라미드에 해당하는 활성 비트를 DE로 반환
@@ -9733,15 +9838,23 @@ chkPiramPasada:
 
 transfCoords:
 		ldi			; Copia	coordenada Y
+					; Y 좌표 복사
 		inc	de		; Pasa los decimales de	la X
+					; X의 소수를 전달
 		ld	a, (hl)
 		and	0F8h		; Ajusta coordenada X a	multiplos de 8 (patrones)
+						; X 좌표를 8의 배수로 설정(패턴)
 		ld	(de), a		; Guarda coordenada X
+						; X 좌표 저장
 
 		inc	de		; Apunta al segundo byte de la coordenada X (habitacion)
+					; X 좌표(방)의 두 번째 바이트를 가리킵니다.
 		ld	a, (hl)		; Vuelve a leer	la coordenada X
+						; X 좌표 다시 읽기
 		and	1		; Se queda con el bit 0	(!?) Solo pueden ponerse la gemas en la	pantalla 0 o 1
+					; 비트 0(!?)으로 유지됩니다. 보석은 화면 0 또는 1에만 놓을 수 있습니다.
 		ld	(de), a		; Interpreta el	bit 0 como pantalla de destino (coordenada + 256*bit0)
+						; 대상 화면으로 비트 0 해석(좌표 + 256*bit0)
 		inc	de
 		inc	hl
 		ret
@@ -9780,9 +9893,11 @@ indexHalfMap:	dw halfMap1
 ; 보석의 반짝임을 구성하는 패턴
 ;----------------------------------------------------
 brillosGema:	db 40h			; Superior
+								; 더 높은
 		db 41h			; Izquierda
 						; 왼쪽
 		db 0			; Espacio para la gema
+						; 보석을 위한 방
 		db 42h			; Derecha
 						; 오른쪽
 
@@ -9818,7 +9933,9 @@ ChgStoneColor:
 		call	getIndexX9
 		ex	de, hl
 		ld	hl, 200h	; Destino = Patron #40 (Piedras/ladrillos)
+						; 대상 = 패턴 #40(돌/벽돌)
 		ld	b, 5		; Numero de patrones a pintar
+						; 칠할 패턴의 수
 
 ChgStoneColor2:
 		push	bc
@@ -9860,68 +9977,96 @@ ColoresPiedra:	db    2,0A0h,	2, 60h,	  2,0A0h,   2, 60h,   0
 
 escalerasEntrada:
 		ld	a, (statusEntrada) ; Status del	prota en las escaleras de la entrada/salida
+								; 입구/출구 계단에 있는 주인공의 상태
 		call	jumpIndex
 
 		dw entraSale		; Subiendo o bajando por las escaleras
+							; 계단을 오르내리거나
 		dw quietoFinEsc		; Ha llegado al	final de las escaleras.	Espera un rato
+							; 당신은 계단의 바닥에 도달했습니다. 잠시만 기다려주세요
 		dw chkBonusStage	; Comprueba si hay que dar un bonus por	pasarse	la piramide
+							; 피라미드 통과에 대한 보너스가 있는지 확인하십시오.
+
 		dw haSalido		; Ha salido de la piramide. Pasa al pergamino
+						; 그는 피라미드에서 나왔습니다. 양피지로 가다
 
 entraSale:
 		ld	hl, protaMovCnt	; (!?) Donde se	usa HL?
+							; (!?) HL은 어디에 사용됩니까?
 		ld	a, (timer)
 		and	3
 		ret	nz		; Procesa una de cada cuatro iteraciones
+					; 4번의 반복 중 1번 처리
 
 		ld	hl, 1E0h
 		ld	(protaSpeed), hl ; Velocidad X mientras	entra en la piramide
+							; 피라미드에 들어가는 동안 X 속도
 		call	mueveProta	; Actualiza la posicion	del prota
+							; 주인공 위치 업데이트
 
 		ld	a, (GameStatus)
 		cp	4		; Entrando o saliendo de la piramide?
+					; 피라미드에 들어갈 것인가, 떠날 것인가?
 		jr	nz, salePiramide
 
 		ld	hl, ProtaY
 		inc	(hl)		; Incrementa la	Y del prota
+						; 주인공의 Y를 높인다
 		ld	a, (hl)
 		and	7		; Ha terminado de bajar	las escaleras? (solo baja 1 tile)
+					; 계단 내려가는 거 다 했어? (그냥 타일 1개를 떨어뜨림)
 		jr	nz, animProta	; Siguiente frame de la	animacion del prota
+							; 주인공 애니메이션의 다음 프레임
 
 		ld	a, 1
 		ld	(protaFrame), a	; Pone frame de	quieto
+							; 프레임 고정
 		call	setAttribProta	; Actualiza atributos de los sprites del prota
+								; 주인공 스프라이트의 속성 업데이트
 		jr	finEntraSale
 
 salePiramide:
 		ld	hl, ProtaY
 		dec	(hl)		; Decrementa la	Y del prota
+						; 주인공의 Y를 낮춘다
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; X prota
 						; 주인공 X
 		add	a, 8
 		ld	hl, puertaXspr	; X sprite puerta (parte derecha)
+							; 문 스프라이트 X (오른쪽 부분)
 		cp	(hl)		; Esta medio cuerpo del	prota tapado por la puerta derecha?
+						; 오른쪽 문으로 주인공의 몸이 반쯤 가려져 있습니까?
 		jr	c, animProta	; No
 
 		call	hideSprAttrib	; Oculta todos los sprites (prota, puerta derecha...)
+								; 모든 스프라이트 숨기기(주인공, 오른쪽 문...)
 		jr	finEntraSale
 
 animProta:
 		ld	hl, protaFrame
 		inc	(hl)		; siguiente frame
+						; 다음 프레임
 		and	7		; rango	0-7
+					; 범위 0-7
 		ld	(hl), a
 		jp	setAttribProta	; Actualiza atributos de los sprites del prota
+							; 주인공 스프라이트의 속성 업데이트
 
 finEntraSale:
 		ld	bc, 0A8h
 		ld	(protaSpeed), bc ; El byte bajo	indica la parte	"decimal" y el alto la entera
+							; 하위 바이트는 "소수" 부분을 나타내고 상위 바이트는 정수를 나타냅니다.
 		ld	b, 4		; Numero de sprites a quitar
+						; 제거할 스프라이트 수
 		call	hideSprAttrib2	; Oculta los sprites de	la puerta
+								; 문 스프라이트 숨기기
 
 		ld	hl, statusEntrada ; Status del prota en	las escaleras
+							; 계단에서 주인공의 상태
 		inc	(hl)		; Pasa al siguiente estado: quieto al pie de las escaleras
+						; 다음 상태로 이동: 계단 바닥에 가만히 서 있음
 
 		ld	a, 20h
 		ld	(timer), a
@@ -9944,6 +10089,7 @@ quietoFinEsc:
 
 		ld	a, (GameStatus)
 		cp	4		; Entrando o saliendo de la piramide?
+					; 피라미드에 들어갈 것인가, 떠날 것인가?
 		jr	z, estaDentro	; Entrando
 
 		ld	a, 20h		; Silencio
@@ -10279,6 +10425,7 @@ momiaAnda:
 
 		ld	(ix+ACTOR_STATUS), 7 ; Estado: Pensando
 		ld	a, (ix+ACTOR_TIPO) ; Tipo de momia
+								; 미라 유형
 		ld	de, vecesDudaMomia
 		call	ADD_A_DE
 		ld	a, (de)		; Segun	el tipo	de momia, duda o mira mas tiempo a los lados
@@ -10383,6 +10530,7 @@ momiaUpdate:
 momiaHaChocado:
 		dec	hl
 		ld	a, (hl)		; Tipo de momia
+						; 미라 유형
 		or	a		; Es la	mas tonta? =0
 		jr	nz, saltaOVuelve ; No
 
@@ -10510,8 +10658,10 @@ updateMomiaAt2:
 		ld	a, (de)
 		ld	d, a		; Frame
 		ld	(hl), c		; Coordenada Y
+						; Y 좌표
 		inc	hl
 		ld	(hl), b		; Coordenada X
+						; X 좌표
 		inc	hl
 		ld	a, (ix+ACTOR_SENTIDO) ;	1 = Izquierda, 2 = Derecha
 		rra
@@ -11063,6 +11213,7 @@ evitaSorpresa3:
 evitaSorpresa4:
 		ld	h, d
 		ld	l, e		; Puntero a la estructura de la	momia
+						; 미라 구조에 대한 포인터
 		inc	hl
 		ld	(hl), a		; Sentido en el	que anda la momia
 		exx
@@ -11415,6 +11566,7 @@ getMomiaDat:
 mueveProta:
 		ld	hl, ProtaXdecimal ; 'Decimales' usados en el calculo de la X. Asi se consiguen velocidades menores a 1 pixel
 		ld	de, (protaSpeed) ; El byte bajo	indica la parte	"decimal" y el alto la entera
+							; 하위 바이트는 "소수" 부분을 나타내고 상위 바이트는 정수를 나타냅니다.
 
 mueveElemento:
 		push	ix
@@ -11448,6 +11600,7 @@ mueveElemento2:
 		adc	a, c		; Suma desplazamiento X	alto, por si ha	cambiado de habitacion
 		ld	b, a
 		ld	a, (ix+1)	; Coordenada X
+						; X 좌표
 		ex	de, hl
 		pop	hl
 		ld	(hl), e		; X decimales
@@ -11961,6 +12114,7 @@ ShowEnding:
 		ldir
 
 		call	setAttribProta	; Actualiza atributos de los sprites del prota
+								; 주인공 스프라이트의 속성 업데이트
 		ld	hl, controlsEnding ; Izquierda,	Izquierda+Salto
 		ld	(keyPressDemo),	hl ; Puntero a los controles grabados
 		ld	a, 88h
