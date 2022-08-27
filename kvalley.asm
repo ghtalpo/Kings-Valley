@@ -4262,6 +4262,7 @@ noTocaMuro:
 		ld	a, c		; (!?) No hace falta
 						; (!?) 불필요
 		dec	b		; Set NZ
+					; NZ 설정
 		ret
 
 getMapOffset00:
@@ -12103,17 +12104,21 @@ chkTocaY_8:
 chkChocaSalto:
 		inc	hl
 		ld	a, (sentidoEscalera) ; Valor de	los controles en el momento del	salto. As� se sabe si fue un salto vertical
+									; 점프 시 컨트롤의 값입니다. 수직 점프인지 확인하는 방법입니다.
 		cp	10h		; Boton	A apretado? (Hold jump)
+					; 버튼 A를 눌렀습니까? (점프를 유지)
 chkChocaSalto1:
 		inc	hl
 		ld	d, (hl)		; Sentido
 						; 방향
 		inc	hl
 		jr	z, chkChocaCae	; Esta apretado.
+							; 빡빡하다.
 
 		ld	a, (ix+ACTOR_X)
 		and	7
 		cp	4		; Esta en medio	de un tile?
+					; 타일 ​​중간인가요?
 		jr	nz, chkChocaCae	; No
 
 ;------------------------------
@@ -12124,8 +12129,11 @@ chkChocaSalto1:
 						; 방향
 		rra
 		ld	bc, 300h	; Offset superior izquierdo
+						; 왼쪽 상단 오프셋
 		jr	c, chkChocaSalto2 ; Va a la izquierda
+								; 왼쪽으로 간다
 		ld	b, 0Ch		; Offset derecho
+						; 오른쪽 오프셋
 
 chkChocaSalto2:
 		push	de
@@ -12133,6 +12141,7 @@ chkChocaSalto2:
 							; Z = 충돌
 		pop	de
 		jr	z, ajustaPasillo ; Comprueba si	se ha encajado en un pasillo (muro por arriba y	por abajo)
+								; 복도(위,아래 벽)에 매립되었는지 확인
 
 ;----------------------------------------
 ; Comprueba si choca con la parte central
@@ -12143,15 +12152,20 @@ chkChocaSalto3:
 		ld	a, d		; Sentido
 						; 방향
 		ld	bc, 308h	; Offset central izquierdo
+						; 왼쪽 중앙 오프셋
 		rra
 		jr	c, chkChocaSalto4 ; Va a la izquierda
+								; 왼쪽으로 간다
 		ld	b, 0Ch		; Offset derecho
+						; 오른쪽 오프셋
 
 chkChocaSalto4:
 		push	de
 		call	chkTocaMuro	; Conca	con la parte central?
+							; 중앙 부분과 충돌합니까?
 		pop	de
 		jr	z, setFinSalto	; Si, termina el salto
+							; 네, 점프를 끝내세요
 
 ;------------------------------------------
 ; Comprueba si choca con la parte de abajo
@@ -12162,40 +12176,54 @@ chkChocaSalto4:
 						; 방향
 		rra
 		ld	bc, 30Eh	; Offset inferior izquierdo
+						; 왼쪽 하단 오프셋
 		jr	c, chkChocaSalto5 ; Va a la izquierda
+								; 왼쪽으로 간다
 		ld	b, 0Ch		; Derecho
+						; 오른쪽
 
 chkChocaSalto5:
 		call	chkTocaMuro	; Z = choca
 							; Z = 충돌
 		jr	z, setFinSalto	; Si, termina el salto
+							; 네, 점프를 끝내세요
 
 chkChocaCae:
 		ld	a, (ix+ACTOR_JUMPSENT) ; 0 = Subiendo, 1 = Cayendo
+									; 0 = 상승, 1 = 하락
 		and	a		; Esta subiendo	o cayendo?
+					; 상승하고 있습니까 하락하고 있습니까?
 		jr	z, setNZ	; Subiendo
+						; 상승
 
 		call	chkChocaSuelo	; Comprueba si choca con el suelo mientras cae
+								; 떨어지는 동안 땅에 닿는지 확인
 		jp	c, chkLlegaSuelo ; No ha chocado
+								; 충돌하지 않았다
 
 setFinSalto:
 		ld	a, (hl)		; Y
 		and	0F8h
 		ld	(hl), a		; Ajusta la coordenada Y a multiplo de 8 descartando los valores menores de 8
+						; Y 좌표를 8의 배수로 설정하고 8보다 작은 값은 버립니다.
 
 		xor	a
 		and	a		; Set Z, fin del salto
+					; Z 설정, 점프 끝
 		ret
 
 ; Comprueba si ha llegado al nivel del suelo
+; 지면에 도달했는지 확인
 
 chkLlegaSuelo:
 		call	chkPisaSuelo
 		jr	z, setFinSalto	; Si, esta en el suelo
+		; 예, 지상에 있습니다.
 
 setNZ:
 		xor	a
 		cp	1		; Set NZ
+					; NZ 설정
 		ret
 
 ;----------------------------------------------------
@@ -12209,6 +12237,7 @@ ajustaPasillo:
 		ld	a, d		; Sentido
 						; 방향
 		ld	bc, 314h	; Offset medio tile por	debajo del elemento (izquierda)
+						; 요소 아래 오프셋 절반 타일(왼쪽)
 		rra
 		jr	c, ajustaPasillo2
 		ld	b, 0Ch		; Derecha
@@ -12242,10 +12271,14 @@ ajustaPasillo2:
 doSalto:
 		ld	a, (GameStatus)
 		cp	0Ah		; Status = Final del juego (ending)?
+					; 상태 = 게임 종료(종료)?
 		jr	z, doSalto2	; Si, esta en el final del juego
+						; 예, 엔드게임에 있습니다.
 
 		xor	a		; No esta en el	final del juego.
+					; 엔드게임에는 없습니다.
 		ld	(waitCounter), a ; Lo pone a cero para no multiplicar los calores del salto x4
+								; 점프의 열을 곱하지 않도록 0으로 설정 x4
 
 doSalto2:
 		push	hl
@@ -12255,59 +12288,83 @@ doSalto2:
 		ld	e, (hl)
 		inc	hl
 		ld	d, (hl)		; DE = Puntero a los desplazamientos del salto
+						; DE = 오프셋 점프 포인터
 		inc	hl
 		ld	b, (hl)		; Sentido del salto: Subiendo o	bajando?
+						; 점프 방향: 위 또는 아래?
 		pop	hl
 		pop	ix
 		dec	hl
 
 		ld	a, (hl)		; Teclas pulsadas
+						; 눌린 키
 		inc	hl
 		inc	hl
 		inc	hl
 		inc	hl
 		and	0Ch		; Se queda solo	con derecha e izquierda
+					; 좌우만 남는다
 		jr	z, doSalto3
 
 		dec	(hl)		; Decrementa la	X
+						; X 감소
 		bit	2, a		; Izquierda = 4
+						; 왼쪽 = 4
 		jr	nz, doSalto3
 
 		inc	(hl)		; Derecha = 8
+						; 오른쪽 = 8
 		inc	(hl)		; Incrementa la	X
+						; X 증가
 
 doSalto3:
 		ld	a, (de)		; Desplazamiento Y del salto
+						; 점프 오프셋 Y
 		inc	a		; Ha llegado al	final de la tabla?
+					; 테이블의 끝에 도달했습니까?
 		jr	z, saltoCaeMax	; Si, cae a la maxima velocidad
+							; 예, 최대 속도로 떨어집니다.
 
 		dec	a		; Restaura el valor de desplazamiento
+					; 오프셋 값을 복원합니다.
 		ld	c, a		; Lo guarda en C
+						; C로 저장
 
 		ld	a, (waitCounter)
 		dec	a
 		dec	a
 		ld	a, c
 		jr	nz, chkSaltoSubBaj ; Salta si waitCounter no es	2
+								; waitCounter가 2가 아니면 점프
 
 		add	a, a
 		add	a, a		; Multiplica el	desplazamiento x4
+						; 오프셋 x4 곱하기
 
 chkSaltoSubBaj:
 		dec	b
 		inc	b		; Sube o cae?
+					; 상승 또는 하락?
 		jr	nz, saltoUpdate	; Sube
+							; 상승
 		neg			; Cae, asi que pasa el valor a negativo
+					; 떨어지므로 값을 음수로 전달하십시오.
 
 saltoUpdate:
 		call	saltoUpdateY	; Actualiza la coordenada Y del	elemento que esta saltando
+								; 점프하는 요소의 Y 좌표 업데이트
 		inc	de		; Siguiente posicion de	la lista de desplazamientos
+					; 스크롤 목록의 다음 위치
 
 		ld	a, b		; Sentido del salto
+						; 점프 방향
 		and	a		; Sube o cae?
+					; 상승 또는 하락?
 		jr	z, saltoUpdate3	; Sube
+							; 상승
 
 		dec	de		; Recorre la lista hacia atras
+					; 목록으로 돌아가기
 
 saltoUpdate2:
 		dec	de
@@ -12315,14 +12372,18 @@ saltoUpdate2:
 saltoUpdate3:
 		ld	(ix+0Ah), e
 		ld	(ix+0Bh), d	; Guarda puntero a los desplazamientos del salto
+						; 점프 오프셋에 대한 포인터 저장
 		ld	a, (de)
 		cp	0FEh		; Ha llegado al	final de la tabla? (Punto mas alto del salto)
+						; 테이블의 끝에 도달했습니까? (점프의 가장 높은 지점)
 		ret	nz		; No
 
 		ld	(ix+0Ch), 1	; Cambia el sentido del	salto. Comienza	a caer
 					; Para ello recorre la misma lista hacia atras
+					; 점프 방향을 변경합니다. 떨어지기 시작하다
+					; 이를 위해 동일한 목록을 역순으로 진행합니다.
 		jr	saltoUpdate2	; Decrementa el	puntero	para dejarlo en	un valor valido
-
+							; 포인터를 유효한 값으로 유지하려면 포인터를 감소시키십시오.
 saltoCaeMax:
 		ld	a, 4
 
@@ -12339,6 +12400,7 @@ saltoUpdateY:
 ; 점프할 때 요소의 Y에 적용된 오프셋
 ;----------------------------------------------------
 		db 0FFh			; Fin del salto. Cae a maxima velocidad
+						; 점프 끝. 최고 속도로 추락
 valoresSalto:	db 4
 		db    2
 		db    2
@@ -12352,6 +12414,7 @@ valoresSalto:	db 4
 		db    0
 		db    0
 		db -2			; Final	de la tabla. Comienza la caida
+						; 테이블 끝. 추락이 시작된다
 
 ;----------------------------------------------------
 ; Pone estado de cayendo
@@ -12369,22 +12432,27 @@ valoresSalto:	db 4
 
 cayendo:
 		ld	(hl), 2		; Estado de cayendo
+						; 떨어지는 상태
 		inc	hl
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; Y
 		and	0FCh
 		ld	(hl), a		; Ajusta la Y a	multiplo de 4
+						; Y를 4의 배수로 설정
 
 		push	hl
 		call	chkCae
 		pop	hl
 		ret	nc		; Esta pisando algo
+					; 무언가를 밟고 있다
 
 		ld	a, (hl)		; Y
 		add	a, 4		; Incrementa la	Y en 4
+						; Y를 4만큼 증가
 		and	0FCh
 		ld	(hl), a		; Ajusta la Y a	multiplo de 4
+						; Y를 4의 배수로 설정
 
 		xor	a
 		sub	1		; Set Carry
@@ -12404,6 +12472,7 @@ cayendo:
 andaEscalera:
 		ld	a, (timer)
 		and	b		; Mascara para ralentizar la velocidad en las escaleras
+					; 계단에서 속도를 늦추는 마스크
 		ret	nz
 
 		inc	hl
@@ -12418,12 +12487,15 @@ andaEscalera:
 					; Y를 가리킴
 		and	3
 		jr	nz, andaEscalera2 ; La X no es multiplo	de 4
+								; X는 4의 배수가 아닙니다.
 
 		push	hl		; Apunta a la Y
 						; Y를 가리킴
 		call	chkFinEscalera	; Comprueba si llega al	final de la escalera
+								; 사다리 바닥에 닿았는지 확인
 		pop	hl
 		ret	z		; Si, ha llegado al final
+					; 네, 끝이 났습니다.
 
 andaEscalera2:
 		ld	a, c		; Sentido
@@ -12431,15 +12503,19 @@ andaEscalera2:
 		inc	hl
 		inc	hl
 		inc	(hl)		; Incrementa la	X
+						; X 증가
 		rra
 		jr	nc, andaEscalera3 ; Va a la derecha
+								; 오른쪽으로 간다
 		dec	(hl)
 		dec	(hl)		; Decrementa la	X. Va a	la izquierda
+						; X를 감소시킵니다. 왼쪽으로 이동합니다.
 
 andaEscalera3:
 		push	hl
 		ld	a, 0Ah
 		call	ADD_A_HL	; Apunta al sentido de las escaleras (+#0f)
+							; 계단 방향을 가리킴(+#0f)
 		ld	a, (hl)
 		dec	hl
 		dec	hl
@@ -12447,14 +12523,18 @@ andaEscalera3:
 		dec	hl
 		dec	hl
 		inc	(hl)		; Contador de movimiento
+						; 이동 카운터
 		pop	hl		; Apunta a la X
 					; X를 가리킴
 
 		add	a, c		; Sentido escalera + sentido movimiento
+						; 계단 방향 + 이동 방향
 		ld	b, 1		; Baja
+						; 하강
 		bit	0, a
 		jr	z, andaEscalera4
 		ld	b, -1		; Sube
+						; 상승
 
 andaEscalera4:
 		dec	hl
@@ -12462,10 +12542,13 @@ andaEscalera4:
 					; Y를 가리킴
 		ld	a, (hl)		; Y
 		add	a, b		; Suma desplazamineto vertical
+						; 수직 오프셋 추가
 		ld	(hl), a		; Actualiza la coordenada Y dependiendo	del sentido de la escalera y hacia donde se mueve
+						; 계단의 방향과 이동 위치에 따라 Y 좌표를 업데이트합니다.
 
 		xor	a
 		cp	1		; Set NZ
+					; NZ 설정
 		ret
 
 
@@ -12481,14 +12564,19 @@ ShowEnding:
 		djnz	showEnding2
 
 		ld	hl, protaEndingDat ; Datos preparados para el ending (el prota sale de la piramide, anda a la izquierda	y salta)
+								; 엔딩을 위해 준비한 데이터 (주인공이 피라미드에서 나와 왼쪽으로 걸어가 점프)
 		ld	de, protaStatus	; Destino: estructura del prota
+							; 대상: 주인공의 구조
 		ld	bc, 0Ch		; Numero de datos a copiar
+						; 복사할 데이터 수
 		ldir
 
 		call	setAttribProta	; Actualiza atributos de los sprites del prota
 								; 주인공 스프라이트의 속성 업데이트
 		ld	hl, controlsEnding ; Izquierda,	Izquierda+Salto
+								; 왼쪽, 왼쪽+점프
 		ld	(keyPressDemo),	hl ; Puntero a los controles grabados
+								; 기록된 컨트롤에 대한 포인터
 		ld	a, 88h
 		ld	(KeyHoldCntDemo), a
 
@@ -12498,6 +12586,7 @@ nextSubStatus_:
 
 controlsEnding:	db 4, 1Bh
 		db 14h,	0FFh		; Izquierda, Izquierda+Salto
+							; 왼쪽, 왼쪽+점프
 
 ;----------------------------------------------------
 ; Anda hasta el	centro de la pantalla y	salta
@@ -12507,19 +12596,25 @@ controlsEnding:	db 4, 1Bh
 showEnding2:
 		djnz	showEnding3
 		call	ReplaySavedMov	; Reproduce movimientos	grabados del ending (andar izquierda y saltar)
+								; 녹음된 종료 동작 재생(왼쪽으로 걷기 및 점프)
 		call	AI_Prota	; Mueve	y anima	al prota
+							; 주인공 이동 및 애니메이션
 		ld	a, (flagVivo)
 		and	a
 		ret	nz		; Se ha	terminado la demo
+					; 데모가 끝났습니다
 
 		call	setProtaSalta_	; Salta
 								; 도약
 
 		ld	hl, sentidoProta ; 1 = Izquierda, 2 = Derecha
+							; 1 = 왼쪽, 2 = 오른쪽
 		ld	(hl), a		; (!?) A = #3F No parece que tenga un valor puesto a proposito
+						; (!?) A = #3F 의도적으로 값을 설정하지 않은 것 같습니다.
 		dec	a		; #3E?
 		dec	hl
 		ld	(hl), a		; ProntaControl
+						; 주인공 제어
 		ld	a, 2
 		ld	(waitCounter), a
 		jr	nextSubStatus_
@@ -12532,9 +12627,12 @@ showEnding2:
 showEnding3:
 		djnz	showSpecialBonus
 		call	AI_Prota	; Mueve	y anima	al prota
+							; 주인공 이동 및 애니메이션
 		ld	a, (flagSalto)	; 0 = Saltando,	1 = En el suelo
+							; 0 = 점프, 1 = 지상에서
 		or	a
 		ret	z		; Aun no ha terminado el salto
+					; 점프는 아직 끝나지 않았다
 		jr	nextSubStatus_
 
 ;----------------------------------------------------
@@ -12545,7 +12643,9 @@ showEnding3:
 showSpecialBonus:
 		djnz	waitEnding
 		call	VidaExtra	; Suma una vida	extra
+							; 생명을 더하다
 		call	specialBonus	; Muestra texto	de CONGARTULATIONS, SPECIAL BONUS y suma 10.000	puntos
+								; 축하 텍스트, 특별 보너스 표시 및 10,000점 추가
 		ld	a, 0D0h
 		ld	(waitCounter), a
 		jr	nextSubStatus_
@@ -12564,6 +12664,7 @@ waitEnding:
 		ret	nz
 
 		ld	a, 8		; status: Stage	clear
+						; 상태: 스테이지 클리어
 		ld	(GameStatus), a
 		ret
 
@@ -12583,11 +12684,15 @@ waitEnding:
 
 setupEnding:
 		call	hideSprAttrib	; Oculta los sprites
+								; 스프라이트를 숨기다
 		call	drawCortinilla	; Dibuja la cortinilla
+								; 커튼을 치다
 		ret	p		; No ha	terminado con la cortinilla
+					; 커튼으로 끝난게 아니야
 
 		ld	a, 20h
 		call	cogeObjeto	; Hace que el prota lleve el pico
+							; 주인공이 부리를 들게 한다.
 
 		ld	a, 8Bh		; Ingame music
 		call	setMusic
@@ -12602,54 +12707,76 @@ setupEnding:
 		ldir
 
 		ld	hl, 2480h	; VRAM address pattern generator table = Pattern #90
+						; VRAM 주소 패턴 생성기 테이블 = 패턴 #90
 		ld	de, endingTiles
 		call	UnpackPatterns
 
 		ld	hl, 480h	; VRAM address color table = pattern #90
+						; VRAM 주소 색상표 = 패턴 #90
 		ld	de, endingColors
 		call	UnpackPatterns
 
 		ld	hl, 391Fh	; VRAM address name table = Posicion pico piramide grande derecha
+						; VRAM 주소 이름 테이블 = 오른쪽 큰 피라미드 피크 위치
 		ld	c, 90h
 		xor	a
 		call	drawHalfPiram
 
 		ld	hl, 3A03h	; VRAM address name table = Posicion vertice izquierdo piramide	mediana	izquierda
+						; VRAM 주소 이름 테이블 = 위치 왼쪽 정점 왼쪽 중앙 피라미드
 		ld	c, 92h
 		call	drawHalfPiram
 
 		ld	hl, 3A2Bh	; VRAM address name table = Posicion vert. izq.	piramide peque�a central
+						; VRAM 주소 이름 테이블 = 왼쪽 정점 위치 작은 중앙 피라미드
 		call	drawHalfPiram
 
 		ld	hl, 3A04h	; VRAM address name table = Posicion vertice superior lado derecho piramide mediana izquierda
+						; VRAM 주소 이름 테이블 = 상단 정점 위치 오른쪽 왼쪽 중앙 피라미드
 		ld	c, 94h
 		inc	a		; Lado derecho de las piramides
+					; 피라미드의 오른쪽
 		call	drawHalfPiram
 
 		ld	hl, 3A2Ch	; VRAM address name table = Posicion vertice superior lado derecho piramide peque�a central
+						; VRAM 주소 이름 테이블 = 상단 정점 위치 오른쪽 작은 중앙 피라미드
 		call	drawHalfPiram
 
 		ld	de, tilesEndDoor ; Patrones que	forman la puerta de la piramide	grande
+								; 대피라미드의 문을 이루는 패턴들
 		ld	bc, 302h	; Alto = 3 tiles, ancho	= 2 tiles
+						; 높이 = 타일 3개, 너비 = 타일 2개
 		ld	hl, 3A1Eh	; VRAM address name table = Posicion de	la puerta
+						; VRAM 주소 이름 테이블 = 포트 위치
 		call	DEtoVRAM_NXNY	; Dibuja la puerta en pantalla
+								; 화면에 문을 그립니다.
 
 		ld	a, 96h		; Patron suelo de arena
+						; 모래 바닥 패턴
 		ld	hl, 3A60h	; VRAM address name table = Suelo
+						; VRAM 주소 이름 테이블 = 접지
 		ld	bc, 20h		; Ancho	de la pantalla
+						; 화면 너비
 		call	setFillVRAM	; Dibuja el suelo
+							; 땅을 그리다
 		call	renderMarcador
 
 		ld	de, starsLocations
 		ld	b, 6		; Numero de estrellas en el cielo
+						; 하늘에 있는 별의 수
 
 drawStars:
 		ld	a, (de)		; Byte bajo de la direccion VRAM tabla de nombres (semicoordenada) de la estrella
+						; 별의 VRAM 이름 테이블 주소(반순서)의 하위 바이트
 		ld	l, a
 		ld	h, 39h		; Byte alto de la direccion VRAM de la tabla de	nombres
-		ld	a, 97h		; Patron estrella
+						; 이름 테이블 VRAM 주소의 상위 바이트
+		ld	a, 97h		; Patron estrellas
+						; 별 패턴
 		call	WRTVRM		; Dibuja la estrella
+							; 별을 그리다
 		inc	de		; Siguiente estrella
+					; 다음 별
 		djnz	drawStars
 
 nextSubstatus2:
@@ -12675,48 +12802,72 @@ nextSubstatus2:
 
 drawHalfPiram:
 		ld	b, 0		; Contador del ancho de	la fila	actual de la piramide
+						; 피라미드의 현재 행 너비의 카운터
 
 chkVertice:
 		push	hl		; Guarda direccion VRAM	del eje	de la piramide
+						; 피라미드 축의 VRAM 주소 저장
 		push	bc		; Guarda el ancho de la	linea actual de	la piramide
+						; 피라미드의 현재 선 너비를 저장합니다.
 		dec	b
 		inc	b		; Es cero el ancho? (Es	el vertice superior?)
+					; 너비가 0입니까? (맨 위 꼭지점인가요?)
 		jr	z, drawVertice	; Coloca el vertice de la piramide
+							; 피라미드의 꼭짓점 배치
 
 drawRelleno:
 		ex	af, af'         ; Guarda la direccion de pintado
 		ld	a, c		; Tile de arista / o \
+						; 가장자리 타일 / 또는 \
 		inc	a		; Lo pasa a tile de relleno
+					; 타일을 채우기 위해 전달
 		call	WRTVRM		; Tile de relleno de la	piramide
+							; 피라미드 채우기 타일
 		ex	af, af'         ; Recupera la direccion de pintado
+							; 페인트 방향 검색
 		dec	hl		; Se mueve un patron a la izquierda
+					; 패턴이 왼쪽으로 이동합니다.
 		and	a		; Lado de la piramide que tiene	que pintar?
+					; 피라미드의 어느 쪽을 그려야 합니까?
 		jr	z, drawRelleno2
 
 		inc	hl
 		inc	hl		; Se mueve un patron a la derecha
+					; 패턴이 오른쪽으로 이동합니다.
 
 drawRelleno2:
 		djnz	drawRelleno	; Aun faltan patrones por pintar de la fila actual de la piramide
+							; 피라미드의 현재 행에 칠할 패턴이 아직 있습니다.
 
 drawVertice:
 		pop	bc		; Recupera el ancho actual de la fila de la piramide
+					; 피라미드 행의 현재 너비 검색
 		inc	b		; Incrementa contador del ancho	de la piramide
+					; 피라미드 너비 카운터 증가
 		ex	af, af'         ; Guarda la direccion de pintado indicada en A
+							; A에 표시된 페인팅 방향을 저장합니다.
 		ld	a, c		; Vertice de la	piramide / patron diagonal
+						; 피라미드 꼭짓점/대각선 패턴
 		call	WRTVRM		; Dibuja el patron en pantalla
 							; 화면에 패턴을 그립니다.
 		ex	af, af'         ; Recupera la direccion de pintado
-
+							; 페인트 방향 검색
 		pop	hl		; Recupera la direccion	VRAM del eje central de	la piramide
+					; 피라미드 중심 축의 VRAM 주소를 검색합니다.
 		ld	de, 20h		; Distancia al tile inferior
+						; 바닥 타일까지의 거리
 		add	hl, de		; Coloca puntero VRAM un tile mas abajo
+						; VRAM 포인터를 한 타일 아래로 설정
 		push	hl		; Guarda direccion VRAM	del eje	central
+						; 중심축의 VRAM 주소 저장
 		and	a
 		ld	de, 3A80h	; VRAM address name table por debajo de	la linea del suelo
+						; 접지선 아래의 VRAM 주소 이름 테이블
 		sbc	hl, de		; Comprueba si ya se ha	pintado	la piramide hasta el suelo
+						; 피라미드가 이미 바닥에 칠해졌는지 확인하십시오.
 		pop	hl
 		jr	c, chkVertice	; Continua pintando otra fila de la piramide
+							; 피라미드의 다른 행을 계속 그리십시오.
 
 		ret
 
@@ -12787,28 +12938,41 @@ protaEndingDat:	db 0, 4, 1, 88h, 0, 0F0h, 0, 0C0h, 0, 0, 0, 0
 setupPergamino:
 		call	hideSprAttrib
 		ld	de, gfxMap	; Patrones del pergamino con el	mapa de	piramides
+						; 피라미드 지도가 있는 양피지 패턴
 		ld	hl, 2600h	; VRAM address pattern #C0
+						; VRAM 주소 패턴 #C0
 		call	UnpackPatterns	; Descomprime los patrones en VRAM
+								; VRAM에서 패턴 압축 풀기
 
 		ld	de, colorTableMap ; Tabla de color de los patrones del mapa
+								; 지도 패턴 색상표
 		ld	hl, 600h	; VRAM address color table pattern #C0
+						; VRAM 주소 색상 테이블 패턴 #C0
 		call	UnpackPatterns	; Descomprime tabla de colores
+								; 색상표 압축 풀기
 
 		ld	de, gfxSprMapa	; Sprites usados en el mapa (silueta piramide y	flechas)
+							; 맵에 사용된 스프라이트(피라미드 실루엣 및 화살표)
 		call	unpackGFXset	; Descomprime sprites
+								; 스프라이트 압축 풀기
 
 		xor	a
 		ld	(statusEntrada), a
 		ld	(timerPergam2),	a ; Se usa para	hacer una pausa	tras terminar de sonar la musica del pergamino al llegar al GOAL
+								; GOAL에 도달했을 때 스크롤 음악 재생이 끝난 후 일시 중지하는 데 사용됩니다.
 
 		ld	a, 91h		; Musica pergamino
+						; 양피지 음악
 		call	setMusic
 
 		ld	a, (piramideActual)
 		call	setPiramidMap	; Coloca la silueta para resaltar la piramide actual
+								; 실루엣을 배치하여 현재 피라미드를 강조 표시합니다.
 
 		ld	a, (puertaSalida) ; Direccion de la salida de la piramide
+								; 피라미드 출구 방향
 		ld	de, numSprFlechas ; Numero de sprites de las flechas
+								; 화살 스프라이트의 수
 
 setFlechaMap:
 		push	de
@@ -12816,6 +12980,7 @@ setFlechaMap:
 		cp	4
 		jr	nz, setFlechaMap2
 		dec	a		; Convierte valores 1,2,4,8 en 0,1,2,3
+					; 값 1,2,4,8을 0,1,2,3으로 변환
 
 setFlechaMap2:
 		push	af
@@ -12823,22 +12988,34 @@ setFlechaMap2:
 		ld	hl, offsetFlechas
 		call	ADD_A_HL
 		ld	de, attrPiramidMap ; Atributos del sprite usado	para resaltar una piramide en el mapa (silueta)
+								; 지도에서 피라미드를 강조 표시하는 데 사용되는 스프라이트의 속성(실루엣)
 		ld	bc, attrFlechaMap ; Atributos de la flecha del mapa
+								; 지도 화살표 속성
 		ld	a, (de)		; Y de la piramide
+						; 피라미드 Y
 		add	a, (hl)		; Le suma el desplazamiento que	le corresponde a la flecha
+						; 화살표에 해당하는 변위를 추가합니다.
 		ld	(bc), a		; Y de la flecha
+						; 화살표 Y
 		inc	hl
 		inc	de
 		inc	bc
 		ld	a, (de)		; X de la piramide
+						; 피라미드 X
 		add	a, (hl)		; Le suma el desplazamiento
+						; 변위 추가
 		ld	(bc), a		; X de la flecha
+						; 화살표 X
 		inc	bc
 		pop	af		; Recupera la direccion	de la flecha
+					; 화살표 방향 복구
 		pop	de		; Puntero al numero de sprite que corresponde cada direccion
+					; 각 방향에 해당하는 스프라이트 번호에 대한 포인터
 		call	ADD_A_DE
 		ld	a, (de)		; Sprite que corresponde a la direccion	de salida
+						; 출력 주소에 해당하는 스프라이트
 		ld	(bc), a		; Sprite de la flecha
+						; 화살 스프라이트
 		ret
 
 ;----------------------------------------------------
