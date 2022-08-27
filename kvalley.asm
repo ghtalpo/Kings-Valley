@@ -6043,26 +6043,35 @@ areaSizeMomia:	db 8, 18h
 
 chkCogeKnife:
 		ld	a, (objetoCogido) ; #10	= Cuchillo, #20	= Pico
+							; #10 = 칼, #20 = 곡괭이
 		and	a
 		ret	nz		; Ya lleva algo
-
+					; 이미 뭔가
 		ld	hl, knifeEnProceso
 		ld	(hl), a
 		inc	hl
 		cp	(hl)
 		ret	z		; No hay cuchillos en esta piramide
+					; 이 피라미드에는 칼이 없습니다
 
 chkCogeKnife2:
 		xor	a
 		call	getKnifeData	; Datos	del cuchillo
+								; 칼 데이터
 		call	getLocationDE	; Comprueba si esta en la misma	habitacion que el prota
+								; 주인공과 같은 방에 있는지 확인
 		jr	nz, chkCogeKnife3 ;  No	estan en la misma habitacion
+								; 그들은 같은 방에 있지 않다
 
 		cp	1		; Esta en reposo en el suelo? (Status =	1)
+					; 지상에서 쉬고 있는가? (상태 = 1)
 		jr	nz, chkCogeKnife3 ; No,	comprueba el siguiente cuchillo
+								; 아니, 다음 칼을 확인
 
 		call	chkAreaItem	; Comprueba si el prota	esta en	contacto con el	cuchillo
+							; 주인공이 칼에 닿았는지 확인
 		jr	c, chkCogeKnife4 ; Si!
+							; 예!
 
 chkCogeKnife3:
 		ld	hl, knifeEnProceso
@@ -6076,35 +6085,49 @@ chkCogeKnife3:
 chkCogeKnife4:
 		ld	a, (knifeEnProceso)
 		ld	(IDcuchilloCoge), a ; Cuchillo que coge	el prota
+								; 주인공을 잡는 칼
 
 		ld	a, 4		; SFX coge objeto
+						; SFX 픽업 아이템
 		call	setMusic
 
 		ld	a, 10h		; Cuchillo
+						; 칼
 		call	cogeObjeto	; Carga	los sprites del	prota con el cuchillo
+							; 칼을 든 주인공의 스프라이트를 로드
 
 		xor	a
 		call	getKnifeData
 		inc	(hl)		; Pasa el cuchillo al siguiente	estado (2 = Lo lleva el	prota)
+						; 칼을 다음 상태로 이동(2 = 주인공이 짊어짐)
 
 		ld	d, h
 		ld	e, l
 		push	hl
 		ld	bc, 0Ah		; Offset tile backup del mapa
+						; 맵 오프셋 타일 백업
 		add	hl, bc
 		ld	b, (hl)		; Tile sobre el	que estaba el cuchillo
+						; 칼이 있던 타일
 		pop	hl		; Apunta al estado
+					; 상태를 가리키다
 
 		inc	hl
 		inc	hl		; Apunta a la Y
+					; Y를 가리킴
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	(hl), b		; Restaura el tile del mapa
+						; 지도 타일 복원
 		ld	h, d
 		ld	l, e		; Recupe puntero a los datos del cuchillo (status)
+						; 나이프 데이터에 대한 포인터 검색(상태)
 		ld	a, b		; Tile del mapa
+						; 지도 타일
 		call	getTileFromID	; Obtiene patron que le	corresponde al tile
+								; 타일에 해당하는 패턴 가져오기
 		jp	drawTile	; Lo dibuja en pantalla
-
+						; 화면에 그려
 
 ;----------------------------------------------------
 ; Obtiene las coordenadas del elemento y comprueba si esta en la misma habitacion que el prota
@@ -6136,8 +6159,11 @@ getLocationDE3:
 		inc	hl
 		ld	b, a
 		ld	c, (hl)		; Habitacion
+						; 방
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	c		; Esta en la misma pantalla que	el prota?
+					; 그는 주인공과 같은 화면에 있습니까?
 		ld	a, b
 		ret
 
@@ -6153,8 +6179,10 @@ getLocationDE3:
 drawTile:
 		call	getLocationDE
 		ret	nz		; No esta en la	habitacion visible
+					; 보이는 방에 있지 않습니다
 
 		call	coordVRAM_DE	; Pasa coordenadas en DE a direccion de	VRAM
+								; DE의 좌표를 VRAM 주소로 전달
 	IF	(VERSION2)
 		call	WRTVRM
 		ld	b,1
@@ -6162,6 +6190,7 @@ drawTile:
 		ret
 	ELSE
 		jp	WRTVRM		; Escribe un dato en la	VRAM
+						; VRAM에 데이터 쓰기
 	ENDIF
 
 ;----------------------------------------------------
@@ -6175,28 +6204,36 @@ drawTile:
 chkCogeGema:
 		xor	a
 		ld	(ElemEnProceso), a ; Empezamos por la primera gema
+								; 우리는 첫 번째 보석으로 시작합니다.
 
 chkCogeGema2:
 		xor	a
 		call	getGemaDat	; Puntero a los	datos de la gema
+							; 보석 데이터에 대한 포인터
 		call	getLocationDE	; Esta en la pantalla del prota?
+								; 메인화면에 있는건가요?
 		jr	nz, chkCogeGema3
 
 		and	0Fh		; A = Color de la gema
+					; A = 보석 색상
 		jr	z, chkCogeGema3	; Color	0
 
 		call	chkAreaItem	; Comprueba si el prota	esta tocando la	gema
+							; 주인공이 보석을 만지고 있는지 확인
 		jr	nc, chkCogeGema3 ; No
 
 		ld	de, 500h
 		call	SumaPuntos	; Suma 500 puntos
+							; 500포인트 추가
 
 		ld	a, 9		; SFX coger gema
+						; sfx 보석 줍기
 		call	setMusic
 
 		ld	a, 1		; Offset status
 		call	getGemaDat
 		ld	(hl), 2		; Status = Gema	cogida.	Hay que	borrarla
+						; 상태 = 보석을 가져갔습니다. 당신은 그것을 삭제해야합니다
 
 chkCogeGema3:
 	IF	(VERSION2)
@@ -6205,10 +6242,14 @@ chkCogeGema3:
 		ret
 	ELSE
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		inc	(hl)		; Siguiente gema
+						; 다음 보석
 		ld	a, (hl)
 		dec	hl		; Puntero a gemas totales en la	piramide
+					; 피라미드의 총 보석에 대한 포인터
 		cp	(hl)		; Quedan gemas por comprobar?
+						; 확인해야 할 보석이 남았습니까?
 		jr	nz, chkCogeGema2
 		ret
 	ENDIF
@@ -6219,7 +6260,7 @@ chkCogeGema3:
 ; con el centro	superior del objeto
 ;
 ; X 오프셋을 개체 중심, 확인할 영역 너비(너비 비례)
-; 객체의 중심에 Y 오프셋, 높이 영역(본체 상단)
+; 객체의 중심에 Y 오프셋, 영역 높이(본체 상단)
 ; 물체와의 충돌의 경우 주인공의 상단이 물체의 상단 중앙에 대해 확인됩니다.
 ;----------------------------------------------------
 itemHitArea:	db 5, 11h
@@ -6234,58 +6275,81 @@ itemHitArea:	db 5, 11h
 
 chkCogePico:
 		ld	a, (objetoCogido) ; #10	= Cuchillo, #20	= Pico
+							; #10 = 칼, #20 = 곡괭이
 		and	a
 		ret	nz		; Ya lleva algo
-
+					; 이미 뭔가
 
 		ld	hl, numPicos
 		ld	a, (hl)
 		or	a
 		ret	z		; No hay picos
+					; 스파이크 없음
 
 		xor	a
 		ld	(ElemEnProceso), a ; Comienza a	comprobar desde	el primer pico
+								; 첫 번째 곡괭이부터 확인 시작
 
 	IF	(!VERSION2)
 		inc	hl		; (!?) No se usa!
+					; (!?) 사용하지 않습니다!
 	ENDIF
 
 chkNextPico:
 		xor	a
 		call	getPicoData	; Obtiene puntero a los	datos del pico
+							; 곡괭이 데이터에 대한 포인터 가져오기
 		call	getLocationDE2	; Comprueba si esta en la misma	habitacionq ue el prota
+								; 주인공과 같은 방에 있는지 확인
 		jr	nz, chkLastPico	; No, pasa al siguiente	pico
+							; 아니, 다음 곡괭이로 이동
 
 		and	a		; Esta activo o	ya ha sido cogido?
+					; 활성 상태입니까 아니면 이미 사용 중입니까?
 		jr	z, chkLastPico	; No esta activo. Pasa al siguiente
+							; 활성 상태가 아닙니다. 다음으로 건너뛰기
 
 		call	chkAreaItem	; Comprueba si el prota	toca el	pico
+							; 주인공이 곡괭이를 만지는지 확인
 		jr	nc, chkLastPico	; No, pasa al siguiente
+							; 아니요, 다음으로 이동합니다.
 
 		ld	a, 4		; SFX Coger objeto
+						; SFX 픽업 아이템
 		call	setMusic
 
 		xor	a
 		call	getPicoData	; Puntero a los	datos del pico
+							; 피크 데이터에 대한 포인터
 
 		ld	(hl), 0		; Marca	pico como usado	(lo desactiva)
+						; 곡괭이를 사용됨으로 표시(끄기)
 		push	hl
 		inc	hl		; Apunta a la Y
+					; Y를 가리킴
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 
 		xor	a
 		ld	(hl), a		; Borra	el pico	del mapa
+						; 지도에서 피크 삭제
 		pop	hl
 		dec	hl
 		call	drawTile	; Borra	el pico	de la pantalla
+							; 화면에서 곡괭이 지우기
 
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		ld	(idxPicoCogido), a ; Indice del	pico cogido por	el prota
+								; 주인공이 잡은 곡괭이의 인덱스
 		ld	a, 20h		; Pico
+						; 곡괭이
 		jp	cogeObjeto	; Carga	los sprites del	prota llevando el pico
+						; 곡괭이를 들고 있는 주인공의 스프라이트를 불러옵니다.
 
 chkLastPico:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		inc	(hl)
 		ld	a, (numPicos)
 		cp	(hl)
@@ -6300,7 +6364,9 @@ chkLastPico:
 
 getPicoData:
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		ld	hl, picosData	; Datos	de los picos
+							; 피크 데이터
 		ld	b, a
 		jp	getIndexX4_masB
 
@@ -6317,49 +6383,69 @@ getPicoData:
 
 chkTocaMomia:
 		ld	c, 0		; Comienza por la primera momia
+						; 첫 번째 미라로 시작
 
 chkNextMomia:
 		ld	a, c
 		call	getMomiaDat	; Obtiene puntero a los	datos de la momia
+							; 미라 데이터에 대한 포인터 가져오기
 		ld	hl, (pMomiaProceso) ; Puntero a	los datos de la	momia en proceso
+								; 진행 중인 미라 데이터에 대한 포인터
 		ld	a, (hl)
 		cp	4		; Esta andando,	saltando, cayendo o en unas escaleras?
+					; 걷거나, 뛰거나, 넘어지거나 계단을 오르고 있습니까?
 		jr	c, chkTocaMomia2 ; Si
 
 		cp	7		; Esta pensando?
+					; 그는 생각하고 있습니까?
 		jr	nz, chkLastACTOR_ ; No,	pasa a la siguiete momia
+								; 아니, 다음 미라로 이동
 
 chkTocaMomia2:
 		ld	a, (protaStatus) ; Status del prota
+							; 주인공의 상태
 		ld	b, a
 		cp	3		; Esta en unas escaleras?
+					; 일부 계단에 있습니까?
 		jr	z, chkTocaMomia3 ; si
 
 		ld	a, (hl)		; Status de la momia
+						; 미라 상태
 		cp	3		; Esta la momia	en unas	escaleras?
+					; 일부 계단에 미라가 있습니까?
 		jr	nz, chkTocaMomia4 ; No
 
 chkTocaMomia3:
 		ld	a, b
 		cp	(hl)		; Estan	ambos en unas escaleras?
+						; 둘 다 일부 계단에 있습니까?
 		jr	nz, chkLastACTOR_ ; No,	entonces no se comprueba si se tocan
+								; 아니요, 터치하면 확인되지 않습니다.
 
 chkTocaMomia4:
 		ld	a, (ProtaRoom)	; Habitacion en	la que esta el prota
+							; 주인공이 있는 방
 		cp	(ix+ACTOR_ROOM)	; Habitacion en	la que esta la momia
+							; 미라가 있는 방
 		jr	nz, chkLastACTOR_ ; No estan en	la misma habitacion
+								; 그들은 같은 방에 있지 않다
 
 		ld	d, (ix+ACTOR_Y)	; Y momia
 		ld	e, (ix+ACTOR_X)	; X momia
 		ld	hl, mummyHitArea
 		call	chkTocaProta	; Comprueba si el prota	toca a la momia
+								; 주인공이 미라를 만지는지 확인
 		jr	c, momiaMataProta ; Si,	se tocan. El prota muere
+								; 예, 그들은 만집니다. 주인공이 죽는다
 
 chkLastACTOR_:
 		inc	c		; Siguiente momia
+					; 다음 미라
 		ld	hl, numMomias	; Numero de momias de la piramide
+							; 피라미드에 있는 미라의 수
 		ld	a, c
 		cp	(hl)		; Ha comprobado	todas las momias?
+						; 미라를 모두 확인하셨나요?
 		jp	nz, chkNextMomia ; No
 
 		and	a
@@ -6367,9 +6453,11 @@ chkLastACTOR_:
 
 momiaMataProta:
 		ld	a, 1Dh		; Musica muere prota
+						; 주인공 사망 음악
 		call	setMusic
 		xor	a
 		ld	(flagVivo), a	; Mata al prota
+							; 주인공을 죽이다
 		ret
 
 
@@ -6442,26 +6530,31 @@ chkTocaProta:
 
 ; HL:
 ; +0 = 오프셋 X1
-; +1 = 면적 너비
+; +1 = 영역 너비
 ; +2 = 오프셋 Y1
-; +3 = 높은 지역
+; +3 = 영역 높이
 ;
 ;----------------------------------------------------
 
 chkArea:
 		ld	a, b		; X area
 		sub	e		; X punto
+					; X 포인트
 		sub	(hl)		; Offset X del punto
 		inc	hl
 		add	a, (hl)		; Ancho	del area
+						; 영역 너비
 		jr	nc, chkArea2	; No esta dentro
+							; 안에 있지 않다
 
 		ld	a, c		; Y area
 		sub	d		; Y punto
+					; Y 포인트
 		inc	hl
 		sub	(hl)		; Offset Y del punto
 		inc	hl
 		add	a, (hl)		; Alto del area
+						; 영역 높이
 
 chkArea2:
 		ret
@@ -6489,12 +6582,15 @@ tickScroll:
 		dec	(hl)
 		dec	(hl)
 		dec	(hl)		; Mueve	el scroll 4 posiciones
+						; 스크롤 4개 위치 이동
 		ld	a, (hl)
 	ENDIF
 		cp	0FCh
 		ret	z		; Ha llegado al	final
+					; 끝에 도달했습니다
 
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+								; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		ld	a, (hl)
 		jr	c, tickScroll2
@@ -6512,7 +6608,9 @@ tickScroll2:
 tickScroll3:
 		ld	b, a		; Desplazamiento relativo a la habitacion actual
 		ld	hl, ProtaRoom	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+								; 1 = 왼쪽, 2 = 오른쪽
 		cp	3
 		jr	nz, tickScroll4
 		ld	a, 1
@@ -6528,7 +6626,7 @@ tickScroll5:
 		add	a, b
 		ld	de, MapaRAM
 		call	ADD_A_DE	; Aplica desplazamiento
-
+							; 오프셋 적용
 
 ;----------------------------------------------------
 ; Dibuja la habitacion actual
@@ -6542,13 +6640,16 @@ tickScroll5:
 
 drawRoom:
 		ld	hl, 3820h	; Segunda fila de la pantalla (la primera esta reservada para el marcador)
+						; 화면의 두 번째 행(첫 번째 행은 마커용으로 예약됨)
 		call	setVDPWrite
 		ld	b, 16h		; Numero de filas (alto	en tiles)
+						; 행 수(타일의 높이)
 
 drawRoom2:
 		push	bc
 		push	de
 		ld	b, 20h		; Numero de columnas (ancho en tiles)
+						; 열 수(타일의 너비)
 
 drawRoom3:
 		ld	a, (de)		; ID tile
@@ -6561,9 +6662,11 @@ drawRoom3:
 
 		pop	de
 		ld	a, 60h		; Desplazamiento a la siguiente	fila (3*32)
+						; 다음 행으로 이동(3*32)
 		call	ADD_A_DE
 		pop	bc
 		djnz	drawRoom2	; Dibuja siguiente fila
+							; 다음 행 그리기
 		ret
 
 ;----------------------------------------------------
@@ -6585,12 +6688,15 @@ getTileFromID:
 		rra
 		rra
 		and	1Eh		; El nibble alto indica	el grupo de tiles
+					; 높은 니블은 타일 그룹을 나타냅니다.
 		ld	hl, indexTiles
 		call	getIndexHL_A
 		ld	a, c
 		and	0Fh		; El nibble bajo indica	el indice dentro del grupo
+					; 낮은 니블은 그룹 내 인덱스를 나타냅니다.
 		call	ADD_A_HL
 		ld	a, (hl)		; Obtiene el patron que	corresponde con	ese ID del mapa
+						; 해당 맵 ID에 해당하는 패턴 가져오기
 		pop	hl
 		ret
 
@@ -6608,6 +6714,7 @@ indexTiles:	dw tilesNULL
 
 	IF	(!VERSION2)
 		dw byte_5DC3		; #90 (!?) Estos bloques no se usan!
+							; #90(!?) 이 블록은 사용되지 않습니다!
 		dw byte_5DC4		; #A0
 		dw byte_5DC6		; #B0
 		dw byte_5DC7		; #C0
@@ -6619,48 +6726,70 @@ tilesNULL:	db    0
 
 tilesPlataforma:db    0
 		db    0			; Vacio
+						; 비어 있는
 		db 40h
 		db 40h			; Ladrillo
+						; 벽돌
 		db 41h			; Limite inferior
+						; 하한
 		db 73h			; Inicio de escalera que baja hacia la derecha (parte izquierda)
+						; 오른쪽(왼쪽)으로 내려가는 계단 시작
 		db 74h			; Inicio de escalera que baja hacia la derecha (Parte derecha)
+						; 오른쪽으로 내려가는 계단 시작(오른쪽)
 		db 83h			; Inicio de escalera que baja hacia la izquierda (parte	derecha)
+						; 왼쪽(오른쪽)으로 내려가는 계단 시작
 		db 82h			; Inicio de escalera que baja hacia la izquierda (parte	izquierda)
+						; 왼쪽으로 내려가는 계단 시작(왼쪽)
 		db 40h			; Ladrillo completo muro trampa
+						; 전체 벽돌 트랩 벽
 		db 42h			; Ladrillo simple muro trampa
+						; 간단한 벽돌 트랩 벽
 		db 43h			; Ladrillo semiroto 1
+						; 반 깨진 벽돌 1
 		db 44h			; Ladrillo semiroto 2
+						; 반 깨진 벽돌 2
 		db 44h
 
 
 tilesEscalera:	db 75h
 		db 76h			; Pelda�os bajan derecha
+						; 오른쪽으로 내려가는 계단
 		db 85h
 		db 84h			; Pelda�os bajan izquierda
-
+						; 왼쪽으로 내려가는 계단
 
 tilesCuchillo:	db 4Bh
 		db 4Bh
 		db 4Bh			; Cuchillo suelo
+						; 그라운드 나이프
 
 
 tilesGemas:	db 51h
 					; Brillo superior
+					; 위쪽 광택
 		db 52h			; Brillo gema izquierda
+						; 왼쪽 보석 광택
 		db 53h			; Brillo gema derecha
+						; 오른쪽 보석 광택
 		db 86h			; Gema azul oscuro
+						; 진한 파란색 보석
 		db 87h			; Gema azul claro
+						; 하늘색 보석
 		db 88h			; Gema magenta
+						; 마젠타 보석
 		db 89h			; Gema amarilla
+						; 노란 보석
 		db 8Ah			; Gema verde
+						; 녹색 보석
 		db 8Bh			; Gema gris
-
+						; 회색 보석
 
 tilesGiratoria:	db 68h
 		db 69h			; Puerta giratoria izquierda->derecha
+						; 왼쪽->오른쪽 회전문
 		db 78h
 		db 77h			; Puerta giratoria derecha->izquierda
-
+						; 오른쪽 -> 왼쪽 회전문
 
 tilesSalida:	db 6Ch
 		db 7Bh
@@ -6669,11 +6798,15 @@ tilesSalida:	db 6Ch
 		db 6Eh
 		db 7Dh
 		db 63h			; Interior superior amarillo salida 1
+						; 내부 상단 노란색 콘센트 1
 		db 64h			; Interior superior amarillo salida 2
+						; 내부 상단 노란색 콘센트 2
 		db 65h
 		db 66h
 		db 67h			; Escaleras
+						; 사다리
 		db 6Fh			; Ladrillos cerrandose
+						; 벽돌 폐쇄
 		db 5Fh
 		db 60h
 		db 7Eh
@@ -6688,8 +6821,11 @@ tilesSalida2:	db 71h
 		db 62h
 		db 81h
 		db 5Ch			; Palanca abajo
+						; 레버를 내리다
 		db 5Dh			; Palanca arriba
+						; 레버를 올리다
 		db 5Eh			; Parte	inferior palanca
+						; 레버 바닥
 
 tilePico:	db 4Ch
 
@@ -6708,6 +6844,7 @@ byte_5DC7:	db 0
 
 tilesAgujero:	db 43h
 		db 44h			; Ladrillo semiroto2
+						; 반쯤 부서진 벽돌2
 	ENDIF
 
 
@@ -6850,8 +6987,10 @@ MapStage10:	db 2, 12h, 20h,	31h, 0FFh, 0FFh, 0A0h, 70h, 0B8h, 98h
 
 	IF	(VERSION2)
 		db 78h,	28h, 30h, 31h, 38h, 0B1h, 0, 3,	0A0h, #18, 38h	; Muro trampa con coordenadas (#18, #a0) Al coger el cuchillo de abajo a la izquierda
+		; 좌표가 있는 트랩 벽(#18, #a0) 왼쪽 아래 칼 집기
 	ELSE
 		db 78h,	28h, 30h, 31h, 38h, 0B1h, 0, 3,	0A0h, 21h, 38h	; Muro trampa mal puesto en (#120,#a0) Hay que hacer un par de agujeros bajo la escalera para que aparezca.
+		; (#120,#a0)에 잘못 배치된 트랩 벽이 나타나려면 계단 아래에 몇 개의 구멍을 만들어야 합니다.
 	ENDIF
 
 		db 21h,	40h, 0E1h, 0Dh,	38h, 40h, 40h, 0C9h, 48h, 20h
@@ -6879,8 +7018,10 @@ MapStage12:	db 3, 10h, 21h,	31h, 0FFh, 0FFh, 60h, 0A0h, 0B4h, 70h
 
 	IF	(VERSION2)
 		db 2, 0, 38h, 0AAh, 2, 58h, 5Eh, 1, 98h, #e9, 0Ch, 30h		; Mueve el muro trampa 8 pixeles a la derecha (!?) Estaba mejor en el original
+		; 트랩벽을 오른쪽으로 8픽셀 이동(!?)
 	ELSE
 		db 2, 0, 38h, 0AAh, 2, 58h, 5Eh, 1, 98h, 0E1h, 0Ch, 30h		; Muro trampa en (#1e0, #98) Aparece al coger el pico de abajo a la derecha
+		; (#1e0, #98)의 트랩 벽 우측 하단 곡괭이를 주울 때 나타납니다.
 	ENDIF
 
 		db 29h,	40h, 0D0h, 68h,	19h, 80h, 0C0h,	88h, 71h, 0A0h
@@ -6958,6 +7099,7 @@ calcBitMask2:
 AI_Gemas:
 		xor	a		; Empezamos por	la primera
 		ld	(ElemEnProceso), a ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 
 nextGema:
 		xor	a
@@ -7014,6 +7156,7 @@ gemaCogida:
 		ld	a, 2		; Offset variable Y
 		call	getGemaDat
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	de, eraseData
 		call	putBrillosMap	; Borra	los brillos del	mapa
 
@@ -7073,7 +7216,9 @@ chkLastGema:
 		jp	nextGema	; No, sigue con otra
 chkLastGema2:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		inc	(hl)		; Siguiente gema
+						; 다음 보석
 		ld	a, (hl)
 		dec	hl
 		cp	(hl)		; Ha procesado todas?
@@ -7082,7 +7227,9 @@ chkLastGema2:
 
 chkLastGema:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		inc	(hl)		; Siguiente gema
+						; 다음 보석
 		ld	a, (hl)
 		dec	hl
 		cp	(hl)		; Ha procesado todas?
@@ -7117,6 +7264,7 @@ getGemaDat:
 					; 6-8 =	0, 0, 0
 		call	ADD_A_HL
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 
 getIndexX9:
 		ld	b, a
@@ -7206,6 +7354,7 @@ putBrillosMap:
 AI_Salidas:
 		xor	a
 		ld	(ElemEnProceso), a ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		ld	(puertaCerrada), a ; Vale 1 al cerrarse	la salida
 
 chkNextExit:
@@ -7512,6 +7661,7 @@ chkSalePiram:
 		exx
 
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		inc	a
 		cp	1		; Arriba?
 					; 위?
@@ -7605,6 +7755,7 @@ getExitDat:
 		ld	hl, pyramidDoors ; Obtiene un puntero a	la salida que se esta procesando
 		call	ADD_A_HL
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		jp	getHL_Ax7	; Devuelve HL +	A*7 y A=(HL)
 
 chkLastExit:
@@ -7652,6 +7803,7 @@ drawPuerta2:
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
 		dec	hl
 		call	getLocationDE2	; Esta en la misma pantalla que	el prota? (se ve?)
+								; 그는 주인공과 같은 화면에 있습니까?
 		pop	hl
 		ret	nz		; No hace falta	pintarla
 
@@ -7671,6 +7823,7 @@ drawPuerta4:
 		ld	a, (de)		; Tile de la puerta
 		call	getTileFromID	; Obtiene patron que le	corresponde
 		call	WRTVRM		; Lo dibuja en pantalla
+							; 화면에 그려
 		inc	hl
 		inc	de
 		pop	bc
@@ -7813,6 +7966,7 @@ chkNextTrampa:
 murosTrampa2:
 		push	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ex	de, hl
 		pop	hl
 		ld	a, (hl)		; Y del	muro
@@ -7820,6 +7974,7 @@ murosTrampa2:
 		jr	nz, murosTrampa3 ; Medio
 
 		ld	a, (de)		; Tile del mapa
+						; 지도 타일
 		and	a		; Esta vacio?
 		jr	nz, trampaChoca	; No, comprueba	con lo que choca
 
@@ -7841,9 +7996,11 @@ murosTrampa3:
 
 trampaMataProta:
 		ld	a, 1Dh		; Musica muere prota
+						; 주인공 사망 음악
 		call	setMusic
 		xor	a
 		ld	(flagVivo), a	; Mata al prota
+							; 주인공을 죽이다
 		ret
 
 ;----------------------------------------------------
@@ -7858,6 +8015,7 @@ trampaMataProta:
 
 trampaChoca:
 		ld	a, (de)		; Tile del mapa
+						; 지도 타일
 
 	IF	(VERSION2)
 		cp	1
@@ -7889,6 +8047,7 @@ trampaLimite:
 		dec	hl		; Apunta al status del muro
 		inc	(hl)		; Pasa al siguiente status = Muro cerrado por completo
 		inc	hl		; Apunta a la Y
+					; Y를 가리킴
 		ld	a, (de)		; Map ID con el	que ha chocado
 		cp	14h		; Limite inferior de la	pantalla?
 		ld	c, 13h		; Tile de ladrillo normal
@@ -7905,6 +8064,7 @@ drawTrampa:
 		ld	a, c
 		ld	(de), a		; Modifica el tile del mapa
 		push	hl		; Apunta a la Y
+						; Y를 가리킴
 		call	getTileFromID	; Obtiene el patron que	le corresponde a ese tile del mapa
 		dec	hl
 		dec	hl		; Apunta a la Y	menos 2	bytes, necesario para que "drawTile" recoja las coordenadas
@@ -7948,6 +8108,7 @@ chkActivaTrampa:
 		ld	h, d
 		ld	l, e
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	b, 0
 
 trampaTecho:
@@ -8044,6 +8205,7 @@ chkAplastaMuro:
 		push	bc
 		call	chkTocaMuro	; Z = choca
 		ld	a, (de)		; Tile del mapa
+						; 지도 타일
 		sub	19h		; #19 =	Ladrillo completo muro trampa, #1A = Ladrillo simple muro trampa
 		cp	2		; Es uno de esos dos tiles del muro trampa?
 		pop	bc
@@ -8083,6 +8245,7 @@ drawAgujero2:
 		ld	b, a
 		push	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ex	de, hl
 		pop	hl
 		ld	a, b
@@ -8208,6 +8371,7 @@ spiningDoor4:
 		ld	l, (ix+SPINDOOR_Y) ; Y
 
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(ix+SPINDOOR_ROOM) ; Esta la puerta en la misma	habitacion que el prota?
 		ret	nz		; No
 
@@ -8233,6 +8397,7 @@ putGiratMap:
 		push	hl
 		pop	de
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		dec	de
 		ld	a, (de)		; Los bits 2-1 indican la altura extra
 		rra
@@ -8278,6 +8443,7 @@ chkGiratorias2:
 		call	getGiratorData
 		push	hl
 		inc	hl		; Apunta a la Y
+					; Y를 가리킴
 		add	a, a
 		add	a, a
 		and	11000b
@@ -8285,6 +8451,7 @@ chkGiratorias2:
 		ld	d, a
 
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
+								; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		ld	a, 8		; 8 pixeles a la derecha
 		jr	c, chkGiratorias3 ; A la izquierda
@@ -8385,6 +8552,7 @@ quitaGiratoria2:
 		inc	hl
 		push	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	c, 0
 		call	putGiratMap3
 		pop	hl
@@ -8729,6 +8897,7 @@ putNextGema2:
 		inc	hl
 		inc	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		push	hl
 		ld	de, brillosGema	; Patrones que forman los destellos de la gema
 		call	putBrillosMap	; Pone los destellos de	la gema	en el mapa
@@ -8743,6 +8912,7 @@ putNextGema2:
 
 chkLastGema_:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		inc	(hl)		; siguiente gema
 		ld	a, (hl)
 		dec	hl
@@ -8791,6 +8961,7 @@ getPicos:
 		inc	hl
 		and	a
 		jr	z, getGiratorias ; No hay picos
+							; 스파이크 없음
 
 		ld	b, a		; Numero de picos
 
@@ -8813,6 +8984,7 @@ getPicos3:
 		push	bc
 		push	hl
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	(hl), 80h	; Pone pico en el mapa
 		pop	hl
 		ld	a, 5
@@ -8855,6 +9027,7 @@ getGiratorias2:
 		rra			; bit 2
 		and	1
 		ld	(de), a		; Habitacion
+						; 방
 
 		inc	de
 		ld	a, (hl)
@@ -8952,11 +9125,13 @@ getStairs2:
 		rra
 		and	1
 		ld	(de), a		; Habitacion
+						; 방
 
 		pop	de		; Datos	escaleras
 		ex	de, hl
 		push	de
 		call	getMapOffset00	; Obtiene en HL	el puntero al mapa de las coodenadas apuntada por HL
+								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 
 getStairs3:
 		ld	a, (hl)		; Hay algo en ese lugar	del mapa?
@@ -9421,6 +9596,7 @@ quietoFinEsc:
 
 		xor	a
 		ld	(ElemEnProceso), a ; Usado para	saber la gema o	puerta que se esta procesando
+								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		ret
 
 
@@ -9629,6 +9805,7 @@ initDoorProta5:
 		ld	(statusEntrada), a ; Subestado de la puerta por	la que entra en	la piramide
 		inc	a
 		ld	(sentidoProta),	a ; 1 =	Izquierda, 2 = Derecha
+								; 1 = 왼쪽, 2 = 오른쪽
 		ret
 
 
@@ -9688,6 +9865,7 @@ nextMomia:
 		ld	h, d
 		ld	l, e
 		ld	b, (hl)		; Status de la momia
+						; 미라 상태
 		inc	hl
 		ld	a, (hl)		; Sentido (1 = izquierda, 2 = derecha)
 		srl	a
@@ -9950,6 +10128,7 @@ updateMomiaAtr:
 		call	getMomiaAtrib
 
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(ix+ACTOR_ROOM)
 		jr	nz, hideMomia	; No estan en la misma habitacion
 
@@ -10063,7 +10242,9 @@ Salta:
 ;----------------------------------------------------
 
 momiaSaltando:
-		call	getYMomia	; Obtiene puntero a los	datos de la momia
+		call	getYMomia
+							; Obtiene la Y de la momia
+							; 미라에게서 Y를 얻습니다.
 		dec	hl
 		push	hl
 		push	ix
@@ -10106,6 +10287,7 @@ chkPasaRoom:
 		inc	hl
 		inc	hl
 		inc	hl		; Apunta a la X
+					; X를 가리킴
 		ld	b, 0		; Limite izquierdo = 0
 		rra			; Derecha o izquierda?
 		jr	nc, chkPasaRoom2
@@ -10262,6 +10444,7 @@ momiaAparece:
 		ld	(ix+ACTOR_CONTROL), 8 ;	Mirando	a la derecha
 		dec	(ix+ACTOR_TIMER) ; Decrementa el tiempo	de aparicion
 		jp	z, setMomiaViva	; Ha llegado al	final
+							; 끝에 도달했습니다
 
 		ld	a, (ix+ACTOR_TIMER)
 		cp	7		; Falta	poco para que vuelva a la vida?
@@ -10357,6 +10540,7 @@ getYMomia:
 
 getVariableMomia:
 		ld	hl, (pMomiaProceso) ; Puntero a	los datos de la	momia en proceso
+								; 진행 중인 미라 데이터에 대한 포인터
 		call	ADD_A_HL
 		ld	a, (hl)
 		ret
@@ -10465,6 +10649,7 @@ evitaSorpresa:
 		ld	hl, 6		; Offset a la variable 'room'
 		add	hl, de
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		ld	b, (hl)		; B = Habitacion momia
 		cp	(hl)		; Comprueba si la momia	esta en	la habitacion actual
 		jr	z, evitaSorpresa6 ; si
@@ -10485,6 +10670,7 @@ evitaSorpresa:
 evitaSorpresa2:
 		dec	b
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	b		; Se encuentra en el lateral cercano a la habitacion en	la que esta el prota?
 		jr	nz, evitaSorpresa6 ; No
 
@@ -10501,6 +10687,7 @@ evitaSorpresa2:
 evitaSorpresa3:
 		inc	hl
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(hl)		; Habitacion de	la momia
 		ld	a, 8		; Cambia el sentido hacia la derecha
 		jr	c, evitaSorpresa4
@@ -10549,6 +10736,7 @@ momiaDecide:
 
 momiaDecide2:
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
+							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(ix+ACTOR_ROOM)
 		jr	nz, momiaDecide3 ; estan en habitaciones distintas
 
@@ -10642,6 +10830,7 @@ buscaProta:
 		ld	b, 0
 		ld	de, ProtaY
 		call	getYMomia	; Obtiene la Y de la momia
+							; 미라에게서 Y를 얻습니다.
 		ld	a, (protaStatus) ; 0 = Normal
 					; 1 = Salto
 					; 2 = Cayendo
@@ -10650,6 +10839,7 @@ buscaProta:
 					; 5 = Picando
 					; 6 = Pasando por un apuerta giratoria
 		cp	3		; Escaleras?
+					; 사다리?
 		jr	z, buscaProta2
 
 		ld	a, (de)		; Y del	prota
@@ -10767,6 +10957,7 @@ buscaCercanias8:
 		jr	z, momiaBaja	; Esta vacio
 
 		ld	a, c		; Tile del mapa
+						; 지도 타일
 		and	0Fh
 		cp	5		; Escaleras que	bajan?
 		call	nc, momiaBaja	; Si, da orden de bajar
@@ -10828,6 +11019,7 @@ getMomiaDat:
 		call	ADD_A_HL
 		push	hl
 		ld	(pMomiaProceso), hl ; Puntero a	los datos de la	momia en proceso
+								; 진행 중인 미라 데이터에 대한 포인터
 		pop	ix
 		ex	de, hl
 		exx
@@ -10866,6 +11058,7 @@ mueveElemento:
 		ld	l, a
 		pop	ix
 		ld	b, (ix+2)	; Habitacion
+						; 방
 		ld	c, (ix+5)	; Desplazamiento habitacion
 		ld	a, (ix-2)	; Sentido del movimiento
 		rra
@@ -11321,10 +11514,12 @@ andaEscalera:
 		ld	a, (hl)		; X
 		dec	hl
 		dec	hl		; Apunta a la Y
+					; Y를 가리킴
 		and	3
 		jr	nz, andaEscalera2 ; La X no es multiplo	de 4
 
 		push	hl		; Apunta a la Y
+						; Y를 가리킴
 		call	chkFinEscalera	; Comprueba si llega al	final de la escalera
 		pop	hl
 		ret	z		; Si, ha llegado al final
@@ -11352,6 +11547,7 @@ andaEscalera3:
 		dec	hl
 		inc	(hl)		; Contador de movimiento
 		pop	hl		; Apunta a la X
+					; X를 가리킴
 
 		add	a, c		; Sentido escalera + sentido movimiento
 		ld	b, 1		; Baja
@@ -11362,6 +11558,7 @@ andaEscalera3:
 andaEscalera4:
 		dec	hl
 		dec	hl		; Apunta a la Y
+					; Y를 가리킴
 		ld	a, (hl)		; Y
 		add	a, b		; Suma desplazamineto vertical
 		ld	(hl), a		; Actualiza la coordenada Y dependiendo	del sentido de la escalera y hacia donde se mueve
