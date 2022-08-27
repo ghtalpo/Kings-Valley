@@ -620,7 +620,7 @@ dummyJump:				; Descomprime graficos y mapa con todos	los elementos
 		call	setupRoom	; Pinta	pantalla
 							; 페인트 스크린
 		call	renderHUD	; Dibuja el marcador, puntos, vidas
-							; 마커, 포인트, 생명을 그립니다.
+							; 마커, 점수, 생명을 그립니다.
 		ld	a, 10h
 		jr	UpdateSubstatus
 
@@ -1348,8 +1348,8 @@ renderMarcador:
 ;
 ; 점수 및 기록 업데이트
 ;
-; DE = 추가할 포인트
-; 10,000포인트 추가 수명
+; DE = 추가할 점수
+; 10,000점 추가 수명
 ; 그럼 매 20000
 ;----------------------------------------------------
 
@@ -1358,7 +1358,7 @@ SumaPuntos:
 								; 비트 6 = 플레이어 제어 Prota
 		add	a, a
 		ret	p		; Esta en modo demo, no	suma puntos
-					; 데모 모드이며 포인트를 추가하지 않습니다.
+					; 데모 모드이며 점수를 추가하지 않습니다.
 
 		ld	hl, score_0000xx
 		ld	a, (hl)
@@ -1403,7 +1403,7 @@ chkExtraLife:
 		push	de
 		push	hl
 		add	a, 2		; Cada 20000 puntos
-						; 20000포인트마다
+						; 20000점마다
 		daa
 		jr	nc, chkExtraLife2
 		ld	a, 0FFh
@@ -2971,7 +2971,7 @@ protaAnda2:
 
 		call	chkChocaAndar
 		jr	nc, protaAnda3	; No choca
-		; 충돌하지 않는다
+							; 충돌하지 않는다
 
 		ld	a, (hl)		; HL apunta al tile del	mapa contra el que ha chocado
 						; HL은 충돌한 지도 타일을 가리킵니다.
@@ -6233,7 +6233,7 @@ chkCogeGema2:
 
 		ld	de, 500h
 		call	SumaPuntos	; Suma 500 puntos
-							; 500포인트 추가
+							; 500점 추가
 
 		ld	a, 9		; SFX coger gema
 						; sfx 보석 줍기
@@ -10091,6 +10091,7 @@ quietoFinEsc:
 		cp	4		; Entrando o saliendo de la piramide?
 					; 피라미드에 들어갈 것인가, 떠날 것인가?
 		jr	z, estaDentro	; Entrando
+							; 입장
 
 		ld	a, 20h		; Silencio
 						; 소리끄기
@@ -10098,6 +10099,7 @@ quietoFinEsc:
 
 		ld	hl, statusEntrada
 		inc	(hl)		; Pasa al siguiente estado de las escaleras: comprueba si hay que dar un bonus por pasarse la fase
+						; 계단의 다음 단계로 이동 : 단계 통과에 대한 보너스가 있는지 확인
 
 		xor	a
 		ld	(ElemEnProceso), a ; Usado para	saber la gema o	puerta que se esta procesando
@@ -10118,6 +10120,7 @@ estaDentro:
 		ld	(waitCounter), a
 		ld	hl, subStatus
 		inc	(hl)		; Inicia la fase
+						; 단계를 시작
 		ret
 
 ;----------------------------------------------------
@@ -10137,9 +10140,11 @@ chkBonusStage:
 
 		call	chkPiramPasada
 		jr	nz, chkBonusStage2 ; Ya	se la habia pasado
+								; 나는 이미 그것을 통과했다.
 
 		ld	de, 2000h
 		call	SumaPuntos	; Bonus	de 2000	puntos
+							; 2000점 보너스
 		ld	a, 8Fh		; Bonus	stage clear
 		call	setMusic
 
@@ -10150,11 +10155,14 @@ chkBonusStage2:
 
 		ld	a, 70h
 		ld	(waitCounter), a ; Tiempo que espera antes de finalizar	el proceso de salida
+							; 출력 프로세스를 완료하기 전에 기다리는 시간
 
 		call	calcBitMask	; Devuelve en DE el bit	activo que corresponde a la piramide actual
 							; 현재 피라미드에 해당하는 활성 비트를 DE로 반환
 		ld	hl, PiramidesPasadas ; Cada bit	indica si la piramide correspondiente ya esta pasada/terminada
+								; 각 비트는 해당 피라미드가 이미 통과/완료되었는지 여부를 나타냅니다.
 		jp	setPiramidClear	; Marca	la piramide actual como	pasada
+							; 현재 피라미드를 과거로 표시
 
 
 ;----------------------------------------------------
@@ -10168,8 +10176,10 @@ chkBonusStage2:
 VidaExtra:
 		ld	hl, Vidas
 		inc	(hl)		; Incrementa el	numero de vidas
+						; 생명의 수를 늘린다
 
 		ld	a, 8Ah		; SFX vida extra
+						; 라이프 추가 SFX
 		call	setMusic
 		jp	dibujaVidas
 
@@ -10183,13 +10193,17 @@ haSalido:
 		ld	hl, timer
 		ld	a, (hl)
 		and	3		; (!?) Para que	hace esto sin o	vale para nada?
+					; (!?) 이 작업을 수행할 가치가 없거나 없는 이유는 무엇입니까?
 
 		inc	hl
 		dec	(hl)		; Decrementa waitCounter
+						; waitCounter 감소
 		ret	nz		; Aun hay que esperar a	que termine la fanfarria de "se salio de la piramide"
+					; 우리는 여전히 "피라미드에서 나왔다"라는 팡파르가 끝날 때까지 기다려야합니다.
 
 		xor	a
 		ld	(flagEntraSale), a ; Continua con la logica normal del juego
+								; 게임의 정상적인 논리를 계속
 
 		ld	a, 8		; Status = Stage clear
 		ld	(GameStatus), a
@@ -10214,19 +10228,26 @@ setSprDoorProta:
 		ld	de, sprAttrib	; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
 							; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 		ld	hl, attribDoor	; Atributos de las puertas de la entrada
+							; 입구 게이트 속성
 		ld	bc, 10h		; 4 sprites * 4	bytes
 		ldir
 
 		ld	a, 0Eh
 		ld	(protaColorRopa), a ; Color gris para la ropa y	casco del prota
+								; 주인공의 옷과 헬멧을 회색으로
+
 		ld	a, 6
 		ld	(ProtaColorPiel), a ; Color naranja para la piel
+								; 주황색 피부색
 
 		ld	a, (puertaEntrada) ; Puerta por	la que se esta entrando	(direccion)
+								; 들어가는 문(주소)
 		srl	a		; Los valores son 1,2,4,8
+					; 값은 1,2,4,8입니다.
 		cp	4
 		jr	nz, initDoorProta2
 		dec	a		; Convierte numero de bit a decimal
+					; 비트를 소수로 변환
 
 initDoorProta2:
 		ld	hl, pyramidDoors ; Y (FF = Desactivado)
@@ -10236,82 +10257,118 @@ initDoorProta2:
 					; Status (Nibble alto =	Status,	Nibble bajo = contador)
 					; Piramide destino
 					; Direccion por	la que se entra	/ Flecha del mapa
+
+					; Y (FF = 꺼짐)
+					; X 소수
+					; X
+					; 방
+					; 상태(높은 니블 = 상태, 낮은 니블 = 카운터)
+					; 대상 피라미드
+					; 진입 방향 / 지도 화살표
 		call	getHL_Ax7	; Obtiene puntero a los	datos de la puerta por la que se entra
+							; 당신이 들어가는 문 데이터에 대한 포인터를 가져옵니다
 
 		push	hl
 		ld	de, ProtaY
 		ld	a, (hl)		; Y centro puerta
+						; 문 중앙 Y
 		sub	8
 		ld	(de), a		; Coloca al prota 8 pixeles mas	arriba
+						; 주인공을 8픽셀 높이 배치
 		inc	de
 		inc	hl
 		ldi			; X decimales
+					; X 소수
 
 		ld	a, (hl)		; X centro puerta
+						; 문 중앙 X
 		add	a, 8
 		ld	(de), a		; Coloca al prota 8 pixeles a la derecha
+						; 주인공을 오른쪽으로 8픽셀 배치
 
 		inc	de
 		inc	hl
 		ldi			; Misma	habitacion para	la puerta y para el prota
+					; 문과 주인공을 위한 같은 방
 
 		ld	bc, 5
 		ld	hl, protaDataDoor
 		ldir			; Pone valores por defecto al iniciar una fase
+						; 단계를 시작할 때 기본값 설정
 
 		call	setAttribProta	; Actualiza los	atributos RAM de los sprites del prota segun sus coordenadas y sentido
+								; 좌표와 방향에 따라 주인공 스프라이트의 RAM 속성 업데이트
 
 		ld	a, (puertaEntrada)
 		srl	a
 		cp	4
 		jr	nz, initDoorProta3 ; Guarda el indice de puerta	por la que se entra a la piramide
+								; 피라미드에 들어가는 문 인덱스를 저장
 		dec	a		; Convierte numero de bit a decimal
+					; 비트를 소수로 변환
 
 initDoorProta3:
 		ld	(ElemEnProceso), a ; Guarda el indice de puerta	por la que se entra a la piramide
+								; 피라미드에 들어가는 문 인덱스를 저장
 		ld	a, 4		; Status
 		call	getExitDat	; Obtiene un puntero al	estado de la puerta
+							; 문 상태에 대한 포인터 가져오기
 		ld	(hl), 50h	; Estado de cerrando puerta
+						; 문 닫힘 상태
 
 		pop	hl		; Puntero a la puerta
+					; 문을 가리키는 포인터
 		ld	d, (hl)		; Coordenada Y central de la puerta
+						; 문의 중심 Y 좌표
 		inc	hl
 		inc	hl
 		ld	e, (hl)		; Coordenada X central de la puerta
+						; 문의 중심 X 좌표
 
 		ld	hl, sprAttrib	; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
 							; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 		ld	a, 16
 		add	a, e
 		ld	e, a		; Suma 16 a la X de la puerta
+						; 문의 X에 16 더하기
 
 		ld	a, d
 		sub	17
 		ld	d, a		; Resta	17 a la	Y de la	puerta
+						; 문의 Y에서 17 빼기
 
 		ld	b, 2
 
 initDoorProta4:
 		ld	c, 2		; Son dos sprites solapados para conseguir color de fondo y de tinta
+						; 배경과 잉크 색상을 얻기 위해 두 개의 겹치는 스프라이트입니다.
 
 initDoorProta5:
 		ld	(hl), d		; Y
 		inc	hl
 		ld	(hl), e		; X
 		inc	hl		; El sprite ya ha sido indicado	antes mediante 'attribDoor'
+					; 스프라이트는 이미 'attribDoor'에 의해 표시되었습니다.
 		inc	hl		; El color tambien ha sido indicado por	'atribDoor'
+					; 색상은 'attribDoor'로도 표시되었습니다.
 		inc	hl		; Apunta a los atributos del siguiente sprite
+					; 다음 스프라이트의 속성을 가리킵니다.
 		dec	c
 		jr	nz, initDoorProta5 ; Siguiente sprite solapado
+								; 다음 중첩 스프라이트
 
 
 		ld	a, d		; Y del	primer cacho de	puerta
+						; 첫 번째 문조각의 Y
 		add	a, 16		; Desplaza el alto del sprite (16 pixeles)
+						; 스프라이트 높이 오프셋(16픽셀)
 		ld	d, a
 		djnz	initDoorProta4	; Pone el siguiente par	de sprites debajo del anterior
+								; 다음 스프라이트 쌍을 이전 스프라이트 아래에 놓습니다.
 
 		xor	a
 		ld	(statusEntrada), a ; Subestado de la puerta por	la que entra en	la piramide
+								; 피라미드로 들어가는 문의 하위 상태
 		inc	a
 		ld	(sentidoProta),	a ; 1 =	Izquierda, 2 = Derecha
 								; 1 = 왼쪽, 2 = 오른쪽
@@ -10330,8 +10387,8 @@ initDoorProta5:
 ;
 ; 단계 시작 시 다음 변수들의 초기 값
 ;
-; 소수 X 속도,
-; 정수 X 속도,
+; X 속도 소수,
+; X 속도 정수,
 ; 방 X 속도,
 ; 이동 카운터,
 ; 프레임
@@ -10346,9 +10403,13 @@ protaDataDoor:	db 0C8h, 0, 0, 1, 1
 ; 문 속성 x, y, 스프라이트, 색상
 ;----------------------------------------------------
 attribDoor:	db 0E0h,0B0h,0D8h,   1	; Dibujo ladrillos
+									; 벽돌 그리기
 		db 0E0h,0B0h,0DCh,   3	; Relleno ladrillos
+								; 벽돌 채우기
 		db 0E0h,0B0h,0E0h,   1	; Dibujo ladrillos
+								; 벽돌 그리기
 		db 0E0h,0B0h,0E4h,   3	; Relleno
+								; 충전재
 
 
 ;----------------------------------------------------
@@ -10366,10 +10427,12 @@ attribDoor:	db 0E0h,0B0h,0D8h,   1	; Dibujo ladrillos
 
 AI_Momias:
 		xor	a		; Empieza por la primera momia :)
+					; 첫 번째 미라로 시작해보세요 :)
 		ld	(momiaEnProceso), a
 
 nextMomia:
 		call	getMomiaProcDat	; Obtiene puntero a la momia en	proceso
+								; 처리 중인 미라에 대한 포인터 가져오기
 		exx
 		ld	h, d
 		ld	l, e
@@ -10377,29 +10440,40 @@ nextMomia:
 						; 미라 상태
 		inc	hl
 		ld	a, (hl)		; Sentido (1 = izquierda, 2 = derecha)
+						; 방향(1 = 왼쪽, 2 = 오른쪽)
 		srl	a
 		srl	a
 		inc	hl
 		ld	(hl), a		; Controles. Dependiendo del sentido "aprieta" DERECHA o IZQUIERDA
+						; 통제 수단. 방향에 따라 RIGHT 또는 LEFT를 누릅니다.
 		ld	a, b		; Estado de la momia
+						; 미라 상태
 		exx
 
-
 		ld	hl, updateMomiaAtr ; Actualiza los atributos RAM de la momia
+								; 미라의 RAM 속성 업그레이드
 		push	hl		; Guarda esta funcion en la pila para ejecutarla al terminar el	proceso	actual
-
+						; 이 함수를 스택에 저장하여 현재 프로세스의 끝에서 실행합니다.
 
 		call	jumpIndex	; Dependiendo del estado de la momia salta a una de las	siguientes funciones
-
+							; 미라의 상태에 따라 다음 기능 중 하나로 점프합니다.
 
 		dw momiaAnda		; 0 = Anda y comprueba si se cae o decide saltar. Al finalizar pasa al estado de pensar
+							; 0 = 가서 그가 넘어지거나 점프하기로 결정했는지 확인하십시오. 결국, 생각의 상태로 이동
 		dw momiaSaltando	; 1 = Procesa salto
+							; 1 = 프로세스 점프
 		dw momiaCayendo		; 2 = Momia cayendo. Al	llegar al suelo	pasa al	estado de andar
+							; 2 = 미라 추락. 지면에 닿으면 보행 상태가 된다.
 		dw momiaEscaleras	; 3 = Mueve a la momia por las escaleras y comprueba si	llega al final de las mismas
+							; 3 = 미라를 계단 위로 옮기고 계단 바닥에 닿는지 확인
 		dw momiaLimbo		; 4 = Espera un	tiempo antes de	pasar al siguiente estado (aparecer)
+							; 4 = 다음 상태로 이동하기 전에 잠시 기다림(나타남)
 		dw momiaAparece		; 5 = Proceso de aparicion de la momia mediante	una nube de polvo
+							; 5 = 먼지 구름 사이로 미라가 출현하는 과정
 		dw momiaSuicida		; 6 = Anda hacia la derecha y explota
+							; 6 = 오른쪽으로 가서 폭발
 		dw momiaPiensa		; 7 = Mira a los lados y decide	como acercarse al prota
+							; 7 = 측면을보고 주인공에게 접근하는 방법을 결정하십시오
 		dw momiaDesaparece
 
 ;----------------------------------------------------
@@ -10421,15 +10495,19 @@ nextMomia:
 momiaAnda:
 		ld	a, (ix+ACTOR_TIMER)
 		or	a		; Esta andando?
+					; 그는 걷고 있습니까?
 		jr	nz, momiaAnda2	; si
 
 		ld	(ix+ACTOR_STATUS), 7 ; Estado: Pensando
+								; 상태: 생각
 		ld	a, (ix+ACTOR_TIPO) ; Tipo de momia
 								; 미라 유형
 		ld	de, vecesDudaMomia
 		call	ADD_A_DE
 		ld	a, (de)		; Segun	el tipo	de momia, duda o mira mas tiempo a los lados
+						; 미라의 종류에 따라 머뭇거리거나 옆에서 더 길게
 		ld	(ix+ACTOR_TIMER), a ; Veces que	mira a los lados
+								; 당신이 측면을 바라볼 때
 		ret
 
 momiaAnda2:
@@ -10438,72 +10516,105 @@ momiaAnda2:
 		jr	nz, momiaAnda3
 
 		dec	(ix+ACTOR_TIMER) ; Cada	16 iteraciones decrementa el tiempo de andar
+							; 16번 반복할 때마다 걷는 시간이 줄어듭니다.
 
 momiaAnda3:
 		pop	hl		; Saca de la pila la rutina que	actualiza los atributos	de la momia
+					; 스택에서 미라의 속성을 업데이트하는 루틴을 팝합니다.
 		call	evitaSorpresa	; Evita	que una	momia aparezca por un lateral cuando el	prota esta cerca
+								; 주인공이 가까이 있을 때 옆에서 미라가 나타나는 것을 방지
 
 		ld	hl, updateMomiaAtr ; Funcion que actualiza los atributos RAM del sprite	de la momia
+								; 미라 스프라이트의 RAM 속성을 업데이트하는 함수
 		push	hl		; Guarda la funcion en la pila para ejecutar al	terminar el proceso
+						; 프로세스가 끝날 때 실행할 함수를 스택에 저장
 
 		ld	a, (ix+ACTOR_CONTROL) ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		bit	4, a		; Boton	A:Orden	de saltar
+						; 버튼 A: 점프 명령
 		jp	nz, tryToJump	; Salta	si no hay obstaculos
+							; 장애물이 없으면 점프
 
 		push	ix		; Datos	momia
+						; 미라 데이터
 		pop	hl
 
 
 		inc	hl
 		push	hl		; Pointer a los	controles de la	momia
+						; 미라의 컨트롤에 대한 포인터
 		inc	hl
 		inc	hl		; Apunta a la coordenada Y
+					; Y 좌표를 가리킴
 		call	chkCae		; Comprueba si tiene suelo bajo	los pies
+							; 발 밑에 땅이 있는지 확인하십시오.
 		pop	hl
 		jp	c, momiaSinSuelo ; Se va a caer	o decide saltar
+							; 넘어질 것인가, 뛰어내리기로 결정한 것인가
 
 		push	hl		; Puntero a los	controles (+#01)
+						; 컨트롤에 대한 포인터(+#01)
 		ld	a, 1		; Las momias no	actualizan la variable "sentidoEscalera" del prota
+						; 미라는 주인공의 변수 "sentidoEscalera"를 업데이트하지 않습니다.
 		ld	(modoSentEsc), a ; Si es 0 guarda en "sentidoEscalera" el tipo de escalera que se coge el prota. 0 = \, 1 = /
+							; 0이면 주인공이 취하는 사다리의 종류를 "sentidoEscalera"에 저장합니다. 0 = \, 1 = /
 		call	chkCogeEsc2	; Comprueba si comienza	a subir	o bajr por una escalera
+							; 사다리를 오르내리기 시작하는지 확인
 		pop	hl
 		jp	z, setSentEsc	; Ha cogido unas escaleras
+							; 약간의 계단을 올라갔다
 
 		call	chkChocaAndar2	; Comprueba si choca contra un muro o puerta giratoria
+								; 벽이나 회전문에 부딪히는지 확인
 
 		push	af
 		ld	a, ACTOR_STRESS	; Contador de veces que	choca (stress)
+							; 충돌 횟수 카운터(스트레스)
 		call	getVariableMomia
 		pop	af
 
 		ld	a, (hl)		; Numero de veces que ha chocado
+						; 충돌한 횟수
 		jr	nc, momiaDecStress ; No	choca contra un	muro o puerta giratoria. Decrementa numero de decisiones
+								; 벽이나 회전문에 부딪히지 않습니다. 결정 횟수 감소
 
 ; La momia ha chocado con un muro
 ; Si el	numero de veces	que ha chocado casi consecutivamente es	9, la momia explota
 ; De esta forma	se evita que se	quede trabada en un agujero o en una ruta sin salida
+; 미라가 벽에 부딪혔다.
+; 거의 연속적으로 충돌한 횟수가 9회이면 미라가 폭발한다.
+; 이렇게 하면 구멍이나 막다른 길에 끼는 것을 방지할 수 있습니다.
+
 		and	0F0h
 		add	a, 1Fh		; Incrementa el	stress de la momia
+						; 미라의 스트레스를 증가시킨다
 		ld	(hl), a
 		cp	0AFh
 		jr	nz, momiaHaChocado
 
 momiaVanish:
 		ld	(ix+ACTOR_STATUS), 8 ; Estado: momia explota y desaparece
+									; 상태: 미라가 폭발하고 사라짐
 		ld	(ix+ACTOR_CONTROL), 4 ;	Va a la	izquierda
+									; 왼쪽으로 간다
 		ld	(ix+ACTOR_TIMER), 22h
 		ret
 
 momiaDecStress:
 		cp	0F0h
 		jr	z, momiaUpdate	; Si el	contado	de stress es 0 no lo decrementa
+							; 스트레스 카운트가 0이면 감소하지 않습니다.
 
 		ld	a, (timer)
 		and	1Fh
 		jr	nz, momiaUpdate	; Solo lo decrementa cada #20 iteraciones
+							; #20번 반복할 때마다 감소합니다.
 
 		dec	(hl)		; Decrementa el	stress de la momia
+						; 미라의 스트레스를 줄여줍니다.
 		jr	nz, momiaUpdate	; (!?) Para que?
+							; (!?) 하도록 하다?
 
 ;----------------------------------------------------
 ; Actualiza la posicion	y frame	de la momia
@@ -10513,10 +10624,15 @@ momiaDecStress:
 momiaUpdate:
 		ld	e, (ix+ACTOR_SPEEDXDEC)
 		ld	d, (ix+ACTOR_SPEED_X) ;	DE = Velocidad de la momia
+		; DE = 미라 속도
 		ld	a, 4		; Offset X decimal
+						; 소수 X 오프셋
 		call	getVariableMomia ; Obtiene puntero a la	X con decimales	de la momia
+									; 미라에서 소수로 X에 대한 포인터를 가져옵니다.
 		call	mueveElemento	; Actualiza sus	coordenadas al sumarle la velocidad
+								; 속도를 추가하여 좌표를 업데이트합니다.
 		call	momiaCalcFrame	; Actualiza si es necesario el frame de	la animacion
+								; 필요한 경우 애니메이션 프레임 업데이트
 		ret
 
 ;----------------------------------------------------
@@ -10532,6 +10648,7 @@ momiaHaChocado:
 		ld	a, (hl)		; Tipo de momia
 						; 미라 유형
 		or	a		; Es la	mas tonta? =0
+					; 제일 멍청해? =0
 		jr	nz, saltaOVuelve ; No
 
 		call	getYMomia
@@ -10539,15 +10656,21 @@ momiaHaChocado:
 		ld	a, (hl)		; Sentido
 						; 방향
 		xor	3		; Invierte derecha/izquierda
+					; 왼쪽/오른쪽 뒤집기
 		ld	b, a		; Cambia el sentido del	movimiento (la gira)
+						; 이동 방향을 변경합니다(회전).
 		call	chkChocaAndar4	; Tambien choca	por el otro lado?
+								; 반대편에서도 튕기나요?
 		jr	nc, saltaOVuelve ; No choca
+								; 충돌하지 않는다
 
 
 ; La momia tonta (blanca) se queda atrapada entre dos muros
+; 두 개의 벽 사이에 끼인 벙어리 미라(흰색)
 
 		ld	(ix+ACTOR_TIMER), 0FFh
 		ld	(ix+ACTOR_STATUS), 7 ; Estado de pensar
+									; 생각의 상태
 		ret
 
 ;----------------------------------------------------
@@ -10559,14 +10682,20 @@ saltaOVuelve:
 		call	getYMomia
 		cp	8
 		jr	c, daLaVuelta	; Esta muy arriba, da la vuelta
+							; 너무 높으면 뒤돌아본다.
 
 		call	chkSaltar	; Puede	saltar?	(No tiene nada encima ni delante)
+		; 점프할 수 있다? (위나 앞에 아무것도 없다)
 		jp	c, momiaSetSalta ; Salta
+								; 도약
 
 daLaVuelta:
 		ld	a, (ix+ACTOR_CONTROL) ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		xor	0Ch		; Cambia de direccion
+					; 방향 전환
 		ld	(ix+ACTOR_CONTROL), a ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		ret
 
 ;----------------------------------------------------
@@ -10576,9 +10705,12 @@ daLaVuelta:
 
 momiaCalcFrame:
 		ld	a, 0Ah		; Offset a contador de movimientos
+						; 이동 카운터에 대한 오프셋
 		call	getVariableMomia
 		inc	(hl)		; Incrementa el	numero de movimientos
+						; 이동 횟수를 늘리십시오.
 		jp	calcFrame2	; Actualiza el numero de frame (0-7) segun  el numero de movimientos acumulados
+						; 누적 이동 수에 따라 프레임 번호(0-7) 업데이트
 
 ;----------------------------------------------------
 ; Guarda el sentido de las escaleras dentro de la estructura de	la momia
@@ -10592,24 +10724,32 @@ momiaCalcFrame:
 
 setSentEsc:
 		ld	a, (ix+ACTOR_CONTROL) ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		rra			; Pasa control ARRIBA al carry
+					; 컨트롤 UP을 carry로 보냄
 		ld	a, c
 		ld	b, 8		; Control: DERECHA
+						; 컨트롤: 오른쪽
 		jr	nc, setSentEsc2	; No tiene ARRIBA apretado
+							; 가까운 UP 없음
 
 		ld	b, 4		; Control: IZQUIERDA
+						; 컨트롤: 왼쪽
 		xor	1
 
 setSentEsc2:
 		and	1
 		ld	(ix+ACTOR_SENT_ESC), a ; Sentido en el que van las escaleras. 0	= \  1 = /
+									; 계단이 가는 방향. 0 = \ 1 = /
 		and	a
 		ld	a, b
 		jr	z, setSentEsc3
 		xor	0Ch		; Cambia sentido del movimiento
+					; 이동 방향을 바꾸다
 
 setSentEsc3:
 		ld	(ix+ACTOR_CONTROL), a ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		ret
 
 ;----------------------------------------------------
@@ -10642,12 +10782,14 @@ updateMomiaAtr:
 							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(ix+ACTOR_ROOM)
 		jr	nz, hideMomia	; No estan en la misma habitacion
+							; 그들은 같은 방에 있지 않다
 
 		dec	c
 		dec	c		; Y = Y	- 2
 		ld	a, (ix+ACTOR_FRAME)
 		push	af
 		rra			; Si el	frame es par, mueve la momia un	poco hacia arriba
+					; 프레임이 짝수면 미라를 조금 위로 올려주세요
 		jr	c, updateMomiaAt2
 		inc	c
 
@@ -10664,39 +10806,56 @@ updateMomiaAt2:
 						; X 좌표
 		inc	hl
 		ld	a, (ix+ACTOR_SENTIDO) ;	1 = Izquierda, 2 = Derecha
+									; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		ld	a, d
 		jr	nc, setFrameMomia
 		add	a, 60h		; Desplazamiento a sprites invertidos
+						; 거꾸로 된 스프라이트로 스크롤
 
 setFrameMomia:
 		ld	(hl), a
 		jr	chkLastMomia	; Comprueba si faltan momias por procesar
+							; 처리할 미라가 없는지 확인하십시오.
 
 hideMomia:
 		ld	(hl), 0E0h	; Oculta el sprite (Y =	#E0)
+						; 스프라이트 숨기기(Y = #E0)
 
 chkLastMomia:
 		ld	hl, momiaEnProceso ; Comprueba si faltan momias	por procesar
+								; 처리할 미라가 없는지 확인하십시오.
 		inc	(hl)
 		ld	a, (hl)
 		dec	hl
 		cp	(hl)		; Ha procesado todas las momias?
+						; 미라를 모두 처리했습니까?
 		ret	nc		; Si, termina
 					; 네 끝납니다
 		jp	nextMomia
 
 framesMomia:	db 2Ch			; Pie atras
+								; 뒷발
 		db 28h			; Pies juntos
+						; 함께 발
 		db 30h			; Pies separados
+						; 발을 벌리다
 		db 2Ch			; Pie atras
+						; 뒷발
 		db 28h			; Pies juntos
+						; 함께 발
 		db 30h			; Pies separados
+						; 발을 벌리다
 		db 28h			; Pies juntos
+						; 함께 발
 		db 30h			; Pies eparados
+						; 발을 벌리다
 		db 0E8h			; Nube grande
+						; 큰 구름
 		db 0ECh			; Nube peque�a
+						; 작은 구름
 		db 0D4h			; Destello
+						; 플래시
 
 ;----------------------------------------------------
 ; Intenta saltar
@@ -10726,23 +10885,29 @@ tryToJump:
 momiaSetSalta:
 		push	ix
 		pop	hl		; Datos	momia
+					; 미라 데이터
 
 Salta:
 		ld	(hl), 1		; Status = Saltar
+						; 상태 = 점프
 		inc	hl
 		res	4, (hl)		; Quita	"Boton A" del estado de las teclas del elemento
+						; 요소의 키 상태에서 "버튼 A"를 제거합니다.
 
 		ld	a, 0Ah
 		call	ADD_A_HL
 		ld	(hl), 2		; Frame	2 = Piernas separadas
+						; 프레임 2 = 다리 벌리기
 		inc	hl
 		ld	de, valoresSalto
 		ld	(hl), e
 		inc	hl
 		ld	(hl), d		; Guarda puntero a los valores del salto
+						; 점프 값에 대한 포인터 저장
 
 		inc	hl
 		ld	(hl), 0		; Salto	subiendo (1 = cayendo)
+						; 위로 점프(1 = 떨어지는)
 		ret
 
 ;----------------------------------------------------
@@ -10763,12 +10928,15 @@ momiaSaltando:
 		push	hl
 		push	ix
 		call	doSalto		; Procesa el salto
+							; 점프를 처리
 
 		pop	ix
 		pop	hl
 		call	chkPasaRoom	; Comprueba si pasa a otra habitacion
+							; 다른 방으로 넘어가는지 확인
 		push	ix
 		pop	hl		; Puntero a estructura de la momia
+					; 미라 구조에 대한 포인터
 
 	IF	(VERSION2)
 		inc	hl
@@ -10777,8 +10945,10 @@ momiaSaltando:
 		call	chkChocaSalto1
 	ELSE
 		call	chkChocaSalto	; Choca	con algo al saltar?
+								; 점프할 때 무언가를 친다?
 	ENDIF
 		jr	z, momiaCayendo	; Si, quita estado de salto y pone el de caida (si no hay suelo) o de andar (si	hay suelo)
+		; 네, 점프 상태를 제거하고 넘어진 상태(지면이 없는 경우) 또는 걷기 상태(지면이 있는 경우)를 넣습니다.
 		ret
 
 
@@ -10803,22 +10973,29 @@ chkPasaRoom:
 		inc	hl		; Apunta a la X
 					; X를 가리킴
 		ld	b, 0		; Limite izquierdo = 0
+						; 왼쪽 한계 = 0
 		rra			; Derecha o izquierda?
+					; 오른쪽 또는 왼쪽?
 		jr	nc, chkPasaRoom2
 		dec	b		; Limite derecho = 255
+					; 오른쪽 제한 = 255
 
 chkPasaRoom2:
 		ld	a, b		; Limite
+						; 한계
 		cp	(hl)		; Lo compara con la X del elemento
+						; 요소의 X와 비교하십시오.
 		inc	hl
 		ret	nz		; No ha	llegado	al limite de la	habitacion
-
+					; 방의 한계에 도달하지 않았습니다
 		inc	(hl)		; Pasa a la habitacion de la derecha
+						; 오른쪽 방으로 이동
 		and	a
 		ret	z
 
 		dec	(hl)
 		dec	(hl)		; Pasa a la habitacion de la izquierda
+						; 왼쪽 방으로 이동
 		ret
 
 ;----------------------------------------------------
@@ -10941,6 +11118,7 @@ momiaLimbo:
 		ld	a, 87h		; SFX aparece momia
 		call	setMusic
 		jp	chkLastMomia	; Comprueba si faltan momias por procesar
+							; 처리할 미라가 없는지 확인하십시오.
 
 ;----------------------------------------------------
 ; Proceso de aparicion de una momia
@@ -10987,6 +11165,7 @@ momiaOpenLegs:
 
 momiaSuicida:
 		ld	(ix+ACTOR_CONTROL), 8 ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		dec	(ix+ACTOR_TIMER)
 		ld	a, (ix+ACTOR_TIMER)
 		ld	b, a		; (!?) Donde se	unsa B?
@@ -11002,6 +11181,7 @@ mataMomia:
 		call	quitaMomia
 		pop	hl
 		jp	chkLastMomia	; Comprueba si faltan momias por procesar
+							; 처리할 미라가 없는지 확인하십시오.
 
 
 ;----------------------------------------------------
@@ -11100,12 +11280,14 @@ momiaPiensa2:
 
 momiaUnknown:
 		ld	a, (ix+ACTOR_CONTROL) ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		xor	1100b
 		ld	(ix+ACTOR_CONTROL), a ;	Invierte el sentido de la momia
 		rra
 		rra
 		and	3
 		ld	(ix+ACTOR_SENTIDO), a ;	1 = Izquierda, 2 = Derecha
+									; 1 = 왼쪽, 2 = 오른쪽
 
 		call	getYMomia
 		ld	bc, 0FCh	; X+15,Y+12
@@ -11147,6 +11329,7 @@ quitaACTOR_:
 		call	initMomia
 		pop	hl
 		jp	chkLastMomia	; Comprueba si faltan momias por procesar
+							; 처리할 미라가 없는지 확인하십시오.
 
 
 ;----------------------------------------------------
@@ -11162,7 +11345,9 @@ quitaACTOR_:
 
 evitaSorpresa:
 		exx			; DE = Puntero estructura momia
+					; DE = 미라 구조 포인터
 		ld	hl, 6		; Offset a la variable 'room'
+						; 변수 'room'에 대한 오프셋
 		add	hl, de
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
 							; X 좌표의 상단 피라미드의 방을 나타냅니다.
@@ -11321,6 +11506,7 @@ setOrdenBajar:
 momiaSetControl:
 		ret	z
 		ld	(ix+ACTOR_CONTROL), a ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
+									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		ret
 
 setOrdenSubir:
@@ -11399,6 +11585,7 @@ buscaCercanias2:
 		djnz	buscaCercanias2	; Borra	ordenes	de subir o bajar anteriores
 
 		push	ix		; Datos	momia
+						; 미라 데이터
 		pop	hl
 
 		inc	hl
@@ -11682,6 +11869,7 @@ chkTechoMazizo:
 		ret	z		; Choca
 
 		scf			; No choca
+					; 충돌하지 않는다
 		ret
 
 ;----------------------------------------------------
@@ -11704,6 +11892,7 @@ chkChocaTecho:
 		ret	z
 
 		scf			; No choca
+					; 충돌하지 않는다
 		ret
 
 chkTocaY_8:
@@ -12141,6 +12330,7 @@ showEnding2:
 		ret	nz		; Se ha	terminado la demo
 
 		call	setProtaSalta_	; Salta
+								; 도약
 
 		ld	hl, sentidoProta ; 1 = Izquierda, 2 = Derecha
 		ld	(hl), a		; (!?) A = #3F No parece que tenga un valor puesto a proposito
@@ -12166,7 +12356,7 @@ showEnding3:
 
 ;----------------------------------------------------
 ; Muestra texto	de CONGRATULATIONS, SPECIAL BONUS y suma 10.000	puntos
-; 축하 텍스트, 특별 보너스 표시 및 10,000포인트 추가
+; 축하 텍스트, 특별 보너스 표시 및 10,000점 추가
 ;----------------------------------------------------
 
 showSpecialBonus:
@@ -12581,7 +12771,7 @@ setEndingStat:
 ; Muestra texto	de "CONGRATULATIONS" "SPECIAL BONUS"
 ; Y suma 10.000	puntos
 ; "축하합니다" "특별 보너스" 텍스트 표시
-; 그리고 10,000포인트 추가
+; 그리고 10,000점 추가
 ;----------------------------------------------------
 
 specialBonus:
