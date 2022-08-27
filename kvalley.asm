@@ -1207,7 +1207,7 @@ drawDigit:
 
 ;----------------------------------------------------
 ; Convierte un valor a decimal
-; 값을 십진수로 변환
+; 값을 소수로 변환
 ;----------------------------------------------------
 
 convDecimal:
@@ -3035,8 +3035,10 @@ setAttribProta:
 		ld	hl, ProtaY	; Actualiza atributos de los sprites del prota
 						; 주인공 스프라이트의 속성 업데이트
 		ld	c, (hl)		; Y prota
+						; 주인공 Y
 		inc	hl
 		inc	hl		; X prota
+					; 주인공 X
 		ld	b, (hl)		; BC = XY
 		ld	a, (protaFrame)
 		ld	hl, protaAttrib
@@ -3395,6 +3397,7 @@ setLanzaKnife4:
 					; 주인공보다 한 행 위에 있는 타일
 		ld	hl, ProtaX
 		ld	a, (hl)		; X prota
+						; 주인공 X
 		and	7
 		cp	4		; En medio de un tile?
 					; 타일 ​​한가운데?
@@ -3492,6 +3495,7 @@ protaLanzaKnife:
 					; X 주인공
 
 		ld	a, (de)		; X prota
+						; 주인공 X
 		add	a, 4
 		ld	(hl), a		; X del	cuchillo igual a X prota + 4
 						; 칼의 X는 X 주인공 + 4와 같습니다.
@@ -3669,6 +3673,7 @@ chkProtaPica2:
 						; 방향
 		inc	hl
 		ld	a, (hl)		; Y prota
+						; 주인공 Y
 		add	a, 10h		; Le suma el alto del prota
 						; 주인공의 키 추가
 		ld	d, a		; Guarda en D la Y del suelo bajo los pies
@@ -3676,6 +3681,7 @@ chkProtaPica2:
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; X prota
+						; 주인공 X
 		ld	bc, 10h		; Offset X: izquierda =	0, derecha = 16
 						; 오프셋 X: 왼쪽 = 0, 오른쪽 = 16
 		and	7
@@ -3983,6 +3989,7 @@ chkIncrust:
 chkIncrust2:
 		ld	hl, ProtaX
 		ld	a, (hl)		; X prota
+						; 주인공 X
 		add	a, b		; Le suma el desplazamiento
 						; 변위 추가
 		and	0FCh		; Ajusta la coordenada X del prota a multiplo de 4
@@ -8080,36 +8087,50 @@ animExitOpen:	db  78h, 60h, 66h, 67h,	61h
 MurosTrampa:
 		ld	hl, muroTrampProces
 		ld	(hl), 0		; Empieza por el primero :P
+						; 첫 번째부터 시작하세요 :P
 		inc	hl
 		ld	a, (hl)		; Numero de muros trampa de la piramide
+						; 피라미드의 트랩 벽 수
 		or	a
 		ret	z		; No hay ninguno
+					; 아무도 없다
 
 chkNextTrampa:
 		ld	hl, chkLastMuro
 		push	hl		; Guarda en la pila la rutina que comprueba si ya se han procesado todos los muros trampa
+						; 모든 트랩 벽이 이미 처리되었는지 확인하는 스택 루틴을 푸시합니다.
 
 		xor	a
 		call	getMuroDat
 		and	a		; Esta activado	este muro trampa?
+					; 이 함정 벽이 활성화되어 있습니까?
 		jp	z, chkActivaTrampa ; No	comprueba si el	prota lo activa
+								;아니면, 주인공이 활성화했는지 확인합니다.
 
 		dec	a
 		ret	nz		; Este muro ya se ha cerrado por completo
+					; 이 벽은 이미 완전히 닫혔습니다
 
 		ld	a, (timer)
 		and	1Fh
 		ret	nz		; El muro se mueve cada	#20 iteraciones
+					; 벽은 #20 반복마다 이동합니다.
 
 		inc	hl
 		ld	a, (hl)		; Y muro
+						; 벽 Y
 		add	a, 4		; Se mueve 4 pixeles hacia abajo
+						; 4픽셀 아래로 이동
 		ld	(hl), a		; Actualiza Y del muro
+						; 벽 Y의 업데이트
 		and	7		; Su Y es multiplo de 8? (pinta	medio ladrillo o uno entero?)
+					; Y는 8의 배수입니까? (반 벽돌 또는 전체를 칠하시겠습니까?)
 		ld	c, 19h		; Map ID ladrillo completo
+						; 완전한 벽돌의 맵 ID
 		jr	nz, murosTrampa2
 
 		inc	c		; Map ID ladrillo simple (4 pixeles alto)
+					; 단순 벽돌의 맵 ID (4픽셀 높이)
 
 murosTrampa2:
 		push	hl
@@ -8118,28 +8139,39 @@ murosTrampa2:
 		ex	de, hl
 		pop	hl
 		ld	a, (hl)		; Y del	muro
+						; 벽 Y
 		and	7		; Ha bajado un tile completo o medio?
+					; 전체 또는 절반 타일을 내려갔습니까?
 		jr	nz, murosTrampa3 ; Medio
+							; 중간
 
 		ld	a, (de)		; Tile del mapa
 						; 지도 타일
 		and	a		; Esta vacio?
+					; 비어 있습니까?
 		jr	nz, trampaChoca	; No, comprueba	con lo que choca
+							; 아니요, 무엇과 충돌하는지 확인하십시오.
 
 murosTrampa3:
 		call	drawTrampa
 		ld	hl, protaStatus	; Datos	del prota
+							; 주인공의 데이터
 		ld	a, (hl)		; Status prota
+						; 주인공의 상태
 		or	a		; Esta realizando alguna accion	especial?
+					; 특별한 조치를 취하고 있습니까?
 		ret	nz		; Si
 
 		ld	hl, ProtaY
 		ld	bc, 500h	; Offset X+5, Y+0
 		call	chkAplastaMuro	; Comprueba si el muro aplasta al prota
+								; 벽이 주인공을 부수는지 확인
 		jr	c, trampaMataProta ; Si, lo aplasta
+								; 네 그것을 부숴
 
 		ld	b, 0Bh		; Offset X+11, Y+0
 		call	chkAplastaMuro	; Comprueba si aplasta al prota
+								; 주인공을 뭉개는지 확인
 		ret	nc		; No
 
 trampaMataProta:
@@ -8171,16 +8203,22 @@ trampaChoca:
 	ENDIF
 
 		and	0F0h		; Se queda con la familia/grupo
+						; 가족/단체와 함께 숙박
 		cp	10h		; Es una plataforma o muro?
+					; 플랫폼인가, 벽인가?
 		jr	z, trampaLimite	; Si
 
 	IF	(!VERSION2)
 		inc	hl		; (!?) Si incrementa HL	pasa a los decimales de	X. Deberia quedarse en la Y,
+					; (!?) HL을 증가시키면 X의 소수점 자리로 이동합니다. Y에 있어야 합니다.
 	ENDIF
 
 		ld	a, (hl)		; Y muro
+						; 벽 Y
 		sub	4		; Decrementa 4 su Y, con lo que	detiene	su avance (deja	de bajar)
+					; Y를 4만큼 감소시켜 전진을 멈춥니다(하향 멈춤).
 		ld	(hl), a		; Actualiza la Y
+						; Y 업데이트
 		ret
 
 ;----------------------------------------------------
@@ -8193,30 +8231,41 @@ trampaChoca:
 
 trampaLimite:
 		dec	hl		; Apunta al status del muro
+					; 벽의 상태를 가리킴
 		inc	(hl)		; Pasa al siguiente status = Muro cerrado por completo
+						; 다음 상태로 이동 = 벽이 완전히 닫힘
 		inc	hl		; Apunta a la Y
 					; Y를 가리킴
 		ld	a, (de)		; Map ID con el	que ha chocado
+						; 충돌한 지도 ID
 		cp	14h		; Limite inferior de la	pantalla?
+					; 화면의 하한?
 		ld	c, 13h		; Tile de ladrillo normal
+						; 일반 벽돌 타일
 		jr	nz, drawTrampa_
 
 		inc	c		; Tile de limite inferior de la	pantalla
+					; 화면의 타일 하한
 
 drawTrampa_:
 	IF	(!VERSION2)
 		call	drawTrampa	; (!?) Para que	pone un	CALL y luego un	RET?
+							; (!?) 왜 CALL을 넣고 RET를 합니까?
 		ret
 	ENDIF
 drawTrampa:
 		ld	a, c
 		ld	(de), a		; Modifica el tile del mapa
+						; 지도 타일 수정
 		push	hl		; Apunta a la Y
 						; Y를 가리킴
 		call	getTileFromID	; Obtiene el patron que	le corresponde a ese tile del mapa
+								; 해당 지도 타일에 해당하는 패턴을 가져옵니다.
 		dec	hl
 		dec	hl		; Apunta a la Y	menos 2	bytes, necesario para que "drawTile" recoja las coordenadas
+					; Y 빼기 2바이트를 가리킵니다. "drawTile"이 좌표를 선택하는 데 필요한 것입니다.
 		call	drawTile	; Dibuja el patron en pantalla
+							; 화면에 패턴을 그립니다.
 		pop	hl
 		ret
 
@@ -8241,17 +8290,22 @@ chkActivaTrampa:
 		inc	hl
 		inc	hl
 		ld	c, (hl)		; X trampa
+						; 함정 X
 		inc	hl
 		ld	b, (hl)		; Habitacion trampa
+						; 함정이 있는 방
 		ld	hl, (ProtaX)
 		and	a
 		sbc	hl, bc
 		ret	nz		; El prota no esta en la misma X que la	trampa
+					; 주인공은 함정과 같은 X에 있지 않다
 
 		ld	a, (de)		; Y trampa
+						; 함정 Y
 		ld	hl, ProtaY
 		cp	(hl)
 		ret	nz		; No estan en la misma Y
+					; 그들은 같은 Y에 있지 않습니다.
 
 		ld	h, d
 		ld	l, e
@@ -8261,38 +8315,50 @@ chkActivaTrampa:
 
 trampaTecho:
 		push	hl		; Puntero a la posicion	en el mapa de la trampa
+						; 트랩 맵의 위치에 대한 포인터
 		push	de		; Puntero a la Y de la trampa
+						; 트랩의 Y에 대한 포인터
 		and	a
 		ld	de, MapaRAM
 		sbc	hl, de		; Se sale del mapa por arriba?
+						; 그것은 위의 지도를 떠나나요?
 		pop	de
 		jr	c, trampaOrigen	; Si, tomamos esta posicion como inicio	del muro trampa
+							; 예, 우리는 트랩 벽의 시작으로 이 위치를 취합니다.
 
 		pop	hl
 		ld	a, (hl)		; Tile del mapa	en el que esta la trampa
+						; 함정이 있는 지도의 타일
 		and	a		; Esta vacio?
+					; 비어 있습니까?
 		jr	nz, trampaOrigen2 ; No
 
 		inc	b
 		ld	a, l
 		sub	60h		; distancia a la fila superior del mapa
+					; 지도의 맨 윗줄까지의 거리
 		ld	l, a
 		jr	nc, trampaTecho2 ; No hay acarreo en la	resta
+							; 빼기에 캐리가 없다.
 
 		dec	h		; Resta	el acarreo a HL
+					; HL에서 캐리 빼기
 
 trampaTecho2:
 		jr	trampaTecho	; Sigue	buscando donde poner el	origen del muro	que se cierra
+						; 닫히는 벽의 원점을 어디에 둘지 계속 찾으십시오.
 
 trampaOrigen:
 		pop	hl
 		ld	(hl), 12h	; Map ID ladrillo/muro
+						; 벽돌/벽의 지도 ID
 
 trampaOrigen2:
 		ld	a, b
 		add	a, a
 		add	a, a
 		add	a, a		; Numero de tiles de distancia hasta el	techo *	8
+						; 천장까지의 타일 수 * 8
 	IF	(!VERSION2)
 		sub	4
 	ENDIF
@@ -8300,14 +8366,19 @@ trampaOrigen2:
 		ex	de, hl
 
 		ld	a, (hl)		; Y de la trampa
+						; 함정 Y
 		sub	b		; Le resta la distacia en pixeles al techo u origen de la trampa
+					; 트랩의 천장 또는 원점까지의 거리(픽셀)를 뺍니다.
 		ld	(hl), a
 		dec	hl		; Apunta al status de la trampa
+					; 트랩의 상태를 가리킴
 		inc	(hl)		; La trampa pasa al estado 1 = Bajando muro
+						; 트랩이 상태 1로 이동 = 벽 낮추기
 
 	IF	(!VERSION2)
 		xor	a
 		ld	(timer), a	;(!?) Para que sirve?
+						;(!?) 무엇을 위한 것입니까?
 	ENDIF
 		ret
 
@@ -8319,6 +8390,7 @@ trampaOrigen2:
 
 getMuroDat:
 		ld	hl, muroTrampaDat ; Y, decimales X, X, habitacion
+								; Y, 소수 X, X, 방
 		call	ADD_A_HL
 		ld	a, (muroTrampProces)
 		ld	b, a
@@ -8327,9 +8399,12 @@ getMuroDat:
 chkLastMuro:
 		ld	hl, muroTrampProces
 		inc	(hl)		; Siguiente muro
+						; 다음 벽
 		ld	a, (hl)		; Muro actual
+						; 현재 벽
 		inc	hl
 		cp	(hl)		; Numero de muro totales
+						; 총 벽 수
 		jp	nz, chkNextTrampa
 		ret
 
@@ -8352,10 +8427,13 @@ chkLastMuro:
 chkAplastaMuro:
 		push	bc
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		ld	a, (de)		; Tile del mapa
 						; 지도 타일
 		sub	19h		; #19 =	Ladrillo completo muro trampa, #1A = Ladrillo simple muro trampa
+					; #19 = 전체 벽돌 트랩 벽, #1A = 단일 벽돌 트랩 벽
 		cp	2		; Es uno de esos dos tiles del muro trampa?
+					; 함정 벽에 있는 타일 2개 중 하나입니까?
 		pop	bc
 		ret
 
@@ -8376,18 +8454,23 @@ chkAplastaMuro:
 
 drawAgujero:
 		ld	hl, agujeroCnt	; Al comenzar a	pica vale #15
+							; 곡괭이를 시작할 때 #15의 가치가 있습니다.
 		ld	a, (hl)
 		and	a
 		ret	z		; Ha terminado de hacer	el agujero
+					; 구멍 뚫기를 마쳤습니다
 
 		ld	a, (hl)
 		cp	12h		; Es el	primer golpe de	pico?
+					; 첫 번째 곡괭이질인가요?
 		inc	hl
 		jr	z, drawAgujero2	; Si, no hace falta incrementar	la Y del agujero
+							; 예, 구멍의 Y를 늘릴 필요가 없습니다.
 
 		inc	(hl)
 		inc	(hl)
 		inc	(hl)		; Incrementa la	Y del agujero en 3
+						; 구멍의 Y를 3만큼 늘립니다.
 
 drawAgujero2:
 		ld	b, a
@@ -8401,28 +8484,38 @@ drawAgujero2:
 		jr	nz, drawAgujero3
 
 		ld	a, (de)		; Lee tile del mapa que	se va a	picar
+						; 발행할 지도의 타일 읽기
 		call	AL_C__AH_B	; Copia	el nibble alto de A en B y el bajo en C
+							; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 		ld	a, b		; se queda con el nibble alto, que es la familia de tiles o tipo
+						; 타일 ​​또는 유형 계열인 하이 니블을 유지합니다.
 		cp	1		; es una plataforma?
+					; 플랫폼인가?
 		jr	nz, endAgujero	; No, finaliza el agujero. Esto	no se puede picar
+							; 아니요, 구멍이 끝납니다. 이것은 잘릴 수 없다
 
 		ld	a, c
 		cp	4		; Es plataforma	o vacio? (Map IDs #10-#13 = #00	(tile vacio), #00, #40 (tile ladrillo),	#40)
+					; 플랫폼입니까 아니면 비어 있습니까? (지도 ID #10-#13 = #00(빈 타일), #00, #40(벽돌 타일), #40)
 		jr	c, drawAgujero3
 
 		cp	9		; Map ID #19 = Tile #40
 		jr	nz, endAgujero
 
 ; Comprueba si hay que borrar el ladrillo picado del mapa de la	RAM
+; RAM 맵에서 부서진 벽돌을 삭제해야 하는지 확인
 
 drawAgujero3:
 		dec	hl
 		ld	a, (hl)		; agujeroCnt
 		inc	hl
 		cp	0Ch		; Valor	de la animacion	en el momento de romper	totalmente el ladrillo de arriba
+					; 위의 벽돌을 완전히 부수는 순간의 애니메이션 값
 		jr	z, drawAgujero4	; Quita	el ladrillo del	mapa
+							; 지도에서 벽돌 제거
 
 		cp	3		; Valor	de la animacion	en el momento de romper	totalmente el ladrillo de abajo
+					; 아래 벽돌을 완전히 깨는 순간의 애니메이션 값
 		jr	nz, drawAgujero5
 
 drawAgujero4:
@@ -8432,21 +8525,30 @@ drawAgujero4:
 		xor	a
 	ENDIF
 		ld	(de), a		; Borra	tile del mapa RAM
+						; RAM 맵에서 타일 삭제
 
 drawAgujero5:
 		ld	a, (agujeroCnt)	; Al comenzar a	pica vale #15
+							; 곡괭이를 시작할 때 #15의 가치가 있습니다.
 		ld	de, tilesAnimCavar ; Tiles usados en la	animacion del agujero
+								; 구멍 애니메이션에 사용된 타일
 		call	ADD_A_DE	; Calcula indice
+							; 지수 계산
 		ld	a, (de)		; Tile de la animacion (ladrillo semiroto, roto	o vacio)
+						; 애니메이션 타일(반 부서진, 부서진 또는 빈 벽돌)
 		dec	hl
 		dec	hl		; Apunta a la Y	del agujero
+					; 구멍의 Y를 가리킵니다.
 		call	drawTile	; Dibuja en pantalla el	tile de	la animacion del agujero
+							; 구멍 애니메이션 타일을 화면에 그립니다.
 		ld	a, 45h		; SFX Pico
+						; SFX 곡괭이
 		jp	setMusic
 
 endAgujero:
 		xor	a
 		ld	(agujeroCnt), a	; Al comenzar a	picar vale #15
+							; 시작하면 #15의 가치가 있습니다.
 		ret
 
 
@@ -8468,17 +8570,29 @@ spiningDoors:
 					; 4 = Habitacion
 					; 5 = Sentido giro
 					; 6 = Contador giro
+
+					; 0 = 상태(비트 0 = 회전, 비트 2-1 = 높이 + 2)
+					; 1 = 그리고
+					; 2 = X 소수
+					; 3 = X
+					; 4 = 방
+					; 5 = 회전 방향
+					; 6 = 카운터 회전
 		ld	a, (numDoorGira)
 		ld	b, a
 		or	a
 		ret	z		; No hay puertas giratorias en esta piramide
+					; 이 피라미드에는 회전문이 없습니다.
 
 spiningDoors2:
 		bit	0, (hl)		; Esta girando esta puerta?
+						; 이 문이 돌아가고 있습니까?
 		jr	nz, spiningDoors3 ; Si
 
 		ld	de, 7		; Tama�o de la estructura de cada puerta giratoria
+						; 각 회전문의 프레임 크기
 		add	hl, de		; Puntero a la siguiente puerta
+						; 옆집을 가리키는 포인터
 		djnz	spiningDoors2
 		ret
 
@@ -8486,24 +8600,32 @@ spiningDoors3:
 		ld	a, (timer)
 		and	7
 		ret	nz		; La puerta solo se mueve cada 8 frames
+					; 문은 8프레임마다 움직입니다.
 
 		push	hl
 		pop	ix
 		ld	a, (ix+SPINDOOR_TIMER) ; Counter
 		inc	(ix+SPINDOOR_TIMER) ; Incrementa contador
+								; 카운터 증가
 		cp	5		; Ha girado completamente?
+					; 완전히 회전했습니까?
 		jr	z, spiningDoorEnd ; Si,	desactiva giro en puerta
+								; 예, 도어 켜기를 비활성화합니다.
 
 		add	a, a
 		add	a, a
 		add	a, a		; x8 (patrones de la tabla que ocupa cada frame	de giro	de la puerta)
+						; x8 (도어 회전의 각 프레임을 차지하는 테이블의 패턴)
 		ld	b, a
 		ld	a, (ix+SPINDOOR_SENT) ;	Sentido	del giro
+									; 회전의 방향
 		cp	8		; Gira a la derecha o a	la izquierda?
+					; 우회전, 좌회전?
 		ld	a, b
 		jr	z, spiningDoor4
 
 		ld	a, 20h		; Invierte la animacion	para el	giro a la izquierda
+						; 좌회전에 대한 애니메이션 반전
 		sub	b
 
 spiningDoor4:
@@ -8511,26 +8633,36 @@ spiningDoor4:
 		call	ADD_A_DE
 
 		ld	c, 2		; Altura por defecto y ancho fijo
+						; 기본 높이 및 고정 너비
 		ld	a, (ix+SPINDOOR_STATUS)
 		srl	a		; Se queda con la altura
+					; 높이 유지
 		add	a, c		; Altura base +	altura extra
+						; 기본 높이 + 추가 높이
 		ld	b, a		; B = Altura puerta
+						; B = 문 높이
 		ld	h, (ix+SPINDOOR_X) ; X
 		ld	l, (ix+SPINDOOR_Y) ; Y
 
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
 							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(ix+SPINDOOR_ROOM) ; Esta la puerta en la misma	habitacion que el prota?
+								; 문은 주인공과 같은 방에 있습니까?
 		ret	nz		; No
 
 		call	coordVRAM_HL	; Obtiene direccion VRAM de la tabla de	nombres	a donde	apunta HL
+								; HL이 가리키는 이름 테이블의 VRAM 주소 가져오기
 		jp	DEtoVRAM_NXNY	; Dibuja puerta	en la pantalla
+							; 화면에 문 그리기
 
 spiningDoorEnd:
 		res	0, (ix+SPINDOOR_STATUS)	; Quita	flag de	girando
+									; 회전에서 깃발을 제거하십시오
 		ld	a, 1100b
 		xor	(ix+SPINDOOR_SENT) ; Invierte sentido de la puerta
+								; 문의 반대 방향
 		ld	(ix+SPINDOOR_SENT), a ;	Actualiza sentido de la	puerta
+									; 문 방향 업데이트
 
 ;----------------------------------------------------
 ; Pone un apuerta giratoria en el mapa
@@ -8539,7 +8671,7 @@ spiningDoorEnd:
 ;----------------------------------------------------
 
 putGiratMap:
-		push	ix		; Pone puerta giratoria	en el mapa
+		push	ix
 		pop	hl
 		inc	hl
 		push	hl
@@ -8548,31 +8680,41 @@ putGiratMap:
 								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		dec	de
 		ld	a, (de)		; Los bits 2-1 indican la altura extra
+						; 비트 2-1은 추가 높이를 나타냅니다.
 		rra
 		and	3
 		add	a, 2		; Le a�ade la altura minima de la puerta (2)
+						; 그것은 당신에게 문의 최소 높이를 제공합니다 (2)
 		ld	b, a		; Altura de la puerta
+						; 문 높이
 		ld	a, 5
 		call	ADD_A_DE
 		ld	a, (de)		; Sentido de giro
+						; 도는 방향
 		bit	2, a
 		ld	a, 50h		; Map ID puerta	izquierda
+						; 왼쪽 문 지도 ID
 		jr	z, putGiratMap2
 		inc	a
 		inc	a		; Map ID puerta	derecha
+					; 오른쪽 문 지도 ID
 
 putGiratMap2:
 		ld	c, a
 
 putGiratMap3:
 		ld	(hl), c		; Parte	izquierda de la	puerta giratoria
+						; 회전문의 왼쪽 부분
 		inc	hl
 		inc	c
 		ld	(hl), c		; Parte	derecha
+						; 오른쪽 부분
 		ld	a, 5Fh		; Offset a la fila inferior del	mapa
+						; 지도의 맨 아래 행으로 오프셋
 		call	ADD_A_HL
 		dec	c
 		djnz	putGiratMap3	; Repite tantas	veces como alta	sea la puerta
+								; 문이 높은 만큼 반복
 		ret
 
 
@@ -8596,33 +8738,43 @@ chkGiratorias2:
 		add	a, a
 		and	11000b
 		add	a, (hl)		; Y puerta
+						; 문 Y
 		ld	d, a
 
 		ld	a, (sentidoProta) ; 1 =	Izquierda, 2 = Derecha
 								; 1 = 왼쪽, 2 = 오른쪽
 		rra
 		ld	a, 8		; 8 pixeles a la derecha
+						; 오른쪽으로 8픽셀
 		jr	c, chkGiratorias3 ; A la izquierda
+								; 왼쪽에
 		neg			; 8 pixeles a la izquierda
+					; 왼쪽으로 8픽셀
 
 chkGiratorias3:
 		inc	hl
 		inc	hl
 		add	a, (hl)		; X puerta
+						; 문 X
 		ld	e, a
 
 		ld	hl, ProtaY
 		ld	a, (hl)		; Y prota
+						; 주인공 Y
 		inc	hl
 		inc	hl
 		ld	l, (hl)		; X Prota
+						; 주인공 X
 		ld	h, a
 		and	a
 		sbc	hl, de		; Resta	las coordenadas	del prota y las	de la puerta
+						; 주인공 좌표와 문의 좌표 빼기
 		pop	hl		; Recupera status puerta
+					; 문 상태 검색
 		jr	nz, chkLastGirat
 
 		set	0, (hl)		; Activa el bit	0 del estado de	la puerta
+						; 문 상태의 비트 0 활성화
 		ld	a, 6
 		call	ADD_A_HL
 		ld	(hl), 0
@@ -8657,11 +8809,20 @@ getGiratorData:
 					; 4 = Habitacion
 					; 5 = Sentido giro
 					; 6 = Contador giro
+
+					; 0 = 상태(비트 0 = 회전, 비트 2-1 = 높이 + 2)
+					; 1 = 그리고
+					; 2 = X 소수
+					; 3 = X
+					; 4 = 방
+					; 5 = 회전 방향
+					; 6 = 카운터 회전
 		call	ADD_A_HL
 		ld	a, (GiratEnProceso)
 
 getHL_Ax7:
 		ld	b, a		; Devuelve HL +	A*7 y A=(HL)
+						; HL + A*7 및 A=(HL) 반환
 		sla	b
 		add	a, b
 		sla	b
@@ -8685,17 +8846,21 @@ quitaGiratorias:
 		ld	hl, numDoorGira
 		cp	(hl)
 		ret	z		; No hay puertas giratorias
+					; 회전문이 없다
 
 		ld	(GiratEnProceso), a ; Empieza por la primera
+								; 처음부터 시작
 		inc	hl
 
 quitaGiratoria2:
 		push	hl
 		ld	a, (hl)		; Tama�o de la puerta giratoria
+						; 회전문 크기
 		rra
 		and	3
 		add	a, 2
 		ld	b, a		; Altura en patrones
+						; 패턴의 높이
 		push	bc
 		inc	hl
 		push	hl
@@ -8705,12 +8870,15 @@ quitaGiratoria2:
 		call	putGiratMap3
 		pop	hl
 		call	getLocationDE3	; Comprueba si la puerta esta en la misma pantalla que el prota
+								; 문이 주인공과 같은 화면에 있는지 확인
 		pop	bc
 		ld	c, 2
 		jr	nz, quitaGiratoria3 ; No lo esta
+								; 그렇지 않다
 		call	coordVRAM_DE	; D = Y, E = X
 		ld	de, eraseData
 		call	DEtoVRAM_NXNY	; Borra	la puerta de la	pantalla
+								; 스크린에서 문 지우기
 
 quitaGiratoria3:
 		pop	hl
@@ -8719,9 +8887,11 @@ quitaGiratoria3:
 		exx
 		ld	hl, GiratEnProceso
 		inc	(hl)		; Incrementa el	contador de puerta giratoria en	proceso
+						; 진행 중인 회전문 카운터를 증가시킵니다.
 		ld	a, (hl)
 		inc	hl
 		cp	(hl)		; Ha comprobado	todas las puertas giratorias?
+						; 모든 회전문을 확인 했습니까?
 		exx
 		jr	nz, quitaGiratoria2
 		ret
@@ -8765,9 +8935,13 @@ coordVRAM_HL:
 ;----------------------------------------------------
 tilesGiroDoor:	db 68h,	69h, 68h, 69h, 68h, 69h, 68h, 69h
 		db 6Ah,	6Bh, 6Ah, 6Bh, 6Ah, 6Bh, 6Ah, 6Bh ; Azul/Blanco	girado ->
+													; 파란색/흰색 회전 ->
 		db 54h,	55h, 54h, 55h, 54h, 55h, 54h, 55h ; Muro azul
+													; 푸른 벽
 		db 7Ah,	79h, 7Ah, 79h, 7Ah, 79h, 7Ah, 79h ; Blanco/azul	girado <-
+													; 흰색/파란색 회전 <-
 		db 78h,	77h, 78h, 77h, 78h, 77h, 78h, 77h ; Blanco/azul
+													; 흰색/파란색
 
 
 ;----------------------------------------------------
@@ -8785,25 +8959,32 @@ setupStage:
 		xor	a
 		ld	(flagMuerte), a
 		ld	(UNKNOWN), a	; (!?) Se usa?
+							; (!?) 사용?
 		call	BorraMapaRAM
 		inc	a
 		ld	(flagVivo), a
 		call	hideSprAttrib	; Limpia los atributos de los sprites (los oculta)
+								; 스프라이트 속성 지우기(숨기기)
 
 		ld	hl, piramideDest
 		ld	a, (hl)
 		dec	hl
 		ld	(hl), a		; Piramide actual igual	a la de	destino
+						; 목적지와 동일한 현재 피라미드
 		call	ChgStoneColor	; Cada 4 fases cambia el color de las piedras
+								; 4단계마다 스톤의 색상이 바뀝니다.
 
 		ld	hl, indexPiramides ; Indice de las piramides
+								; 피라미드 지수
 		ld	a, (piramideActual)
 		dec	a
 		add	a, a
 		call	getIndexHL_A	; Obtiene el puntero al	mapa de	la piramide actual
+								; 현재 피라미드의 지도에 대한 포인터를 가져옵니다.
 		ex	de, hl
 		ld	b, 4
 		ld	ix, MapaRAMRoot	; La primera fila del mapa no se usa (ocupada por el marcador).	Tambien	usado como inicio de la	pila
+							; 지도의 첫 번째 행은 사용되지 않습니다(마커가 점유). 스택의 시작으로 사용됨
 
 unpackMap:
 		ld	a, (de)
@@ -8849,39 +9030,48 @@ unpackMap:
 ; 각 비트는 벽돌이 있는지 또는 비어 있는지 여부를 나타냅니다.
 ;
 		ld	b, 16h		; Numero de filas por pantalla (22)
+						; 화면당 행 수(22)
 
 unpackMap2:
 		exx
 		ld	b, 2		; Dos bytes
+						; 2바이트
 
 unpackMap3:
 		push	bc
 		ld	b, 8		; Ocho bits
+						; 8비트
 		ld	c, (hl)
 
 unpackMap4:
 		rl	c		; Rota el byte para mirar si el	bit esta a 0 o a 1
+					; 바이트를 회전하여 비트가 0인지 1인지 확인합니다.
 		ld	a, 0		; Tile vacio
 						; 빈 타일
 		jr	nc, unpackMap5
 		ld	a, 12h		; Tile ladrillo
+						; 타일 ​​벽돌
 
 unpackMap5:
 		ld	(de), a		; Pone el tile en el buffer del	mapa
+						; 맵 버퍼에 타일 넣기
 		inc	de
 		djnz	unpackMap4
 
 		inc	hl		; Siguiente byte (8 tiles)
+					; 다음 바이트(8타일)
 		pop	bc
 		djnz	unpackMap3
 
 		ld	a, 50h		; Distancia a la siguiente fila. Hay tres pantallas en horizontal
+						; 다음 행까지의 거리입니다. 가로로 세 개의 화면이 있습니다.
 		call	ADD_A_DE
 		exx
 		djnz	unpackMap2
 
 		exx
 		ld	bc, 10h		; Distancia a la segunda mitad de la pantalla
+						; 화면의 후반부까지의 거리
 		add	ix, bc
 		pop	de
 		pop	bc
@@ -8959,6 +9149,7 @@ getDoors6:
 		inc	de
 		ld	a, (hl)
 		call	AL_C__AH_B	; Copia	el nibble alto de A en B y el bajo en C
+							; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 		ld	a, b
 		ld	(de), a		; Piramide a la	que lleva esta puerta
 		inc	de
@@ -9055,6 +9246,7 @@ putNextGema2:
 		xor	a
 		call	getGemaDat
 		call	AL_C__AH_B	; Copia	el nibble alto de A en B y el bajo en C
+							; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 		ld	a, b		; Color	de la gema
 		add	a, 40h		; Map ID gemas
 		pop	hl
@@ -9084,6 +9276,7 @@ chkLastGema_:
 		inc	de
 		or	a
 		jr	z, getPicos	; No hay ninguno
+						; 아무도 없다
 
 		ld	b, a
 
@@ -9157,6 +9350,7 @@ getGiratorias:
 		ld	(de), a		; Actualiza numero de puertas giratorias de la piramide
 		or	a
 		jr	z, getMuroTrampa ; No hay puertas giratorias
+							; 회전문이 없다
 
 		inc	de
 		ld	b, a
@@ -9185,6 +9379,7 @@ getGiratorias2:
 		rla			; bits 0-1
 		and	0Ch
 		ld	(de), a		; Sentido de giro
+						; 도는 방향
 		inc	de
 		inc	de
 		inc	hl
@@ -9200,8 +9395,17 @@ getGiratorias2:
 					; 5 = Sentido giro
 					; 6 = Contador giro
 
+					; 0 = 상태(비트 0 = 회전, 비트 2-1 = 높이 + 2)
+					; 1 = 그리고
+					; 2 = X 소수
+					; 3 = X
+					; 4 = 방
+					; 5 = 회전 방향
+					; 6 = 카운터 회전
+
 getGiratorias3:
 		call	putGiratMap	; Pone puerta giratoria	en el mapa
+							; 지도에 회전문을 놓으십시오
 		ld	de, 7
 		add	ix, de
 		ld	hl, GiratEnProceso
@@ -9450,6 +9654,7 @@ initMomia2:
 		inc	hl
 		ld	a, b
 		call	AL_C__AH_B	; Copia	el nibble alto de A en B y el bajo en C
+							; A에서 B로 높은 니블을 복사하고 C로 낮은 니블을 복사합니다.
 		ld	(hl), c		; Color
 		ret
 
@@ -9693,6 +9898,7 @@ salePiramide:
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; X prota
+						; 주인공 X
 		add	a, 8
 		ld	hl, puertaXspr	; X sprite puerta (parte derecha)
 		cp	(hl)		; Esta medio cuerpo del	prota tapado por la puerta derecha?
@@ -10935,6 +11141,7 @@ momiaDecide5:
 		ld	a, (hl)		; Tipo de tile
 		and	0F0h		; Se queda con la familia
 		cp	10h		; Es una plataforma o muro?
+					; 플랫폼인가, 벽인가?
 		jr	z, momiaDecide7	; Si
 
 		dec	hl		; Tile de la izquierda del mapa
@@ -11299,6 +11506,7 @@ chkSaltar:
 chkIncrustUp:
 		push	bc
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		pop	bc		; Recupera offset coordendas de	choque
 		jr	z, chkTechoMazizo ; Ha chocado
 
@@ -11317,6 +11525,7 @@ chkTechoMazizo:
 
 		ld	b, 8		; Parte	central	X del elemento
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		ret	z		; Choca
 
 		scf			; No choca
@@ -11333,10 +11542,12 @@ chkTechoMazizo:
 chkChocaTecho:
 		ld	bc, 4FEh
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		ret	z
 
 		ld	bc, 0AFEh
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		ret	z
 
 		scf			; No choca
@@ -11348,6 +11559,7 @@ chkTocaY_8:
 		ld	c, a
 		push	bc
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		pop	bc
 		ret
 
@@ -11393,6 +11605,7 @@ chkChocaSalto1:
 chkChocaSalto2:
 		push	de
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		pop	de
 		jr	z, ajustaPasillo ; Comprueba si	se ha encajado en un pasillo (muro por arriba y	por abajo)
 
@@ -11429,6 +11642,7 @@ chkChocaSalto4:
 
 chkChocaSalto5:
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		jr	z, setFinSalto	; Si, termina el salto
 
 chkChocaCae:
@@ -11478,6 +11692,7 @@ ajustaPasillo:
 ajustaPasillo2:
 		push	de
 		call	chkTocaMuro	; Z = choca
+							; Z = 충돌
 		pop	de
 		jr	z, setFinSalto	; Y
 
@@ -11852,6 +12067,7 @@ setupEnding:
 
 		call	BorraMapaRAM
 		ld	hl, MapaRAMRoot	; La primera fila del mapa no se usa (ocupada por el marcador).	Tambien	usado como inicio de la	pila
+							; 지도의 첫 번째 행은 사용되지 않습니다(마커가 점유). 스택의 시작으로 사용됨
 		ld	de,  MapaRAMRoot+1 ; La	primera	fila del mapa no se usa	(ocupada por el	marcador). Tambien usado como inicio de	la pila
 		ld	bc, 720h
 		ld	(hl), 0		; Tile vacio
@@ -11962,6 +12178,7 @@ drawVertice:
 		ex	af, af'         ; Guarda la direccion de pintado indicada en A
 		ld	a, c		; Vertice de la	piramide / patron diagonal
 		call	WRTVRM		; Dibuja el patron en pantalla
+							; 화면에 패턴을 그립니다.
 		ex	af, af'         ; Recupera la direccion de pintado
 
 		pop	hl		; Recupera la direccion	VRAM del eje central de	la piramide
@@ -13222,6 +13439,7 @@ numFinishGame:	# 1
 dummy_6		# 2
 
 UNKNOWN:	# 1			; (!?) Se usa?
+						; (!?) 사용?
 dummy_7		# 2
 
 flagMuerte:	# 1			; No se	usa (!?)
@@ -13349,7 +13567,7 @@ timerEmpuja:	# 1			; Timer	usado para saber el tiempo que se empuja una puerta g
 							; 회전문을 누르는 시간을 알던 타이머
 flagScrolling:	# 1
 agujeroCnt:	# 1			; Al comenzar a	pica vale #15
-						; 구멍숫자(?) Pica를 시작할 때 #15의 가치가 있습니다.
+						; 곡괭이를 시작할 때 #15의 가치가 있습니다.
 
 ; Datos	del agujero que	se esta	picando
 ; 드릴되는 구멍의 세부 정보
