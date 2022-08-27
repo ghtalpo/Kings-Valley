@@ -849,7 +849,7 @@ reiniciaJuego:
 
 stageClear:
 		ld	a, 20h		; Silencio
-						; 고요
+						; 소리끄기
 		call	setMusic
 
 		ld	hl, Vidas
@@ -1904,6 +1904,7 @@ initHardware:
 		call	SetPSGMixer
 
 		ld	a, 20h		; Silencio
+						; 소리끄기
 		call	setMusic
 
 		ld	de, 0		; (!?) No tendr�a que ser HL? Aunque la proteccion anticopia use DE, la rutina "setFillVRAM" usa HL
@@ -2140,6 +2141,7 @@ chkPushAnyKey:
 
 		push	af
 		ld	a, 20h		; Silencio
+						; 소리끄기
 		call	setMusic
 		pop	af
 
@@ -7098,19 +7100,23 @@ calcBitMask2:
 
 AI_Gemas:
 		xor	a		; Empezamos por	la primera
+					; 우리는 첫 번째로 시작합니다
 		ld	(ElemEnProceso), a ; Usado para	saber la gema o	puerta que se esta procesando
 								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 
 nextGema:
 		xor	a
 		call	getGemaDat	; Obtiene puntero a los	datos de la gema en proceso
+							; 처리 중인 gem의 데이터에 대한 포인터 가져오기
 		inc	hl
 		ld	a, (hl)		; Status
 		call	jumpIndex
 		dw gemaDoNothing
 		dw gemaDoNothing
 		dw gemaCogida		; 2 = Borra la gema de la pantalla y del mapa e	incrementa el numero de	gemas cogidas
+							; 2 = 화면과 지도에서 보석을 지우고 가져가는 보석의 수를 늘립니다.
 		dw gemaDoNothing	; 3 = Inactiva
+							; 3 = 비활성
 
 gemaDoNothing:
 		jp	chkLastGema
@@ -7129,29 +7135,40 @@ gemaDoNothing:
 gemaCogida:
 		xor	a
 		call	getGemaDat	; Obtiene puntero a los	datos de la gema en proceso
+							; 처리 중인 gem의 데이터에 대한 포인터 가져오기
 		ld	a, (hl)
 		and	0F0h
 		ld	(hl), a		; Desactiva gema del mapa
+						; 맵안의 보석 비활성화
 
 		inc	hl
 		inc	(hl)		; Pasa al siguiente estado
+						; 다음 상태로 이동
 
 		inc	hl
 		ld	a, (hl)		; Y
 		sub	8
 		ld	d, a		; Coordenada Y del brillo de arriba de la gema
+						; 보석 꼭대기 반짝임의 Y좌표
 		inc	hl
 		inc	hl
 		ld	e, (hl)		; X
 		call	coordVRAM_DE	; Obtiene direccion de la VRAM de esas coordenadas en la tabla de nombres
+								; 이름 테이블에 있는 해당 좌표의 VRAM 주소 가져오기
 		xor	a		; Tile vacio
+					; 빈 타일
 		call	WRTVRM		; Borra	el brillo superior
+							; 상단 광택 지우기
 
 		ld	bc, 1Fh		; Distancia al brillo de la izquierda (tile de abajo a la izquierda)
+						; 왼쪽 밝기까지의 거리(왼쪽 하단 타일)
 		add	hl, bc
 		ld	de, eraseData	; Tiles	vacios
+							; 빈 타일
 		ld	bc, 103h	; Ancho	de 3 tiles
+						; 3 타일의 너비
 		call	DEtoVRAM_NXNY	; Borra	de la pantalla el brillo de la izquierda, la gema y el brillo de la derecha
+								; 화면에서 왼쪽 반짝이, 보석 및 오른쪽 반짝이를 지웁니다.
 
 		ld	a, 2		; Offset variable Y
 		call	getGemaDat
@@ -7159,12 +7176,16 @@ gemaCogida:
 								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		ld	de, eraseData
 		call	putBrillosMap	; Borra	los brillos del	mapa
+								; 지도의 하이라이트 지우기
 
 		ld	hl, gemasCogidas
 		inc	(hl)		; Incrementa el	numero de gemas	cogidas
+						; 수집한 보석의 수를 늘립니다.
 
 		call	knifeUpdateBack	; Fuerza a los cuchillos a actualizar el tile de fondo sobre el	que estan
 					; Podia	estar sobre el brillo de la gema y ahiora que se ha quitado hay	que actualizarlo
+					; 칼이 있는 배경 타일을 강제로 업데이트합니다.
+					; 보석의 광택에 관한 것일 수 있으며 이제 제거되었으므로 업데이트해야 합니다.
 		jp	chkLastGema
 
 ;----------------------------------------------------
@@ -7176,6 +7197,7 @@ gemaCogida:
 ;----------------------------------------------------
 knifeDataInicio:db    0
 		db    2			; Velocidad del	cuchillo
+						; 칼 속도
 
 eraseData:	db 0, 0, 0
 		db 0, 0, 0
@@ -7212,8 +7234,10 @@ tilesAnimCavar:	db 0
 
 chkLastGema:
 		call	chkLastGema2	; Se han procesado todas las gemas?
+								; 모든 보석이 처리되었습니까?
 		ret	z		; Si
 		jp	nextGema	; No, sigue con otra
+						; 아니요, 다른 작업을 계속합니다.
 chkLastGema2:
 		ld	hl, ElemEnProceso ; Usado para saber la	gema o puerta que se esta procesando
 								; 처리중인 보석이나 문을 아는 데 사용됩니다.
@@ -7222,6 +7246,7 @@ chkLastGema2:
 		ld	a, (hl)
 		dec	hl
 		cp	(hl)		; Ha procesado todas?
+						; 모두 처리하셨나요?
 		ret
 	ELSE
 
@@ -7233,8 +7258,11 @@ chkLastGema:
 		ld	a, (hl)
 		dec	hl
 		cp	(hl)		; Ha procesado todas?
+						; 모두 처리하셨나요?
 		ret	z		; Si, termina
+					; 네 끝납니다
 		jp	nextGema	; No, procesa la siguiente
+						; 아니요, 다음을 처리하십시오.
 	ENDIF
 
 ;----------------------------------------------------
@@ -7261,6 +7289,14 @@ getGemaDat:
 					; 3 = decimales	X
 					; 4 = X
 					; 5 = habitacion
+					; 6-8 =	0, 0, 0
+
+					; 0 = 색상/활성. 높은 니블은 색상을 나타냅니다. 저음이 활성화된 경우(1) 그렇지 않은 경우(0)
+					; 1 = 상태
+					; 2 = Y
+					; 3 = 소수	X
+					; 4 = X
+					; 5 = 방
 					; 6-8 =	0, 0, 0
 		call	ADD_A_HL
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
@@ -7296,6 +7332,7 @@ DEtoVRAM_NXNY:
 		ld	b, 0
 		call	DEtoVRAMset
 		ld	a, 20h		; Siguiente fila (incrementa coordenada	Y)
+						; 다음 행(Y 좌표 증가)
 		call	ADD_A_HL
 		pop	bc
 		djnz	DEtoVRAM_NXNY
@@ -7315,15 +7352,20 @@ DEtoVRAM_NXNY:
 
 putBrillosMap:
 		ld	bc, -60h	; Tama�o de una	fila del mapa (3 pantallas de 32 tiles)
+						; 지도 행의 크기(32개 타일의 3개 화면)
 		add	hl, bc		; Fila superior
+						; 상단 줄
 		ex	de, hl
 		ldi			; Pone brillo superior de la gema
+					; 보석에 최고의 광택을 부여합니다.
 		ld	bc, 5Eh		; Distancia al brillo de la izquierda
+						; 왼쪽 밝기까지의 거리
 		ex	de, hl
 		add	hl, bc
 		ex	de, hl
 		ld	c, 3
 		ldir			; Copia	brillo de la izquierda,	espacio, brillo	de la derecha
+						; 왼쪽 밝기, 공간, 오른쪽 밝기
 		ex	de, hl
 		ret
 
@@ -7356,38 +7398,55 @@ AI_Salidas:
 		ld	(ElemEnProceso), a ; Usado para	saber la gema o	puerta que se esta procesando
 								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		ld	(puertaCerrada), a ; Vale 1 al cerrarse	la salida
+								; 출력이 닫힐 때 1의 가치가 있습니다.
 
 chkNextExit:
 		ld	hl, chkLastExit	; Comprueba si ya ha comprobado	las cuatro salidas
+							; 이미 4개의 출력을 모두 확인했는지 확인하십시오.
 		push	hl		; Mete esta funcion en la pila para que	se ejecute al salir
+						; 이 함수를 스택에 푸시하여 종료 시 실행되도록 합니다.
 
 		xor	a
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		inc	a		; Es #ff su estatus?
+					; 상태가 #ff입니까?
 		ret	z		; No existe esa	salida
+					; 그런 출구는 없다
 
 		inc	hl
 		inc	hl
 		inc	hl
 		inc	hl
 		ld	a, (hl)		; Status de la puerta
+						; 문 상태
 		rra
 		rra
 		rra
 		rra
 		and	0Fh		; El nibble alto indica	el status. El bajo se usa como contador	de animacion o substatus
+					; 높은 니블은 상태를 나타냅니다. 낮은 니블은 애니메이션 카운터 또는 하위 상태로 사용됩니다.
 		call	jumpIndex
 
 
 		dw chkAllGemas		; 0 = Comprueba	si se han cogido todas las gemas
+							; 0 = 모든 보석을 가져갔는지 확인
 		dw paintEntrada		; 1 = Dibuja la	puerta de entrada a la piramide
+							; 1 = 피라미드 입구 문을 그립니다.
 		dw chkOpenExit		; 2 = Comprueba	si toca	la palanca que abre la puerta
+							; 2 = 문을 여는 레버를 터치했는지 확인
 		dw openCloseExit	; 3 = Abriendo salida
+							; 3 = 개방 출력
 		dw chkSalePiram		; 4 = Puerta abierta. Espera a que salga de la piramide
+							; 4 = 문 열림. 그가 피라미드에서 나올 때까지 기다리십시오.
 		dw openCloseExit	; 5 = Cerrando salida
+							; 5 = 종료 출력
 		dw doNothing3		; 6 = No hace nada. Mantiene la	puerta esperando a la cortinilla
+							; 6 = 아무것도 하지 않는다. 문이 커튼을 기다리게 합니다.
 		dw finAnimEntrar	; 7 = Quita o deja la puerta dependiendo de si ya ha estado en la piramide
+							; 7 = 이미 피라미드에 있었는지 여부에 따라 문을 제거하거나 나갑니다.
 		dw paintCerrada		; 8 = La puerta	permanece visible y cerrada
+							; 8 = 문이 계속 표시되고 닫힌 상태로 유지됨
 
 ;----------------------------------------------------------------
 ;
@@ -7416,10 +7475,14 @@ chkNextExit:
 
 chkAllGemas:
 		ld	hl, gemasCogidas ; Comprueba si	ha cogido todas	la gemas
+							; 보석을 모두 가져갔는지 확인
 		ld	a, (hl)		; Gemas	recogidas
+						; 수집한 보석
 		inc	hl
 		cp	(hl)		; Numero de gemas que hay en esta piramide
+						; 이 피라미드의 보석 수
 		ret	nz		; No las ha cogido todas
+					; 그는 그들 모두를 잡지 못했습니다.
 
 		ld	a, 1
 		ld	(flagStageClear), a
@@ -7428,8 +7491,11 @@ chkAllGemas:
 		call	setMusic	; Musica de "stage clear"
 
 		call	quitaGiratorias	; Quita	las puerta giratorias
+								; 회전문 제거
 		ld	a, 4		; Offset al byte de status de la puerta
+						; 게이트 상태 바이트에 대한 오프셋
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		ld	(hl), 10h	; Status = #10
 
 doNothing3:
@@ -7450,23 +7516,32 @@ doNothing3:
 paintEntrada:
 		ld	a, (GameStatus)
 		cp	4		; Esta entrando	en la piramide?
+					; 피라미드에 들어가고 있습니까?
 		push	af
 		ld	a, 2		; Frame	salida abierta
+						; 프레임 출력 개방
 		jr	z, paintEntrada2
 		pop	af
 
 paintCerrada:
 		push	af
 		xor	a		; Frame	salida cerrada
+					; 닫힌 출력 프레임
 
 paintEntrada2:
 		call	getAnimExit	; Devuelve en DE un puntero a los tiles	que forman la salida
+							; 출력을 구성하는 타일에 대한 포인터를 DE로 반환합니다.
 		ld	a, 4		; Offset al estado de la puerta
+						; 게이트 상태에 대한 오프셋
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		ld	(hl), 20h	; Cambia el estado a #20
+						; 상태를 #20으로 변경
 		call	drawPuerta	; En DE	se pasa	el puntero a los tiles que forman la salida
+							; DE에서 포인터는 출력을 형성하는 타일로 전달됩니다.
 		pop	af
 		ret	z		; Esta entrando	en la piramide (animacion bajar	escaleras)
+					; 그는 피라미드에 들어가고 있습니다(계단 아래로 애니메이션)
 
 ;----------------------------------------------------
 ; Fuerza a los cuchillos para que guarden el fondo sobre el que	estan
@@ -7479,21 +7554,27 @@ paintEntrada2:
 
 knifeUpdateBack:
 		ld	hl, knifeEnProceso ; Indica a los cuchillos que	hay en el suelo	que guarden el tile de fondo sobre el que estan
+								; 바닥에 있는 칼에게 그들이 있는 배경 타일을 저장하도록 지시합니다.
 		ld	(hl), 0
 		inc	hl
 		ld	b, (hl)		; Numero de cuchillos de la fase
+						; 단계의 칼 수
 
 status0Knife2:
 		xor	a		; Offset status	cuchillo
+					; 오프셋 상태 나이프
 		call	getKnifeData
 		ld	a, (hl)		; Status
 		dec	a		; Es igual a 1 (en reposo)
+					; 1과 같습니다(휴식 시)
 		jr	nz, status0Knife3
 		ld	(hl), a		; Lo pasa a 0
+						; 0으로 전달
 
 status0Knife3:
 		ld	hl, knifeEnProceso
 		inc	(hl)		; Siguiente cuchillo
+						; 다음 칼
 		djnz	status0Knife2
 		ret
 
@@ -7509,10 +7590,13 @@ status0Knife3:
 
 chkOpenExit:
 		ld	a, (protaStatus) ; Estado del prota
+							; 주인공의 상태
 		cp	1		; Esta saltando?
+					; 그는 점프하고있다?
 		ret	nz		;  No
 
 		call	chkSameScreenS	; Comprueba si la salida esta en la pantalla del prota
+								; 출력이 메인 화면에 있는지 확인
 		ret	nz		; No
 
 		ld	a, d		; Y
@@ -7524,8 +7608,10 @@ chkOpenExit:
 		push	hl
 		ld	hl, palancaArea
 		call	chkTocaProta	; Comrpeuba si el prota	toca la	palanca
+								; 주인공이 레버를 만지는지 확인
 		pop	hl
 		ret	nc		; No toca la palanca que abre la puerta
+					; 문을 여는 레버를 만지지 마십시오
 
 		ld	a, 1
 		ld	(flagStageClear), a
@@ -7534,6 +7620,7 @@ chkOpenExit:
 		ld	(timer), a
 		inc	hl
 		ld	(hl), 30h	; Estado de abriendo la	puerta
+						; 문을 여는 상태
 		jr	openCloseExit2
 
 
@@ -7563,33 +7650,49 @@ openCloseExit:
 		ld	a, (timer)
 		and	1Fh
 		ret	nz		; Procesa uno de cada 32 frames. Espera	0.5s aprox.
+					; 매 32 프레임 중 하나를 처리합니다. 약 0.5초 동안 기다립니다.
 
 openCloseExit2:
 		call	knifeUpdateBack	; Indica a los cuchillos que hay en el suelo que guarden el tile de fondo sobre	el que estan
+								; 바닥에 있는 칼에게 그들이 있는 배경 타일을 저장하도록 지시합니다.
 		ld	a, 4		; Offset al status de la puerta
+						; 문 상태에 대한 오프셋
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		inc	(hl)		; Incrementa el	substatus de la	puerta
+						; 문의 하위 상태를 높입니다.
 
 		ld	a, (hl)		; Contador de animacion
+						; 애니메이션 카운터
 		and	0Fh
 		cp	4		; Ha terminado la animacion de abrir o cerrar?
+					; 오프닝 또는 클로징 애니메이션이 끝났습니까?
 		jr	nz, openCloseExit5 ; Aun no
+								; 아직 아님
 
 		ld	a, (GameStatus)
 		cp	4		; Esta entrando	en la piramide?
+					; 피라미드에 들어가고 있습니까?
 		jr	nz, openCloseExit3 ; No, esta saliendo.
+								; 아니, 나온다.
 
 		ld	(hl), 70h	; Estado puerta: Ha terminado de cerrarse. Mira	si hay que dejarla o quitarla
+						; 문 상태: 닫힘이 완료되었습니다. 남겨두거나 제거해야하는지 확인하십시오.
 		jr	openCloseExit4
 
 openCloseExit3:
 		ld	a, (hl)		; Status puerta
+						; 문 상태
 		add	a, 10h		; Pasa al siguiente estado
+						; 다음 상태로 이동
 		ld	(hl), a		; Si se	esta abriendo para salir, tras accionar	la palanca, pasa al estado 4
 					; Si se	ha cerrado tras	salir, pasa al estado 6, que deja la puerta cerrada esperando a	la cortinilla
+					; 나가기 위해 열려 있으면 레버를 작동시킨 후 상태 4로 이동합니다.
+					; 외출 후 닫혀 있으면 상태 6으로 이동하여 문을 닫고 커튼을 기다리게 합니다.
 
 openCloseExit4:
 		ld	hl, puertaCerrada ; Vale 1 al cerrarse la salida
+								; 출력이 닫힐 때 1의 가치가 있습니다.
 		inc	(hl)
 		ret
 
@@ -7597,12 +7700,16 @@ openCloseExit5:
 		ld	a, (hl)		; Status
 		and	0F0h
 		cp	50h		; Esta cerrando	la puerta?
+					; 문을 닫고 계십니까?
 		ld	a, (hl)
 		jr	nz, abreSalida	; No, se esta abriendo
+							; 아니, 연다
 
 		and	0Fh		; Se queda con el contador de la animacion
+					; 애니메이션 카운터 유지
 		sub	4
 		neg			; Los subestados van de	0 a 3 al cerrar
+					; 하위 상태는 닫을 때 0에서 3으로 이동합니다.
 
 abreSalida:
 		and	0Fh
@@ -7612,11 +7719,14 @@ abreSalida:
 
 		push	af
 		ld	a, 8Dh		; SFX abriendo/cerrando	puerta
+						; SFX 문 여닫기
 		call	setMusic	; Musica que suena al abrirse o	cerrarse la puerta (si esta entrando no	se oye porque tiene preferencia	la que ya esta sonando)
+							; 문이 열리고 닫힐 때 나는 음악
 		pop	af
 
 pintaSalida:
 		call	getAnimExit	; Devuelve en DE un puntero a los tiles	que forman la salida
+							; 출력을 구성하는 타일에 대한 포인터를 DE로 반환합니다.
 		jp	drawPuerta
 
 
@@ -7640,24 +7750,32 @@ pintaSalida:
 
 chkSalePiram:
 		call	chkSameScreenS	; Comprueba si la salida esta en la pantalla del prota
+								; 출력이 메인 화면에 있는지 확인
 		ret	nz		; La puerta no esta en la misma	habitacion que el prota
+					; 문은 주인공과 같은 방에 있지 않습니다.
 ; DE = YX
 
 		ld	hl, salidaArea
 		call	chkTocaProta
 		ret	nc		; No ha	entrado	en la salida
+					; 출구에 들어가지 않았다
 
 		call	quitaMomias	; Oculta las momias
+							; 미라를 숨기다
 
 		exx
 		ld	a, 4		; Offset status	puerta
+						; 문 상태 오프셋
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		ld	(hl), 50h	; Cambia el status a 5 (#50) = Cerrando	puerta
+						; 상태를 5(#50)로 변경 = 문 닫음
 
 		inc	hl
 		ld	bc, 2
 		ld	de, piramideDest
 		ldir			; Copia	la piramide de destino y la puerta por la que se entra (flecha del mapa)
+						; 목적지 피라미드와 들어가는 문을 복사하십시오(지도의 화살표).
 		exx
 
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
@@ -7675,11 +7793,13 @@ chkSalePiram:
 
 setFlechaSalida:
 		ld	(puertaSalida),	a ; 1 =	Arriba,	2 = Abajo, 4 = Izquierda, 8 = Derecha
-
+								; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 
 ; Pone los sprites de la parte derecha de la puerta que	tapan al prota al entrar por las escaleras
+; 계단 진입 시 주인공을 가리는 문 오른쪽에 스프라이트를 배치합니다.
 
 		ld	hl, sprAttrib	; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
+							; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 		ld	a, 10h
 		add	a, e		; X + 16
 		ld	e, a
@@ -7688,9 +7808,11 @@ setFlechaSalida:
 		ld	d, a		; Y - 17
 
 		ld	b, 2		; 16x32	Dos sprites consecutivos en Y
+						; 16x32 Y의 두 연속 스프라이트
 
 setSprPuerta:
 		ld	c, 2		; 2 sprites solapados
+						; 2개의 겹치는 스프라이트
 
 setSprPuerta2:
 		ld	(hl), d		; Y del	sprite
@@ -7699,8 +7821,10 @@ setSprPuerta2:
 		inc	hl
 		inc	hl
 		inc	hl		; Puntero a los	atributos del siguiente	sprite
+					; 다음 스프라이트의 속성에 대한 포인터
 		dec	c
 		jr	nz, setSprPuerta2 ; Segundo sprite solapado
+							; 두 번째 겹치는 스프라이트
 
 		ld	a, d
 		add	a, 10h
@@ -7709,13 +7833,17 @@ setSprPuerta2:
 
 		ld	a, 20h
 		call	setMusic	; Silencio
+							; 소리끄기
 
 		xor	a
 		ld	(statusEntrada), a ; Status de la entrada a 0 =	Saliendo en la piramide
+								; 0의 입력 상태 = 피라미드 종료
 		inc	a
 		ld	(flagEntraSale), a ; 1 = Entrando o saliendo de	la piramide. Ejecuta una logica	especial para este caso
+								; 1 = 피라미드에 들어가거나 나가는 것. 이 경우에 대해 특수 논리 실행
 		inc	a
 		ld	(sentidoProta),	a ; Sentido a la derecha
+								; 오른쪽 방향
 		pop	hl
 		pop	hl
 		ret
@@ -7732,14 +7860,18 @@ setSprPuerta2:
 
 finAnimEntrar:
 		call	chkPiramPasada	; Comprueba si la piramide en la que entra ya ha estado
+								; 그것이 들어가는 피라미드가 이미 존재했는지 확인하십시오.
 		push	af
 		ld	a, 4		; Offset status
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		pop	af
 		ld	(hl), 0		; Estado que oculta la puerta y	comprueba si se	cogen todas las	gemas
+						; 문을 숨기고 보석을 모두 가져갔는지 확인하는 상태
 		jr	z, borraSalida
 
 		ld	(hl), 20h	; Estado que deja la puerta visible y espera a que el prota toque la palanca para abrirla
+						; 문이 보이도록 두고 주인공이 레버를 터치하여 문을 열 때까지 기다리는 상태
 		ret
 
 borraSalida:
@@ -7753,13 +7885,16 @@ borraSalida:
 
 getExitDat:
 		ld	hl, pyramidDoors ; Obtiene un puntero a	la salida que se esta procesando
+							; 처리 중인 출력에 대한 포인터를 가져옵니다.
 		call	ADD_A_HL
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
 								; 처리중인 보석이나 문을 아는 데 사용됩니다.
 		jp	getHL_Ax7	; Devuelve HL +	A*7 y A=(HL)
+						; HL + A*7 및 A=(HL) 반환
 
 chkLastExit:
 		ld	hl, ElemEnProceso ; Comprueba si ya ha comprobado las cuatro salidas
+								; 이미 4개의 출력을 모두 확인했는지 확인하십시오.
 		inc	(hl)
 		ld	a, 4
 		cp	(hl)
@@ -7780,48 +7915,58 @@ chkLastExit:
 drawPuerta:
 		xor	a
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		ld	bc, 0F0F8h	; Offset X-16, Y-8
 		push	de
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
+								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		pop	de
 		ex	de, hl
 		push	hl
 
 		ld	b, 3		; Alto en patrones de la puerta
+						; 문 패턴의 높이
 
 drawPuerta2:
 		push	bc
 		ld	bc, 5		; Ancho	en patrones de la puerta
+						; 문 패턴의 너비
 		ldir
 
 		ld	a, 5Bh		; Desplazamiento a la fila inferior de la puerta en el mapa RAM
+						; RAM 맵에서 문의 맨 아래 행으로 이동
 		call	ADD_A_DE
 		pop	bc
 		djnz	drawPuerta2
 
 		xor	a
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		dec	hl
 		call	getLocationDE2	; Esta en la misma pantalla que	el prota? (se ve?)
 								; 그는 주인공과 같은 화면에 있습니까?
 		pop	hl
 		ret	nz		; No hace falta	pintarla
+					; 칠할 필요가 없다
 
 		push	hl
 		call	coordVRAM_DE	; Calcula puntero a la tabla de	nombres	de las coordenadas en DE
+								; DE에서 좌표의 테이블 이름에 대한 포인터 계산
 		pop	de
 		ld	bc, -22h
 		add	hl, bc
 
 		ld	b, 3		; Patrones alto
-
+						; 높은 패턴
 drawPuerta3:
 		ld	c, 5		; Patrones ancho
-
+						; 넓은 패턴
 drawPuerta4:
 		push	bc
 		ld	a, (de)		; Tile de la puerta
+						; 문 타일
 		call	getTileFromID	; Obtiene patron que le	corresponde
+								; 일치하는 패턴 가져오기
 		call	WRTVRM		; Lo dibuja en pantalla
 							; 화면에 그려
 		inc	hl
@@ -7833,6 +7978,7 @@ drawPuerta4:
 		jr	nz, drawPuerta4
 
 		ld	a, 1Bh		; Distancia en VRAM a la fila inferior de la puerta (#20 - 5)
+						; VRAM에서 게이트의 맨 아래 행까지의 거리(#20 - 5)
 		call	ADD_A_HL
 		djnz	drawPuerta3
 		ret
@@ -7852,8 +7998,9 @@ drawPuerta4:
 ;----------------------------------------------------
 
 chkSameScreenS:
-		xor	a		; Comprueba si la salida esta en la pantalla del prota
+		xor	a
 		call	getExitDat	; Obtiene un puntero a la salida que se	esta procesando
+							; 처리 중인 출력에 대한 포인터 가져오기
 		dec	hl
 		jp	getLocationDE2
 
@@ -7868,6 +8015,7 @@ chkSameScreenS:
 
 getAnimExit:
 		add	a, a		; Devuelve en DE un puntero a los tiles	que forman la salida
+						; 출력을 구성하는 타일에 대한 포인터를 DE로 반환합니다.
 		ld	hl, idxAnimExit
 		call	getIndexHL_A
 		ex	de, hl
@@ -8714,6 +8862,7 @@ unpackMap3:
 unpackMap4:
 		rl	c		; Rota el byte para mirar si el	bit esta a 0 o a 1
 		ld	a, 0		; Tile vacio
+						; 빈 타일
 		jr	nc, unpackMap5
 		ld	a, 12h		; Tile ladrillo
 
@@ -8806,6 +8955,7 @@ getDoors5:
 
 getDoors6:
 		ld	(de), a		; Status de la puerta
+						; 문 상태
 		inc	de
 		ld	a, (hl)
 		call	AL_C__AH_B	; Copia	el nibble alto de A en B y el bajo en C
@@ -9355,6 +9505,7 @@ chkPiramPasada:
 		ld	bc, (PiramidesPasadas) ; Cada bit indica si la piramide	correspondiente	ya esta	pasada/terminada
 		push	bc
 		call	calcBitMask	; Devuelve en DE el bit	activo que corresponde a la piramide actual
+							; 현재 피라미드에 해당하는 활성 비트를 DE로 반환
 		pop	bc
 		ld	a, b
 		and	d
@@ -9581,6 +9732,7 @@ finEntraSale:
 quietoFinEsc:
 		call	AI_Salidas
 		ld	a, (puertaCerrada) ; Vale 1 al cerrarse	la salida
+								; 출력이 닫힐 때 1의 가치가 있습니다.
 		or	a
 		ret	z		; La puerta no se ha cerrado aun
 
@@ -9589,6 +9741,7 @@ quietoFinEsc:
 		jr	z, estaDentro	; Entrando
 
 		ld	a, 20h		; Silencio
+						; 소리끄기
 		call	setMusic
 
 		ld	hl, statusEntrada
@@ -9641,11 +9794,13 @@ chkBonusStage:
 chkBonusStage2:
 		ld	hl, statusEntrada
 		inc	(hl)		; Pasa al siguiente estado
+						; 다음 상태로 이동
 
 		ld	a, 70h
 		ld	(waitCounter), a ; Tiempo que espera antes de finalizar	el proceso de salida
 
 		call	calcBitMask	; Devuelve en DE el bit	activo que corresponde a la piramide actual
+							; 현재 피라미드에 해당하는 활성 비트를 DE로 반환
 		ld	hl, PiramidesPasadas ; Cada bit	indica si la piramide correspondiente ya esta pasada/terminada
 		jp	setPiramidClear	; Marca	la piramide actual como	pasada
 
@@ -9705,6 +9860,7 @@ haSalido:
 
 setSprDoorProta:
 		ld	de, sprAttrib	; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
+							; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 		ld	hl, attribDoor	; Atributos de las puertas de la entrada
 		ld	bc, 10h		; 4 sprites * 4	bytes
 		ldir
@@ -9772,6 +9928,7 @@ initDoorProta3:
 		ld	e, (hl)		; Coordenada X central de la puerta
 
 		ld	hl, sprAttrib	; Tabla	de atributos de	los sprites en RAM (Y, X, Spr, Col)
+							; RAM의 스프라이트 속성 테이블(Y, X, Spr, Col)
 		ld	a, 16
 		add	a, e
 		ld	e, a		; Suma 16 a la X de la puerta
@@ -10170,6 +10327,7 @@ chkLastMomia:
 		dec	hl
 		cp	(hl)		; Ha procesado todas las momias?
 		ret	nc		; Si, termina
+					; 네 끝납니다
 		jp	nextMomia
 
 framesMomia:	db 2Ch			; Pie atras
@@ -10596,6 +10754,7 @@ momiaUnknown:
 		call	getYMomia
 		ld	bc, 0FCh	; X+15,Y+12
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
+								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		ld	b, a		; (!?) Guarda el tile del mapa en B. Para que?
 		and	0F0h		; Se queda con la familia o tipo de tile
 		cp	10h
@@ -10604,6 +10763,7 @@ momiaUnknown:
 		call	getYMomia
 		ld	bc, 10FCh	; X+16,	Y-4
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
+								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		ld	b, a		; (!?) Para que	lo guarda en B?
 		and	0F0h
 		cp	10h
@@ -10902,6 +11062,7 @@ buscaCercanias3:
 		ld	bc, 8		; (!?) Con poner 'ld c,8' bastaria
 		ld	b, c		; Punto	central	de la momia
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
+								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 
 		ex	af, af'
 		dec	hl		; Tile a la izquierda de la momia
@@ -11694,6 +11855,7 @@ setupEnding:
 		ld	de,  MapaRAMRoot+1 ; La	primera	fila del mapa no se usa	(ocupada por el	marcador). Tambien usado como inicio de	la pila
 		ld	bc, 720h
 		ld	(hl), 0		; Tile vacio
+						; 빈 타일
 		ldir
 
 		ld	hl, 2480h	; VRAM address pattern generator table = Pattern #90
