@@ -3690,6 +3690,7 @@ chkProtaPica2:
 
 chkProtaPica3:
 		ld	a, e		; Sentido
+						; 방향
 		rra
 		ld	a, b		; Offset picando a la izquierda
 						; 왼쪽 클릭 오프셋
@@ -4116,6 +4117,7 @@ chkChocaSuelo:
 		push	hl
 		dec	hl
 		ld	a, (hl)		; Sentido
+						; 방향
 		inc	hl
 		ld	bc, 50Fh	; Parte	inferior izquierda
 						; 왼쪽 하단
@@ -5292,11 +5294,13 @@ movKnife3:
 								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 
 		ld	a, (ix+0)	; Sentido
+						; 방향
 		inc	hl		; Tile de la derecha del cuchillo
 					; 칼 오른쪽 타일
 		rr	a
 		push	af
 		jr	nc, movKnife4	; Derecha
+							; 오른쪽
 		dec	hl
 		dec	hl		; Tile de la izquierda
 					; 왼쪽 타일
@@ -5306,6 +5310,7 @@ movKnife4:
 		ld	a, (hl)		; Tile del mapa	de fondo
 						; 배경 맵 ​​타일
 		jr	nc, movKnife5	; Derecha
+							; 오른쪽
 
 		ld	d, (ix+0Ah)	; tile de fondo	2
 						; 배경 타일 2
@@ -5348,8 +5353,10 @@ movKnife6:
 		dec	hl		; Puntero VRAM
 					; VRAM 포인터
 		ld	a, (ix+0)	; Sentido
+						; 방향
 		rra
 		jr	nc, movKnife7	; Derecha
+							; 오른쪽
 		inc	hl
 		inc	hl
 
@@ -5380,8 +5387,10 @@ movKnife9:
 								; HL이 가리키는 좌표의 맵에 대한 포인터를 HL에 가져옵니다.
 		dec	hl
 		ld	a, (ix+0)	; Sentido
+						; 방향
 		rra
 		jr	c, movKnife10	; Izquierda
+							; 왼쪽
 		inc	hl
 		inc	hl
 
@@ -5409,6 +5418,7 @@ movKnife11:
 						; 칼의 다음 상태로 이동: 충돌
 		inc	hl
 		ld	b, (hl)		; Sentido
+						; 방향
 		inc	hl
 		inc	hl
 		inc	hl
@@ -5426,7 +5436,9 @@ movKnife12:
 		call	ADD_A_HL	; Puntero a los	tiles de backup	de fondo
 							; 배경 백업 타일에 대한 포인터
 		rr	b		; Sentido
+					; 방향
 		jr	nc, knifeRestaura ; Derecha
+							; 오른쪽
 		inc	hl
 
 knifeRestaura:
@@ -5509,6 +5521,7 @@ knifeRebota:
 		call	getKnifeData
 		push	hl
 		ld	a, (hl)		; Sentido
+						; 방향
 		inc	hl
 		inc	hl
 		inc	hl
@@ -7501,6 +7514,7 @@ chkSalePiram:
 		ld	a, (ElemEnProceso) ; Usado para	saber la gema o	puerta que se esta procesando
 		inc	a
 		cp	1		; Arriba?
+					; 위?
 		jr	z, setFlechaSalida
 
 		dec	a
@@ -8931,6 +8945,7 @@ getStairs2:
 		ld	a, (hl)		; Bit 0	= Sentido. Bit 1 = Habitacion
 		and	1
 		ld	b, a		; Sentido
+						; 방향
 
 		inc	de
 		ld	a, (hl)
@@ -8951,6 +8966,7 @@ getStairs3:
 		ld	c, 20h
 		call	putPeldanoMap
 		and	a		; Sentido?
+					; 방향?
 		push	bc
 		ld	bc, -62h	; Desplazamiento a la fila superior del	mapa si	la escalera que	sube hacia la izquierda
 		jr	z, getStairs4
@@ -8973,6 +8989,7 @@ getStairs5:
 
 putPeldanoMap:
 		ld	a, b		; Sentido
+						; 방향
 		and	a
 		jr	z, putPeldanoMap2
 		inc	c
@@ -9233,8 +9250,10 @@ indexHalfMap:	dw halfMap1
 ;----------------------------------------------------
 brillosGema:	db 40h			; Superior
 		db 41h			; Izquierda
+						; 왼쪽
 		db 0			; Espacio para la gema
 		db 42h			; Derecha
+						; 오른쪽
 
 
 ;----------------------------------------------------
@@ -9829,6 +9848,7 @@ momiaHaChocado:
 		call	getYMomia
 		dec	hl
 		ld	a, (hl)		; Sentido
+						; 방향
 		xor	3		; Invierte derecha/izquierda
 		ld	b, a		; Cambia el sentido del	movimiento (la gira)
 		call	chkChocaAndar4	; Tambien choca	por el otro lado?
@@ -10082,6 +10102,7 @@ momiaSaltando:
 
 chkPasaRoom:
 		ld	a, (hl)		; Sentido
+						; 방향
 		inc	hl
 		inc	hl
 		inc	hl		; Apunta a la X
@@ -10912,10 +10933,12 @@ chkSaltar:
 
 		dec	hl
 		ld	a, (hl)		; Sentido
+						; 방향
 		inc	hl
 		ld	bc, 304h	; Offset para la parte superior	izquierda
 		rr	a
 		jr	c, chkIncrustUp	; Izquierda
+							; 왼쪽
 
 		ld	b, 0Ch		; Offset X parte derecha
 
@@ -10993,6 +11016,7 @@ chkChocaSalto:
 chkChocaSalto1:
 		inc	hl
 		ld	d, (hl)		; Sentido
+						; 방향
 		inc	hl
 		jr	z, chkChocaCae	; Esta apretado.
 
@@ -11006,6 +11030,7 @@ chkChocaSalto1:
 ; 위에서 충돌하는지 확인하십시오.
 ;------------------------------
 		ld	a, d		; Sentido
+						; 방향
 		rra
 		ld	bc, 300h	; Offset superior izquierdo
 		jr	c, chkChocaSalto2 ; Va a la izquierda
@@ -11024,6 +11049,7 @@ chkChocaSalto2:
 
 chkChocaSalto3:
 		ld	a, d		; Sentido
+						; 방향
 		ld	bc, 308h	; Offset central izquierdo
 		rra
 		jr	c, chkChocaSalto4 ; Va a la izquierda
@@ -11041,6 +11067,7 @@ chkChocaSalto4:
 ;------------------------------------------
 
 		ld	a, d		; Sentido
+						; 방향
 		rra
 		ld	bc, 30Eh	; Offset inferior izquierdo
 		jr	c, chkChocaSalto5 ; Va a la izquierda
@@ -11087,10 +11114,12 @@ setNZ:
 
 ajustaPasillo:
 		ld	a, d		; Sentido
+						; 방향
 		ld	bc, 314h	; Offset medio tile por	debajo del elemento (izquierda)
 		rra
 		jr	c, ajustaPasillo2
 		ld	b, 0Ch		; Derecha
+						; 오른쪽
 
 ajustaPasillo2:
 		push	de
@@ -11285,6 +11314,7 @@ andaEscalera:
 
 		inc	hl
 		ld	c, (hl)		; Sentido
+						; 방향
 		inc	hl
 		inc	hl
 		inc	hl
@@ -11301,6 +11331,7 @@ andaEscalera:
 
 andaEscalera2:
 		ld	a, c		; Sentido
+						; 방향
 		inc	hl
 		inc	hl
 		inc	(hl)		; Incrementa la	X
@@ -11965,8 +11996,11 @@ offsetFlechas:	db 0F9h, 2
 ;----------------------------------------------------
 numSprFlechas:	db 0E8h
 		db 0F0h			; Abajo
+						; 아래
 		db 0F4h			; Izquierda
+						; 왼쪽
 		db 0ECh			; Derecha
+						; 오른쪽
 
 ;----------------------------------------------------
 ; Numero de sprites de las flechas invertidas
@@ -11974,8 +12008,11 @@ numSprFlechas:	db 0E8h
 ;----------------------------------------------------
 numSprFlechInv:	db 0F0h
 		db 0E8h			; Arriba
+						; 위
 		db 0ECh			; Derecha
+						; 오른쪽
 		db 0F4h			; Izquierda
+						; 왼쪽
 
 
 TXT_ENDING:
