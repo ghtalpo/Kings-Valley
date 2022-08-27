@@ -2936,7 +2936,7 @@ protaAnda:
 							; 점프를 시도하지 마십시오
 
 		cp	10h		; Es un	cuchillo?
-					; 칼이야?
+					; 칼인가?
 		jp	nz, chkProtaPica ; No, es un pico. Intenta hacer un agujero
 							; 아니요, 절정입니다. 구멍을 만들려고
 		jp	setLanzaKnife	; Lanza	el cuchillo
@@ -3483,14 +3483,17 @@ protaLanzaKnife:
 
 		ld	de, ProtaY
 		ld	a, (de)		; Y del	prota
+						; 주인공의 Y
 		sub	8
 		ld	(hl), a		; Y del	cuchillo 8 pixeles por encima del prota
 						; 그리고 주인공보다 8픽셀 위의 칼날
 
 		inc	hl		; X decimales
+					; X 소수
 		inc	hl		; X cuchillo
 					; X 나이프
 		inc	de		; X decimales
+					; X 소수
 		inc	de		; X prota
 					; X 주인공
 
@@ -3862,6 +3865,7 @@ picaLateral:
 		ld	de, agujeroDat	; Y, X,	habitacion
 		inc	hl
 		ld	a, (hl)		; Y del	prota
+						; 주인공의 Y
 		ld	(de), a		; Y del	agujero
 						; Y 구멍
 		inc	hl
@@ -5990,7 +5994,9 @@ chkKnifeMomia3:
 
 		push	bc
 		ld	c, (ix+ACTOR_Y)	; Y momia
+							; Y 미라
 		ld	b, (ix+ACTOR_X)	; X momia
+							; X 미라
 		ld	hl, areaSizeMomia
 		call	chkArea
 		pop	bc
@@ -6026,6 +6032,7 @@ chkKnifeMomia5:
 		ld	(ix+ACTOR_CONTROL), 4 ;	Control: IZQUIERDA
 								; 컨트롤: 왼쪽
 		ld	a, (ix+ACTOR_Y)	; Y momia
+							; Y 미라
 		and	0F8h
 		ld	(ix+ACTOR_Y), a	; Ajusta la Y a	multiplo de 8
 							; Y를 8의 배수로 설정
@@ -6440,7 +6447,9 @@ chkTocaMomia4:
 								; 그들은 같은 방에 있지 않다
 
 		ld	d, (ix+ACTOR_Y)	; Y momia
+							; Y 미라
 		ld	e, (ix+ACTOR_X)	; X momia
+							; X 미라
 		ld	hl, mummyHitArea
 		call	chkTocaProta	; Comprueba si el prota	toca a la momia
 								; 주인공이 미라를 만지는지 확인
@@ -11009,23 +11018,33 @@ momiaSinSuelo:
 		ld	a, (ix+ACTOR_TIPO)
 		and	a
 		jr	z, momiaCayendo	; Momia	mas tonta. Nunca salta
+							; 가장 멍청한 미라. 절대 점프하지 않는다
 
 		cp	3
 		jr	z, momiaCayendo
 
 		ld	a, (ix+ACTOR_POS_RELAT)	; 0 = A	la misma altura	(o casi), 1 = Momia por	encima,	2 = Por	debajo
+									; 0 = 같은 높이(또는 거의)에서, 1 = 위의 미라, 2 = 아래
 		cp	1		; La momia esta	por encima del prota?
+					; 미이라가 주인공 위에 있다?
 		jr	z, momiaCayendo	; Si, se deja caer para	bajar
+							; 네, 내려가기 위해 떨어집니다.
 
 		call	getYMomia	; Obtiene la Y de la momia
+							; 미라에게서 Y를 얻습니다.
 		ld	a, (hl)		; (!?) No hace falta
+						; (!?) 불필요
 		cp	8		; Esta muy cerca de la parte de	arriba?
+					; 정상에 아주 가깝죠?
 		jr	c, momiaCayendo	; No salta
+							; 점프하지마
 
 ; Va a saltar
+; 점프할거야
 		call	chkSaltar	; Tiene	espacio	para saltar?
+							; 점프할 공간이 있습니까?
 		jp	c, momiaSetSalta ; si, salta
-
+								; 네 점프
 
 ;----------------------------------------------------
 ; Procesa la caida de la momia y comprueba si llega al suelo
@@ -11040,7 +11059,9 @@ momiaCayendo:
 		push	ix
 		pop	hl
 		call	cayendo		; Incrementa la	Y y comprueba si choca contra el suelo
+							; Y를 높이고 땅에 닿는지 확인하십시오.
 		jp	nc, setMomiaAndar ; No esta cayendo, pone estado de andar
+								; 그는 넘어지지 않고 걷고 있다
 		ret
 
 momiaEscaleras:
@@ -11050,22 +11071,28 @@ momiaEscaleras:
 		ld	a, (hl)		; Controles
 		and	0Ch
 		ret	z		; No va	ni a la	derecha	ni a la	izquierda
+					; 오른쪽으로도 왼쪽으로도 가지 않는다.
 
 		ld	a, (ix+ACTOR_TIPO)
 		ld	de, pausaEscalera
 		call	ADD_A_DE
 		ld	a, (de)		; Masca	aplicada al timer para ralentizar el movimiento	de la momia en la escalera
+						; 사다리에서 미라의 움직임을 늦추기 위해 타이머에 마스크를 적용했습니다.
 		ld	b, a
 		ld	a, 1
 		ld	(quienEscalera), a ; (!?) Se usa esto? Quien esta en una escalera 0 = Prota. 1 = Momia
+								; (!?) 이것은 사용됩니까? 사다리에 있는 사람 0 = 주인공. 1 = 미라
 		ld	(quienEscalera), a ; (!?) Para que lo pone dos veces?
+								; (!?) 왜 두 번 넣어?
 		call	andaEscalera
 		jr	z, setMomiaPensar ; Ha llegado al final	de la escalera
+								; 당신은 사다리의 바닥에 도달했습니다
 		call	momiaCalcFrame
 		ret
 
 setMomiaPensar:
 		ld	(ix+ACTOR_TIMER), 0 ; Al poner el timer	a 0 y el estado	de andar se consigue pasar al estado de	pensar en la siguiente iteracion
+		; 타이머를 0으로 설정하고 걷는 상태로 다음 반복을 생각하는 상태로 전달할 수 있습니다.
 
 setMomiaAndar:
 		xor	a
@@ -11074,6 +11101,7 @@ setMomiaAndar:
 
 
 		ld	a, 3		; (!?) Este codigo no se ejecuta nunca!
+						; (!?) 이 코드는 실행되지 않습니다!
 
 setMomiaStatus:
 		ld	(ix+ACTOR_STATUS), a
@@ -11105,17 +11133,22 @@ pausaEscalera:	db    3
 
 momiaLimbo:
 		pop	hl		; Saca de la pila la funcion que actualiza los atributos de la momia (no es visible)
+					; 스택에서 미라의 속성을 업데이트하는 함수 팝(보이지 않음)
 		ld	a, (timer)
 		and	1
 		jp	nz, chkLastMomia ; Procesa solo	una de cada dos	iteraciones
+								; 다른 모든 반복만 처리
 
 		dec	(ix+ACTOR_TIMER)
 		jp	nz, chkLastMomia ; Aun falta tiempo para que aparezca
+								; 아직 나타날 시간이 있다
 
 		inc	(ix+ACTOR_STATUS) ; Siguiente estado de	la momia: Aparece
+								; 미라의 다음 상태: 나타남
 		ld	(ix+ACTOR_TIMER), 82h
 
 		ld	a, 87h		; SFX aparece momia
+						; 미라 출현 SFX
 		call	setMusic
 		jp	chkLastMomia	; Comprueba si faltan momias por procesar
 							; 처리할 미라가 없는지 확인하십시오.
@@ -11134,23 +11167,30 @@ momiaLimbo:
 
 momiaAparece:
 		ld	(ix+ACTOR_CONTROL), 8 ;	Mirando	a la derecha
+									; 오른쪽을 찾고
 		dec	(ix+ACTOR_TIMER) ; Decrementa el tiempo	de aparicion
+								; 스폰 시간 감소
 		jp	z, setMomiaViva	; Ha llegado al	final
 							; 끝에 도달했습니다
 
 		ld	a, (ix+ACTOR_TIMER)
 		cp	7		; Falta	poco para que vuelva a la vida?
+					; 그가 다시 살아날 때까지 얼마 남지 않았습니까?
 		jr	c, momiaOpenLegs ; Muestra la momia con	las piernas separadas
+								; 다리를 벌린 미라를 보여줍니다.
 
 		ld	b, a
 		and	1Fh
 		ret	nz		; No han pasado	32 iteraciones
+					; 32번의 반복이 통과되지 않았습니다.
 
 		bit	5, b
 		ld	a, 8		; Frame	nube grande
+						; 큰 구름 프레임
 		jr	z, setMomiaFrame
 
 		inc	a		; Frame	nube peque�a
+					; 작은 구름 프레임
 
 setMomiaFrame:
 		ld	(ix+ACTOR_FRAME), a
@@ -11161,6 +11201,7 @@ setMomiaViva:
 
 momiaOpenLegs:
 		ld	(ix+ACTOR_FRAME), 2 ; Piernas separadas
+								; 다리를 벌리다
 		ret
 
 momiaSuicida:
@@ -11169,11 +11210,13 @@ momiaSuicida:
 		dec	(ix+ACTOR_TIMER)
 		ld	a, (ix+ACTOR_TIMER)
 		ld	b, a		; (!?) Donde se	unsa B?
+						; (!?) 어디에서 B에 합류합니까?
 		jr	z, mataMomia
 		and	1Fh
 		ret	nz
 
 		ld	a, 0Ah		; Frame	destello desaparecer
+						; 프레임 플래시 사라짐
 		ld	(ix+ACTOR_FRAME), a
 		ret
 
@@ -11197,7 +11240,9 @@ mataMomia:
 quitaMomia:
 		call	getMomiaAtrib
 		ld	(hl), 0E0h	; Y = #E0. Quita momia de la pantalla
+						; Y = #E0. 화면에서 미라를 제거
 		ld	(ix+ACTOR_STATUS), 4 ; Limbo
+									; 연옥
 		ld	(ix+ACTOR_TIMER), 80h
 		ld	(ix+ACTOR_FRAME), 9
 		ret
@@ -11221,6 +11266,7 @@ getMomiaAtrib2:
 
 getYMomia:
 		ld	a, 3		; Coordenada Y
+						; Y 좌표
 
 ;----------------------------------------------------
 ; Devuelve el valor A de la estructura de la momia actual
@@ -11254,35 +11300,46 @@ getVariableMomia:
 
 momiaPiensa:
 		ld	a, (ix+ACTOR_TIMER) ; Veces que	duda
+								; 망설이는 시간들
 		or	a
 		jr	z, momiaPiensa2	; Ya se	lo ha pensado
+							; 당신은 이미 그것에 대해 생각
 
 		cp	0E0h
 		jr	z, momiaUnknown
 
 		ld	(ix+ACTOR_FRAME), 2 ; Frame piernas separadas
+								; 프레임 다리를 벌리다
 		and	3
 		ld	(ix+ACTOR_SENTIDO), a ;	Sentido	en el que mira
+									; 당신이 바라보는 방향
 
 		ld	a, (timer)
 		and	1Fh
 		ret	nz		; Permanece 32 frames en esa postura
+					; 해당 위치에 32프레임 유지
 
 		dec	(ix+ACTOR_TIMER) ; Decrementa las veces	que mira a los lados
+								; 옆을 보는 시간을 줄여라
 		ret	nz		; Aun tiene que	pensarselo un poco mas
+					; 아직 조금 더 생각하셔야 합니다
 
 momiaPiensa2:
 		call	momiaDecide	; Toma una decision para acercarse al prota
+							; 주인공에게 다가가기로 결정
 		ld	(ix+ACTOR_STATUS), 0 ; Estado: andar
+									; 상태: 도보
 		ret
 
 ; (!?) Para que	sirve esto?
+; (!?) 이것은 무엇을 위한 것입니까?
 
 momiaUnknown:
 		ld	a, (ix+ACTOR_CONTROL) ;	1 = Arriba, 2 =	Abajo, 4 = Izquierda, 8	= Derecha
 									; 1 = 위쪽, 2 = 아래쪽, 4 = 왼쪽, 8 = 오른쪽
 		xor	1100b
 		ld	(ix+ACTOR_CONTROL), a ;	Invierte el sentido de la momia
+									; 미라의 방향을 뒤집다
 		rra
 		rra
 		and	3
@@ -11294,37 +11351,47 @@ momiaUnknown:
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
 								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		ld	b, a		; (!?) Guarda el tile del mapa en B. Para que?
+						; (!?) 맵 타일을 B에 저장합니다. 왜?
 		and	0F0h		; Se queda con la familia o tipo de tile
+						; 가족 또는 타일 유형과 함께 유지
 		cp	10h
 		jp	nz, tryToJump	; Salta	si no hay un muro/plataforma en	su parte inferior derecha
+							; 오른쪽 하단에 벽/플랫폼이 없으면 점프
 
 		call	getYMomia
 		ld	bc, 10FCh	; X+16,	Y-4
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
 								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 		ld	b, a		; (!?) Para que	lo guarda en B?
+						; (!?) 왜 B에 저장합니까?
 		and	0F0h
 		cp	10h
 		jp	nz, tryToJump	; salta	si no hay un muro/plataforma en	su parte superior derecha
+							; 오른쪽 상단에 벽/플랫폼이 없으면 점프
 		jp	momiaVanish
 
 momiaDesaparece:
 		ld	(ix+ACTOR_CONTROL), 8 ;	Anda a la derecha
-
+									; 오른쪽으로 이동
 		dec	(ix+ACTOR_TIMER) ; Decrementa el tiempo	de exploxion
+								; 폭발 시간 감소
 
 		ld	a, (ix+ACTOR_TIMER)
 		ld	b, a
 		jr	z, quitaACTOR_	; Ha terminado el tiempo. La momia desaparece
+							; 시간이 다되었다. 미라가 사라진다
 
 		and	1Fh
 		ret	nz		; No es	multiplo de #20
+					; #20의 배수가 아닙니다.
 
 		ld	(ix+ACTOR_FRAME), 0Ah ;	Destello desaparece
+									; 플래시가 사라집니다
 		ret
 
 quitaACTOR_:
 		call	quitaMomia	; Quita	el sprite de la	pantalla y manda la momia al limbo (estado 4)
+							; 화면에서 스프라이트를 제거하고 미라를 림보로 보냅니다(상태 4).
 		ld	(ix+ACTOR_TIMER), 0FFh
 		call	initMomia
 		pop	hl
@@ -11352,18 +11419,23 @@ evitaSorpresa:
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
 							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		ld	b, (hl)		; B = Habitacion momia
+						; B = 미라 방
 		cp	(hl)		; Comprueba si la momia	esta en	la habitacion actual
+						; 미라가 현재 방에 있는지 확인
 		jr	z, evitaSorpresa6 ; si
 
 		dec	hl
 		ld	a, (hl)		; X momia
+						; X 미라
 		ld	c, 50h
 		cp	c
 		jr	c, evitaSorpresa2 ; La X de la momia es	menor de #50
+								; 미라의 X는 #50보다 작습니다.
 
 		ld	c, 0B0h
 		cp	c
 		jr	c, evitaSorpresa6 ; La X de la momia es	menor de #B0. No se encuentra cerca de los bordes laterales
+								; 미라의 X는 #B0보다 작습니다. 측면 가장자리 근처에서 발견되지 않음
 
 		inc	b
 		inc	b
@@ -11373,6 +11445,7 @@ evitaSorpresa2:
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
 							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	b		; Se encuentra en el lateral cercano a la habitacion en	la que esta el prota?
+					; 주인공이 있는 방과 가까운 쪽인가?
 		jr	nz, evitaSorpresa6 ; No
 
 		xor	a
@@ -11390,10 +11463,13 @@ evitaSorpresa3:
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
 							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(hl)		; Habitacion de	la momia
+						; 미라의 방
 		ld	a, 8		; Cambia el sentido hacia la derecha
+						; 방향을 오른쪽으로 변경
 		jr	c, evitaSorpresa4
 
 		ld	a, 4		; Cambia el sentido hacia la izquierda
+						; 왼쪽으로 방향을 바꾸다
 
 evitaSorpresa4:
 		ld	h, d
@@ -11401,6 +11477,7 @@ evitaSorpresa4:
 						; 미라 구조에 대한 포인터
 		inc	hl
 		ld	(hl), a		; Sentido en el	que anda la momia
+						; 미라가 걷는 방향
 		exx
 		ret
 
@@ -11426,66 +11503,89 @@ momiaDecide:
 		ld	(ix+ACTOR_TIMER), a
 
 		call	buscaCercanias	; Mira si hay escaleras	para subir o bajar en las cercanias (5 tiles a cada lado)
+								; 근처에 올라가거나 내려가는 계단이 있는지 확인합니다(각 면에 5개의 타일).
 		call	buscaProta	; Comprueba la posicion	de la momia relativa al	prota
+							; 주인공을 기준으로 미라의 위치를 ​​확인
 		and	a
 		jr	z, momiaDecide2	; A la misma altura
+							; 같은 높이에서
 
 		dec	a
 		jr	z, setOrdenBajar ; La momia esta por encima
+								; 미라는 위에 있다
 
 		dec	a
 		jr	z, setOrdenSubir ; La momia esta por debajo
+								; 미라는 아래에 있다
 
 momiaDecide2:
 		ld	a, (ProtaRoom)	; Parte	alta de	la coordenada X. Indica	la habitacion de la piramide
 							; X 좌표의 상단 피라미드의 방을 나타냅니다.
 		cp	(ix+ACTOR_ROOM)
 		jr	nz, momiaDecide3 ; estan en habitaciones distintas
+								; 그들은 다른 방에 있습니다
 
 		ld	a, (ProtaX)
 		cp	(ix+ACTOR_X)	; Compara la X del prota con la	X de la	momia
+							; 주인공의 X와 미라의 X를 비교하십시오.
 
 momiaDecide3:
 		ld	a, 8		; Control: Anda	a la DERECHA
+						; 제어: 오른쪽으로 이동
 		jr	nc, momiaDecide4 ; El prota esta a la derecha
+								; 주인공은 오른쪽
 
 		ld	a, 4		; Control: anda	a la IZQUIERDA
+						; 제어: 왼쪽으로 이동
 
 momiaDecide4:
 		ld	(ix+ACTOR_CONTROL), a ;	Fija la	direccion que debe seguir la momia para	acercarse al prota
+									; 미라가 주인공에게 접근하기 위해 따라야 할 방향을 설정
 
 		ld	c, a
 		ld	hl, ProtaY
 		call	getMapOffset00	; Obtiene puntero a la posicion	del mapa del prota
+								; 주인공의 지도 위치에 대한 포인터 가져오기
 		ex	de, hl
 		call	getYMomia
 		call	getMapOffset00	; Obtiene puntero a la posicion	del mapa de la momia
-
+								; 미라의 지도 위치에 대한 포인터 가져오기
 
 ; Comprueba si entre la	momia y	el prota hay algun obstaculo
 ; De ser asi, intentara	subir o	bajar de donde se encuentra
+; 미라와 주인공 사이에 장애물이 있는지 확인
+; 그렇다면 현재 위치에서 위 또는 아래로 올라가려고 할 것입니다.
 
 		ld	b, 20h		; Ancho	de la habitacion
+						; 방 너비
 
 momiaDecide5:
 		and	a
 		push	hl		; Mapa momia
+						; 미라 지도
 		sbc	hl, de
 		pop	hl
 		ret	z		; Ha llegado a la posicion del prota en	la busqueda
+					; 검색에서 주인공의 위치에 도달했습니다.
 
 		ld	a, (hl)		; Tipo de tile
+						; 타일 ​​종류
 		and	0F0h		; Se queda con la familia
+						; 가족과 함께 머물다
 		cp	10h		; Es una plataforma o muro?
 					; 플랫폼인가, 벽인가?
 		jr	z, momiaDecide7	; Si
 
 		dec	hl		; Tile de la izquierda del mapa
+					; 지도 왼쪽의 타일
 		bit	2, c		; Sentido en el	que se mueve la	momia
+						; 미라가 움직이는 방향
 		jr	nz, momiaDecide6 ; Va a	la izquierda
+								; 왼쪽으로 간다
 
 		inc	hl
 		inc	hl		; Tile de la derecha
+					; 오른쪽 타일
 
 momiaDecide6:
 		djnz	momiaDecide5
@@ -11493,14 +11593,17 @@ momiaDecide6:
 
 momiaDecide7:
 		ld	a, i		; Valor	aleatorio
+						; 임의의 값
 		rra
 		or	c		; Sentido en el	que se mueve la	momia
+					; 미라가 움직이는 방향
 		rra
 		call	c, setOrdenSubir
 
 setOrdenBajar:
 		ld	hl, ordenBajar
 		ld	a, (hl)		; Se mueve hacia la escaleras mas lejanas (dentro del radio de busqueda) que bajan
+						; 내려가는 가장 먼 계단(검색 반경 내)으로 이동합니다.
 		and	a
 
 momiaSetControl:
@@ -11512,6 +11615,7 @@ momiaSetControl:
 setOrdenSubir:
 		ld	hl, ordenSubir
 		ld	a, (hl)		; Controles para dirigirse a la	escalera mas lejana (dentro del	radio de busqueda) que sube
+						; 위로 올라가는 가장 먼 사다리(검색 반경 내)로 이동하는 컨트롤
 		and	a
 		jr	momiaSetControl
 
@@ -11542,27 +11646,44 @@ buscaProta:
 					; 4 = Lanzando un cuhillo
 					; 5 = Picando
 					; 6 = Pasando por un apuerta giratoria
+					
+					; 0 = 정상
+					; 1 = 점프
+					; 2 = 떨어지는
+					; 3 = 계단
+					; 4 = 칼을 던지다
+					; 5 = 찌른다
+					; 6 = 회전문 통과하기
+
 		cp	3		; Escaleras?
 					; 사다리?
 		jr	z, buscaProta2
 
 		ld	a, (de)		; Y del	prota
+						; 주인공의 Y
 		sub	(hl)		; Le resta la Y	de la momia
+						; 그것은 미라의 Y를 뺀다.
 		ld	c, a
 		sub	10
 		add	a, 18
 		jr	c, buscaProta3	; Estan	casi a la misma	altura
+							; 그들은 거의 같은 높이에 있습니다.
 
 buscaProta2:
 		inc	b
 		ld	a, (de)		; Y del	prota
+						; 주인공의 Y
 		sub	(hl)		; Y de la momia
+						; 미라의 Y
 		jr	nc, buscaProta3	; La momia esta	por encima
+							; 미라는 위에 있다
 		inc	b		; La momia esta	por debajo
+					; 미라는 아래에 있다
 
 buscaProta3:
 		ld	a, b
 		ld	(ix+ACTOR_POS_RELAT), a	; 0 = A	la misma altura	(o casi), 1 = Momia por	encima,	2 = Por	debajo
+									; 0 = 같은 높이(또는 거의)에서, 1 = 위의 미라, 2 = 아래
 		ret
 
 
@@ -11583,6 +11704,7 @@ buscaCercanias2:
 		ld	(hl), 0
 		inc	hl
 		djnz	buscaCercanias2	; Borra	ordenes	de subir o bajar anteriores
+								; 이전 상승 또는 하락 주문 삭제
 
 		push	ix		; Datos	momia
 						; 미라 데이터
@@ -11591,106 +11713,142 @@ buscaCercanias2:
 		inc	hl
 		ex	af, af'
 		ld	a, (hl)		; Controles: Sentido en	el que va
+						; 컨트롤: 진행 방향
 		ex	af, af'
 
 		inc	hl
 		inc	hl
 		push	hl		; Y
 		call	buscaCercanias3	; Busca	primero	en el sentido actual
+								; 현재 의미에서 먼저 검색
 		pop	hl
 		ex	af, af'
 		xor	0Ch		; Invierte sentido para	buscar en el contrario al que va
+					; 반대 방향을 찾는 역감각
 		ex	af, af'
 
 buscaCercanias3:
 		call	getYMomia
 		ld	bc, 8		; (!?) Con poner 'ld c,8' bastaria
+						; (!?) 'ld c,8'을 넣으면 충분합니다.
 		ld	b, c		; Punto	central	de la momia
+						; 미라의 중심점
 		call	getMapOffset	; Obtiene en HL	la direccion del mapa que corresponde a	las coordenadas
 								; 좌표에 해당하는 지도의 방향을 HL로 가져옵니다.
 
 		ex	af, af'
 		dec	hl		; Tile a la izquierda de la momia
+					; 미라 왼쪽 타일
 		bit	2, a		; Va a la izquierda?
+						; 왼쪽으로 간다?
 		jr	nz, buscaCercanias4 ; Si, va a la izquierda
+								; 네 왼쪽으로 갑니다
 
 		inc	hl
 		inc	hl		; Tile a la derecha de la momia
+					; 미라 오른쪽 타일
 
 buscaCercanias4:
 		ex	af, af'
 		ld	b, 0		; contador de desplazamientos X	en la busqueda
+						; 검색에서 오프셋 카운터 X
 
 buscaCercanias5:
 		ex	af, af'
 		dec	hl		; desplaza la busqueda un tile a la izquierda
+					; 검색을 왼쪽으로 한 타일 이동
 		bit	2, a		; Va a la izquierda?
+						; 왼쪽으로 간다?
 		jr	nz, buscaCercanias6 ; si, va a la izquierda
+								; 네 왼쪽으로 갑니다
 
 		inc	hl
 		inc	hl		; desplaza la busqueda un tile a la derecha
+					; 검색을 한 타일 오른쪽으로 이동
 
 buscaCercanias6:
 		ex	af, af'
 		ld	a, (hl)		; tile del mapa
+						; 지도 타일
 		and	0F0h		; se queda con la familia o tipo de tile
+						; 가족 또는 타일 유형과 함께 유지
 		cp	10h		; es un	muro o plataforma?
+					; 벽인가 플랫폼인가?
 		ret	z		; si
 
 		cp	20h		; Es una escalera?
+					; 사다리인가요?
 		jr	z, buscaCercanias7 ; Ha	encontrado una escalera
+								; 사다리를 발견
 
 		cp	30h		; Es un	cuchillo?
+					; 칼인가?
 		jr	nz, buscaCercanias8
 
 		ld	a, (hl)
 		cp	30h		; Es un	cuchillo clavado en el suelo?
+					; 칼이 땅에 꽂혀 있습니까?
 		jr	z, buscaCercanias8
 
 buscaCercanias7:
 		ld	c, 1		; Orden	subir
+						; 주문 업로드
 		ld	de, distSubida
 		call	guardaOrden
 
 buscaCercanias8:
 		push	hl
 		ld	a, 60h		; Ancho	de las 3 habitaciones
+						; 3개의 방의 폭
 		call	ADD_A_HL	; Apunta a la fila inferior (yTile+1)
+							; 맨 아래 행을 가리킵니다(yTile+1).
 		ld	a, (hl)		; lee el tile del mapa
+						; 지도 타일 읽기
 		ld	c, a
 		pop	hl
 		and	0F0h		; Se queda con el tipo de tile
+						; 그것은 타일의 종류와 함께 유지
 		jr	z, momiaBaja	; Esta vacio
+							; 비어 있습니까?
 
 		ld	a, c		; Tile del mapa
 						; 지도 타일
 		and	0Fh
 		cp	5		; Escaleras que	bajan?
+					; 내려가는 계단?
 		call	nc, momiaBaja	; Si, da orden de bajar
+								; 그래 내려오라고 명령해
 
 		inc	b
 		ld	a, 5
 		cp	b		; Ha buscado ya	5 posiciones en	una direccion?
+					; 이미 한 방향으로 5개 위치를 검색했습니까?
 		jr	nz, buscaCercanias5
 		ret
 
 momiaBaja:
 		ld	c, 2		; Orden	bajar
+						; 낮은 차수
 		ld	de, distBajada
 
 guardaOrden:
 		ld	a, (de)
 		cp	b
 		ret	nc		; La orden existente tiene mas prioridad (va a las escaleras mas lejanas?)
+					; 기존 명령이 더 높은 우선 순위를 갖습니다(가장 먼 계단으로 가나요?)
 
 		ld	a, b
 		ld	(de), a		; Distancia a las escaleras
+						; 계단까지의 거리
 		dec	de
 		ex	af, af'
 		push	af
 		and	0FCh		; Mantiene el sentido de la busqueda
+						; 검색의 감각을 유지
 		or	c		; A�ade	orden de subir o bajar
+					; 위 또는 아래 순서 추가
 		ld	(de), a		; Guarda la orden
+						; 주문 저장
 		pop	af
 		ex	af, af'
 		ret
@@ -11722,6 +11880,7 @@ getMomiaDat:
 		add	a, b		; x22
 		exx
 		ld	hl, momiaDat	; Estructuras de las momias
+							; 미라의 구조
 		call	ADD_A_HL
 		push	hl
 		ld	(pMomiaProceso), hl ; Puntero a	los datos de la	momia en proceso
@@ -11752,6 +11911,7 @@ getMomiaDat:
 
 mueveProta:
 		ld	hl, ProtaXdecimal ; 'Decimales' usados en el calculo de la X. Asi se consiguen velocidades menores a 1 pixel
+								; X 계산에 사용되는 '소수'. 따라서 1픽셀 미만의 속도가 달성됩니다.
 		ld	de, (protaSpeed) ; El byte bajo	indica la parte	"decimal" y el alto la entera
 							; 하위 바이트는 "소수" 부분을 나타내고 상위 바이트는 정수를 나타냅니다.
 
@@ -11767,9 +11927,12 @@ mueveElemento:
 		ld	b, (ix+2)	; Habitacion
 						; 방
 		ld	c, (ix+5)	; Desplazamiento habitacion
+						; 방 변위
 		ld	a, (ix-2)	; Sentido del movimiento
+						; 방향 감각
 		rra
 		jr	nc, mueveElemento2 ; Va	hacia la derecha
+		; 오른쪽으로 간다
 		ld	a, c
 		cpl
 		ld	c, a
@@ -11783,14 +11946,18 @@ mueveElemento:
 
 mueveElemento2:
 		add	hl, de		; Suma desplazamiento
+						; 변위 합계
 		ld	a, b		; Habitacion actual
+						; 현재 방
 		adc	a, c		; Suma desplazamiento X	alto, por si ha	cambiado de habitacion
+						; 방을 변경한 경우, 변위 X 높이 추가
 		ld	b, a
 		ld	a, (ix+1)	; Coordenada X
 						; X 좌표
 		ex	de, hl
 		pop	hl
 		ld	(hl), e		; X decimales
+						; X 소수
 		inc	hl
 		ld	(hl), d		; X
 		ld	(ix+2),	b	; Room
@@ -11818,9 +11985,12 @@ chkSaltar:
 		dec	hl
 		dec	hl
 		ld	a, (hl)		; Controles del	elemento
+						; 요소 컨트롤
 		pop	hl
 		cp	10h		; Salto	vertical sin desplazamiento lateral?
+					; 사이드 스크롤 없이 수직 점프?
 		jr	z, chkChocaTecho ; Si, solo comprueba que no tenga techo sobre la cabeza
+								; 예, 머리 위에 지붕이 없는지 확인하십시오.
 
 ;---------------------------------------
 ; El salto es con desplazamiento lateral
@@ -11831,26 +12001,32 @@ chkSaltar:
 ;---------------------------------------
 		call	chkChocaTecho
 		ret	nc		; Ha chocado
+					; 충돌했다
 
 		dec	hl
 		ld	a, (hl)		; Sentido
 						; 방향
 		inc	hl
 		ld	bc, 304h	; Offset para la parte superior	izquierda
+						; 왼쪽 상단에 대한 오프셋
 		rr	a
 		jr	c, chkIncrustUp	; Izquierda
 							; 왼쪽
 
 		ld	b, 0Ch		; Offset X parte derecha
+						; 오프셋 X 오른쪽 부분
 
 chkIncrustUp:
 		push	bc
 		call	chkTocaMuro	; Z = choca
 							; Z = 충돌
 		pop	bc		; Recupera offset coordendas de	choque
+					; 충격 좌표 오프셋을 복구합니다.
 		jr	z, chkTechoMazizo ; Ha chocado
+								; 충돌했다
 
 		call	chkTocaY_8	; Decrementa en	8 el offset Y y	comprueba si choca
+							; 오프셋 Y를 8만큼 감소시키고 충돌하는지 확인하십시오.
 		ret	z
 
 		scf
@@ -11858,15 +12034,21 @@ chkIncrustUp:
 
 chkTechoMazizo:
 		call	chkTocaY_8	; Decrementa en	8 el offset Y y	comprueba si choca
+							; 오프셋 Y를 8만큼 감소시키고 충돌하는지 확인하십시오.
 		ret	z		; Choca
+					; 충돌하다
 
 		call	chkTocaY_8	; Decrementa en	8 el offset Y y	comprueba si choca
+							; 오프셋 Y를 8만큼 감소시키고 충돌하는지 확인하십시오.
 		ret	z		; Choca
+					; 충돌하다
 
 		ld	b, 8		; Parte	central	X del elemento
+						; 요소의 중앙 부분 X
 		call	chkTocaMuro	; Z = choca
 							; Z = 충돌
 		ret	z		; Choca
+					; 충돌하다
 
 		scf			; No choca
 					; 충돌하지 않는다
@@ -11897,6 +12079,7 @@ chkChocaTecho:
 
 chkTocaY_8:
 		ld	a, c		; Decrementa en	8 el offset Y y	comprueba si choca
+						; 오프셋 Y를 8만큼 감소시키고 충돌하는지 확인하십시오.
 		sub	8
 		ld	c, a
 		push	bc
