@@ -21,18 +21,27 @@ VERSION2	equ	1	; Segunda version de la ROM con correccion de fallos
 ;
 ; - Impide que se pueda lanzar un cuchillo cuando la puerta se esta abriendo.
 ;   De esta forma se evita que se corrompa el grafico de la puerta al pasar el cuchillo sobre ella
+; - 문이 열릴 때 칼이 튀는 것을 방지합니다.
+; 이렇게 하면 칼로 문 그래픽이 손상되는 것을 방지할 수 있습니다.
 ;
 ; - Impide que se pueda lanzar un cuchillo cuando se esta pegado a un objeto (gema, pico, etc...)
 ;   En la version original atravesaba el objeto al lanzar el cuchillo
+; - 물체(보석, 곡괭이 등...)에 부착 시 칼이 던지는 것을 방지합니다.
+; 원래 버전에서는 칼을 던질 때 물체를 통과했습니다.
 ;
 ; - Se puede picar sobre un muro trampa
+; - 트랩 벽에 쏘일 수 있습니다.
 ;
 ; - Corregida la posicion del muro trampa de la piramide 10 de la pantalla de la izquierda, abajo a la izquierda (aparece al coger el cuchillo)
 ;   La version original lo ten�a en la pantalla de la derecha bajo las escaleras. Pero hacia falta cabar un par de ladrillos del suelo para que apareciese.
+; - 화면 좌측, 좌측 하단의 피라미드 10의 함정 벽 위치 수정 (칼을 집었을 때 나타남)
+; 원래 버전에서는 계단 아래 오른쪽 화면에 그를 표시했습니다. 그러나 그것이 나타나려면 땅에서 몇 개의 벽돌을 파내야 했습니다.
 ;
 ; - Modificaci�n de la posicion del muro trampa de la pir�mide 12, en la pantalla de la derecha, abajo a la derecha (aparece al coger el pico) Se ha movido un tile a la derecha (?)
+; - 오른쪽 화면, 오른쪽 하단에서 피라미드 12의 함정 벽 위치 수정(곡괭이를 집었을 때 나타남) 타일이 오른쪽(?)으로 이동되었습니다.
 ;
 ; - Los muros trampa se detienen al chocar contra un objeto. En la version anterior lo borraba (erroneamente decrementaba los decimales X en vez de la coordenada Y)
+; - 트랩 벽은 물체와 충돌할 때 멈춥니다. 이전 버전에서는 삭제되었습니다(Y 좌표 대신 X 소수점을 잘못 감소시켰습니다)
 ;-------------------------------------------------------------------------------
 
 ; En la piramide 10-2 hay una momia que parece por encima del suelo (!?)
@@ -13028,11 +13037,13 @@ setFlechaMap2:
 
 setFlechaGoal:
 		ld	hl, attrPiramidMap ; Atributos del sprite usado	para resaltar una piramide en el mapa (silueta)
+								; 지도에서 피라미드를 강조 표시하는 데 사용되는 스프라이트의 속성(실루엣)
 		push	hl
 		ld	(hl), 97h
 		inc	hl
 		ld	(hl), 7Bh
 		ld	a, 1		; Flecha por arriba
+						; 위쪽 화살표
 		call	setFlechaInvert
 		pop	hl
 		ld	(hl), 0C3h
@@ -13068,14 +13079,19 @@ setFlechaInvert:
 tickPergamino:
 		ld	a, (timer)
 		and	7		; 8 colores de animacion
+					; 8가지 애니메이션 색상
 		ld	hl, coloresFlecha ; Colores usados para	resaltar la flecha y piramide en el mapa
+								; 지도에서 화살표와 피라미드를 강조 표시하는 데 사용되는 색상
 		call	ADD_A_HL
 		ld	a, (hl)
 		ld	(colorPiramidMap), a ; Color del outline de la piramide	en el mapa
+									; 지도의 피라미드 윤곽선 색상
 		ld	(colorFlechaMap), a ; Color de la flecha que indica a que piramide vamos en el mapa
+								; 지도에서 우리가 가고 있는 피라미드를 나타내는 화살표의 색상
 		call	updateSprites
 
 		call	chkPause	; Comprueba si se pulsa	F1 en el mapa
+							; 지도에서 F1을 눌렀는지 확인
 
 		ld	hl, piramideActual
 		ld	a, (hl)
@@ -13084,35 +13100,46 @@ tickPergamino:
 		ld	hl, statusEntrada
 		inc	(hl)
 		cp	0Eh		; Ultima piramide?
+					; 마지막 피라미드?
 		ld	a, (hl)
 		jr	z, setEndingStat
 
 		cp	58h		; Ciclos que muestra la	flecha de salida
+					; 종료 화살표를 표시하는 주기
 		jr	z, setDestinoMap
 
 		cp	0E0h		; Ciclos que muestra la	flecha de entrada
+						; 입력 화살표를 표시하는 주기
 		ret	nz
 
 		inc	a
 		ld	(flagEndPergamino), a ;	1 = Ha terminado de mostar el pergamino/mapa
+									; 1 = 스크롤/지도 표시 완료
 		ret
 
 setEndingStat:
 		cp	58h		; Hay que cambiar la posicion de la flecha al destino?
+					; 화살표 위치를 목적지로 변경해야 합니까?
 		jr	z, setFlechaGoal ; Coloca la flecha sobre GOAL
+								; GOAL에 화살표 배치
 
 		ld	a, (MusicChanData)
 		or	a
 		ret	nz		; Aun suena musica
+					; 여전히 음악이 재생됩니다
 
 		ld	hl, timerPergam2 ; Se usa para hacer una pausa tras terminar de	sonar la musica	del pergamino al llegar	al GOAL
+								; GOAL에 도달했을 때 스크롤 음악 재생이 끝난 후 일시 중지하는 데 사용됩니다.
 		ld	a, (hl)
 		inc	(hl)
 		cp	80h
 		ret	nz		; Hace una pausa al terminar de	sonar la musica
+					; 음악이 끝나면 일시 중지
 
 		ld	hl, numFinishGame ; Numero de veces que	se ha terminado	el juego
+								; 게임이 끝난 횟수
 		inc	(hl)		; Incrementa el	numero de veces	que se ha terminado el juego
+						; 게임이 끝난 횟수를 늘립니다.
 
 		xor	a
 		inc	hl
@@ -13123,9 +13150,12 @@ setEndingStat:
 		ld	bc, 0Ah
 		ld	a, c		; A = Status #A
 		ldir			; Borra	10 bytes de variables desde numFinishedGame
+						; numFinishedGame에서 변수 10바이트 삭제
 
 		call	setGameStatus	; Pone status #A = Ending
+								; 상태 설정 #A = 종료
 		jp	ResetSubStatus	; (!?) Ya lo hace en la	anterior llamada
+							; (!?) 이전 호출에서 이미 수행합니다.
 
 ;----------------------------------------------------
 ; Muestra texto	de "CONGRATULATIONS" "SPECIAL BONUS"
@@ -13163,10 +13193,12 @@ setPiramidMap:
 		ld	hl, coordPiramMap
 		call	ADD_A_HL
 		ld	de, attrPiramidMap ; Atributos del sprite usado	para resaltar una piramide en el mapa (silueta)
+								; 지도에서 피라미드를 강조 표시하는 데 사용되는 스프라이트의 속성(실루엣)
 		ldi			; Y
 		ldi			; X
 		ex	de, hl
 		ld	(hl), 0E4h	; Sprite de la silueta de la piramide
+						; 피라미드 실루엣 스프라이트
 		ret
 
 ;----------------------------------------------------
@@ -13203,6 +13235,7 @@ colorTableMap:	db 5, 8Fh, 3, 6Fh, 5, 9Fh, 8, 8Fh, 83h,	61h, 6Fh, 6Fh
 ; 피라미드 실루엣, 위쪽, 오른쪽, 아래쪽, 왼쪽 화살표
 ;----------------------------------------------------
 gfxSprMapa:	dw 1F20h		; Direccion VRAM sprite	#E4
+							; VRAM 스프라이트 주소 #E4
 		db 88h,	6, 9, 10h, 20h,	40h, 0C0h, 30h,	0Fh, 0Ah, 0, 85h
 		db 80h,	40h, 20h, 30h, 0C0h, 9,	0, 84h,	10h, 38h, 7Ch
 		db 0FEh, 3, 38h, 32h, 0, 87h, 10h, 18h,	0FCh, 0FEh, 0FCh
@@ -13211,10 +13244,12 @@ gfxSprMapa:	dw 1F20h		; Direccion VRAM sprite	#E4
 
 		dw #3867
 		db 91h		; Transfiere #11 patrones
+					; #11 패턴 전송
 		db 20h, 0,	30h, 39h, 32h, 21h, 2Dh, 29h, 24h, 1Bh, 33h,	0, 2Dh,	21h, 30h, 0, 20h	; Text: "- Pyramid's Map -"
 
 
 		; Tabla de nombres del pergamino
+		; 양피지 이름 테이블
 		db 4Fh, 0, 85h, 0CFh, 0D0h
 		db 1, 1, 0D2h, 4, 1, 88h, 0D0h,	0D3h, 1, 1, 1, 0D2h, 0D0h
 		db 0D5h, 0Fh, 0, 81h, 0D8h, 10h, 1, 81h, 0DCh, 0Eh, 0
@@ -13239,6 +13274,7 @@ gfxSprMapa:	dw 1F20h		; Direccion VRAM sprite	#E4
 		db 1, 1, 1, 0D1h, 0D1h,	1, 1, 0D1h, 0E7h, 0
 
 coloresFlecha:	db 1, 6, 6, 0Ah, 0Ah, 6, 6, 6	; Colores usados para resaltar la flecha y piramide en el mapa
+												; 지도에서 화살표와 피라미드를 강조 표시하는 데 사용되는 색상
 
 
 ;----------------------------------------------------
@@ -13297,14 +13333,18 @@ numSprFlechInv:	db 0F0h
 
 TXT_ENDING:
 		dw #38c9		; Direccion VRAM
+						; VRAM 주소
 		db 8Fh
 		db 23h,	2Fh, 2Eh, 27h, 32h, 21h, 34h, 35h, 2Ch,	21h, 34h, 29h, 2Fh, 2Eh, 33h 	; "CONGRATULATIONS"
 		db #2e, 0									; Rellena #2e patrones
+													; 채우기 #2e 패턴
 		db 90h			; Transfiere #10 patrones
+						; #10 패턴 전송
 		db 33h, 30h, 25h, 23h, 29h, 21h, 2Ch, 0, 22h, 2Fh, 2Eh, 35h, 33h, 0, 0, 11h 	; "SPECIAL BONUS  1"
 
 		db    4, 10h									; "0000"
 		db    0										; Fin
+													; 끝
 
 ;----------------------------------------------------
 ;
@@ -13344,32 +13384,45 @@ SetMusic_:
 		ld	c, a
 		and	3Fh
 		ld	b, 2		; Canales a usar
+						; 사용할 채널
 		ld	hl, musicCh1
 		cp	0Bh		; Es una efecto	de sonido de los que suenan mientras suena la musica principal?
+					; 메인 음악이 재생되는 동안 재생되는 효과음인가요?
 		jr	c, setSFX
 
 		cp	11h		; Es una musica	que suena en solitario y usa los 3 canales?
+					; 3채널을 다 사용해서 혼자 소리가 나는 음악인가요?
 		jr	c, setMus
 
 		inc	b		; Usa los 3 canales
+					; 3채널 모두 사용
 		jr	setMus
 
 setSFX:
 		dec	b		; Solo usa 1 canal
+					; 1채널만 사용
 		ld	hl, musicCh3	; El canal 3 es	el que reproduce los efectos de	sonido
+							; 채널 3은 음향 효과를 재생하는 채널입니다.
 
 setMus:
 		ld	a, (hl)		; Musica que esta sonando en este canal
+						; 이 채널에서 재생 중인 음악
 		and	3Fh		; Descarta bits	de configuracion y se queda solo con el	numero de musica
+					; 구성 비트를 버리고 음악 번호만 남습니다.
 		ld	e, a		; E = Sonido actual
+						; E = 현재 소리
 		ld	a, c
 		and	3Fh		; A = Sonido que se quiere reproducir
+					; A = 재생할 사운드
 		cp	e		; Tiene	mas prioridad el que esta sonando o el nuevo?
+					; 재생 중인 것 또는 새 것이 더 우선시됩니까?
 		ret	c		; El que esta sonando tiene mas	prioridad
+					; 재생 중인 쪽이 우선 순위가 높습니다.
 
 		add	a, a
 		ld	de, MusicIndex-2
 		call	ADD_A_DE	; Obtiene puntero a los	datos de la musica o efecto que	hay que	reproducir
+							; 재생할 음악 또는 효과의 데이터에 대한 포인터 가져오기
 		dec	hl
 		dec	hl
 
@@ -13377,22 +13430,28 @@ setChanData:
 		push	hl
 		pop	ix
 		ld	(hl), 1		; Contador de la duracion de la	nota
+						; 노트 지속 시간 카운터
 		inc	hl
 		ld	(hl), 1		; Duracion por defecto de la nota
+						; 메모의 기본 길이
 		inc	hl
 		ld	(hl), c		; Musica que esta reproduciendo	el canal
+						; 채널을 재생하는 음악
 
 		inc	hl
 		ld	a, (de)
 		ld	(hl), a		; Byte bajo del	puntero	a los datos de la musica/efecto
+						; 음악/효과 데이터에 대한 포인터의 하위 바이트
 		inc	hl
 		inc	de
 		ld	a, (de)
 		ld	(hl), a		; Byte alto del	puntero
+						; 포인터 상위 바이트
 
 		ld	(ix+9),	0
 		ld	a, 0Ah
 		call	ADD_A_HL	; Apunta al siguiente canal
+							; 다음 채널을 가리킴
 		inc	de
 		djnz	setChanData
 		ret
@@ -13411,33 +13470,46 @@ setChanData:
 
 patternLoop:
 		inc	hl		; Parametro del	comando	loop
+		; 루프 명령 매개변수
 		ld	a, (ix+MUSIC_CNT_LOOP) ; Veces que se ha reproducido un	pattern
+									; 패턴이 재생된 횟수
 		inc	a		; Incrementa el	numero de veces	que ha sonado el pattern
+					; 패턴이 울린 횟수를 늘립니다.
 		cp	(hl)		; Ha sonado tantas veces como se indica?
+						; 표시된 횟수만큼 울렸습니까?
 		jr	z, omiteLoop
 
 		jp	m, setMusPattern ; Es un loop infinito?
+								; 무한루프인가요?
 		dec	a		; No incrementa	el numero de veces que ha sonado
+					; 울린 횟수를 늘리지 않습니다.
 
 setMusPattern:
 		ld	(ix+MUSIC_CNT_LOOP), a ; Veces que se ha reproducido un	pattern
+									; 패턴이 재생된 횟수
 		inc	hl
 		ld	a, (hl)		; Direccion baja del pattern
+						; 패턴의 낮은 주소
 		ld	(ix+MUSIC_ADD_LOW), a
 		inc	hl
 		ld	a, (hl)		; Direccion alta del pattern
+						; 패턴의 상위 주소
 		ld	(ix+MUSIC_ADD_HIGH), a
 		jr	contProcessSnd	; Interpretar el pattern
+							; 패턴 해석
 
 omiteLoop:
 		inc	hl
 		inc	hl		; Descarta direccion del loop
+					; 루프 주소 폐기
 		xor	a
 		ld	(ix+MUSIC_CNT_LOOP), a ; Inicializa contador de	repeticiones del pattern
+									; 패턴 반복 카운터 초기화
 		call	incMusicPoint
 
 contProcessSnd:
 		inc	(ix+MUSIC_CNT_NOTA) ; Este comando no modifica la duracion de la nota
+								; 이 명령은 음표의 지속 시간을 수정하지 않습니다.
 		jp	processSndData
 
 ;----------------------------------------------------
@@ -13459,6 +13531,7 @@ contProcessSnd:
 switchCh3OnOff:
 		ld	a, c
 		cp	5		; Es el	canal 3?
+					; 채널3인가요?
 		ret	nz		; No
 
 		dec	d
@@ -13466,9 +13539,11 @@ switchCh3OnOff:
 
 		ld	a, 10011100b
 		jr	SetPSGMixer	; Desactiva el tono del	canal 3	y activa el ruido
+						; 채널 3 톤 끄기 및 노이즈 켜기
 
 toneOnCh123:
 		ld	a, 10111000b	; Activa los 3 canales de sonido y apaga los de	ruido
+							; 3개의 사운드 채널을 활성화하고 노이즈 채널을 끕니다.
 
 SetPSGMixer:
 		ld	(mixerValuePSG), a
@@ -13485,50 +13560,66 @@ SetPSGMixer:
 updateSound:
 		ld	a, (mixerValuePSG)
 		call	SetPSGMixer	; Fija el estado de los	canales	del PSG
+							; PSG 채널의 상태 설정
 
 		ld	c, 1
 		ld	ix, MusicChanData
 		exx
 		ld	b, 3		; Numero de canales
+						; 채널 수
 		ld	de, 0Eh		; Channel data size
+						; 채널 데이터 크기
 
 updateSound2:
 		exx
 		ld	a, (ix+MUSIC_ID) ; Musica que esta reproduciendo el canal
+								; 채널을 재생하는 음악
 
 		push	af
 		dec	a		; Es el	sonido de caer?
+					; 떨어지는 소리인가?
 		call	z, updateSfxCaer
 		pop	af
 
 		or	a		; Esta sonando algo?
+					; 뭔가 울리나요?
 		call	nz, processSndData ; si
 
 		inc	c
 		inc	c		; Siguiente canal
+					; 다음 채널
 		exx
 		add	ix, de		; Apunta a los datos del siguiente canal
+						; 다음 채널의 데이터를 가리킵니다.
 		djnz	updateSound2	; Reproduce siguiente canal
+								; 다음 채널 재생
 		ret
 
 updateSfxCaer:
 		ld	a, c
 		cp	5
 		ret	c		; No es	el canal 3
+					; 채널 3이 아닙니다.
 
 		ld	hl, caidaSndDat	; Este byte y los dos anteriores controlan la frecuencia del sonido de caida
+							;	이 바이트와 이전 2바이트는 감쇠 사운드의 주파수를 제어합니다.
 		ld	de, caidaSndData
 		ld	a, (flagSetCaeSnd) ; Si	es 0 hay que inicializar los datos del sonido de caida
+								; 0이면 떨어지는 소리의 데이터 초기화가 필요하다
 		cp	1
 		jr	c, initCaeSndDat ; Inicializa valores del sonido de caida
+								; 가을 소리 값 초기화
 
 		ld	a, 8
 		add	a, (hl)		; Incrementa frecuencia	del sonido de caida
+						; 떨어지는 소리의 주파수를 높입니다.
 		ld	(hl), a
 		dec	hl
 		jr	nc, setFrqCaePoint ; Guarda el puntero a la frecuencia de caida
+								; 감쇠 주파수에 대한 포인터 저장
 
 		inc	(hl)		; Si hay acarreo, incrementa frecuencia	byte alto
+						; 캐리인 경우 상위 바이트 빈도 증가
 
 setFrqCaePoint:
 		dec	hl
@@ -13552,6 +13643,7 @@ initCaeSndDat:
 
 
 		db    1			; Quita	"flagSetCaeSnd"
+						; "flagSetCaeSnd" 제거
 		db 21h
 		db 0B0h
 caidaSndData:	db 61h
@@ -13566,30 +13658,44 @@ processSndData:
 		jp	m, loc_7C2D
 
 		dec	(ix+MUSIC_CNT_NOTA) ; Decrementa contador duracion nota
+								; 음표 지속 시간 카운터 감소
 		ret	nz		; No hay que actualizar	la nota, sigue sonando la anterior
+					; 메모를 업데이트할 필요가 없습니다. 이전 메모가 계속 울립니다.
 
 nextNote:
 		ld	l, (ix+MUSIC_ADD_LOW)
-		ld	h, (ix+MUSIC_ADD_HIGH) ; Puntero a los datos de	la musica
+		ld	h, (ix+MUSIC_ADD_HIGH) ; Puntero a los datos de	la musica/efecto
+									; 음악 데이터에 대한 포인터
 		ld	a, (hl)		; Dato
+						; 데이터
 		cp	0FEh		; Hay que hacer	un loop	de un pattern?
+						; 패턴을 반복해야 하나요?
 		jp	z, patternLoop	; Si
 
 		jr	nc, endMusic	; #FF =	Fin de los datos
+							; #FF = 데이터 끝
 
 		bit	7, (ix+MUSIC_ID)
 		jp	nz, setNote
 
 ; Duracion nota: #2x (x	= duracion)
+; 음표 지속 시간: #2x(x = 지속 시간)
+
 		and	0F0h		; Se queda con el comando (nibble alto)
+						; 명령 유지(높은 니블)
 		cp	20h		; Comando: Cambiar duracion de la nota?
+					; 명령: 음표 길이를 변경하시겠습니까?
 		ld	a, (hl)		; Vuelve a leer	el dato
+						; 데이터를 다시 읽어
 		jr	nz, loc_7BC7
 
 		and	0Fh		; Se queda con la duracion (nibble bajo)
+					; 지속 시간 유지(낮은 니블)
 		ld	(ix+MUSIC_DURAC_NOTA), a ; Cambia la duracion de la nota
+										; 메모 지속 시간 변경
 		inc	hl
 		ld	a, (hl)		; Lee el siguiente dato
+						; 다음 정보를 읽으십시오
 
 loc_7BC7:
 		ld	b, a
@@ -13623,6 +13729,7 @@ loc_7BEA:
 		jr	z, loc_7BF7
 
 		ld	a, (hl)		; (!?) No se usa el valor
+						; (!?) 값이 사용되지 않음
 		call	incMusicPoint
 		ld	a, b
 		jr	setDuracion
@@ -13632,8 +13739,10 @@ loc_7BF7:
 		ld	b, a
 		xor	(hl)
 		ld	d, a		; Frecuencia (high)
+						; 주파수(높음)
 		inc	hl
 		ld	e, (hl)		; Frecuencia (low)
+						; 주파수(낮음)
 		call	incMusicPoint
 		ex	de, hl
 		call	setFreq
@@ -13646,7 +13755,9 @@ loc_7BF7:
 setDuracion:
 		ld	h, a
 		ld	e, (ix+MUSIC_DURAC_NOTA) ; Valor de la duracion	de la nota
+										; 음표 지속 시간 값
 		ld	(ix+MUSIC_CNT_NOTA), e ; Contador de la	duracion de la nota
+									; 음표 지속 시간 카운터
 		ld	a, (ix+0Ch)
 		add	a, e
 		ld	(ix+8),	a
@@ -13655,17 +13766,22 @@ setDuracion:
 endMusic:
 		xor	a
 		ld	(ix+MUSIC_CNT_LOOP), a ; Veces que se ha reproducido un	pattern
+									; 패턴이 재생된 횟수
 		ld	(ix+0Bh), a
 		ld	d, 1
 		call	switchCh3OnOff
 		xor	a
 		ld	(ix+MUSIC_ID), a ; Ninguna musica sonando
+								; 음악 재생 없음
 		ld	h, a		; Volumen 0
+						; 볼륨 0
 		jr	setVolume
 
 loc_7C2D:
 		dec	(ix+MUSIC_CNT_NOTA) ; Decrementa duracion contador nota
+								; 음표 카운터 지속 시간 감소
 		jp	z, nextNote	; Fin nota
+						; 음표 끝
 
 		dec	(ix+8)
 		ld	a, (ix+8)
@@ -13686,6 +13802,7 @@ decVolume:
 		ld	a, (ix+MUSIC_VOLUME)
 		dec	a
 		ret	m		; El volumen era 0
+					; 볼륨은 0이었습니다
 		ld	(ix+MUSIC_VOLUME), a
 		ld	h, a
 
@@ -13712,6 +13829,7 @@ setNote:
 		ld	a, (hl)
 		and	0F0h
 		cp	0D0h		; Comando #D = Tempo
+						; 명령 #D = 템포
 		ld	a, (hl)
 		jr	nz, loc_7C6A
 
@@ -13726,6 +13844,7 @@ loc_7C6A:
 
 		and	0Fh
 		ld	(ix+MUSIC_VOLUME_CH), a	; Volumen canal
+									; 채널 볼륨
 		inc	hl
 		ld	a, (hl)
 		ld	(ix+0Ch), a
@@ -13749,11 +13868,14 @@ loc_7C7F:
 
 changOctave:
 		ld	(ix+MUSIC_OCTAVA), a ; Octava?
+									; 옥타브?
 		inc	hl
 		ld	a, (hl)		; Nota+duracion
+						; 음표+지속시간
 
 loc_7C94:
 		and	0Fh		; Nibble bajo =	duracion
+					; 낮은 니블 = 지속 시간
 		ld	b, a
 		ld	a, (ix+MUSIC_TEMPO)
 		jr	z, setDuracionNota
@@ -13777,6 +13899,7 @@ setDuracionNota:
 		jr	z, defaultVolume
 
 		ld	a, (ix+MUSIC_VOLUME_CH)	; Volumen canal
+									; 채널 볼륨
 
 defaultVolume:
 		ld	(ix+MUSIC_VOLUME), a
@@ -13787,9 +13910,11 @@ defaultVolume:
 		call	ADD_A_HL
 
 		ld	l, (hl)		; Frecuencia
+						; 주파수
 		ld	h, 0
 
 		ld	a, (ix+MUSIC_OCTAVA) ; Octava?
+									; 옥타브?
 		or	a
 		jr	z, setOctave
 
@@ -13804,16 +13929,21 @@ setOctave:
 		or	a
 		jr	z, setFreq
 		inc	hl		; Chorus?
+					; 화음?
 
 ; C = Canal 1,3,5 (1-3)
 ; HL = Frecuencia
+; C = 채널 1,3,5(1-3)
+; HL = 주파수
 
 setFreq:
 		ld	a, c		; Registro PSG de la frecuencia	del canal (high)
+						; 채널 주파수 PSG 레지스터(높음)
 		ld	e, h
 		call	WRTPSG
 		ld	a, c
 		dec	a		; Registro frecuencia (low)
+					; 주파수 기록(낮음)
 		ld	e, l
 		jp	WRTPSG
 
@@ -13842,46 +13972,65 @@ freqNotas:	db 6Ah
 
 MusicIndex:
 		dw SFX_Dummy		; 1 - Caer
+							; 1 - 추락
 		dw SFX_Dummy		; 2 - Choca suelo
+							; 2 - 땅을 닿다
 		dw SFX_PuertaGir	; 3 - Puerta giratoria
+							; 3 - 회전문
 		dw SFX_Coger		; 4 - Coge objeto:cuchillo o pico
+							; 4 - 물건 줍기: 칼이나 곡괭이
 		dw SFX_Picar		; 5 - Sonido del pico
+							; 5 - 곡괭이의 소리
 		dw SFX_Lanzar		; 6 - Larzar cuchillo
+							; 6 - 투척 칼
 		dw SFX_Momia		; 7 - Aparece una momia
+							; 7 - 미라가 나타난다
 		dw SFX_Hit		; 8 - Explota momia al golpearla con cuchillo
+						; 8 - 미라가 칼로 명중하면 폭발합니다.
 		dw SFX_Gema		; 9 - Coger gema
+						; 9 - 보석 얻기
 		dw SFX_VidaExtra	; 10 - Vida extra
+							; 10 - 엑스트라 라이프
 
 		dw MUS_Ingame		; 11 - Musica ingame
+							; 11 - 게임 내 음악
 		dw MUS_Ingame2
 
 		dw MUS_CloseDoor	; 13 - Puerta cerrandose
+							; 13 - 문 닫기
 		dw MUS_CloseDoor2
 
 		dw MUS_SalirPiram	; 15 - Campanilla al salir de la piramide
+							; 15 - 피라미드를 떠날 때 벨
 		dw MUS_SalirPiram2
 
 		dw MUS_Mapa		; 17 - Fanfarria del pergamino
+						; 17 - 두루마리 팡파르
 		dw MUS_Mapa2
 		dw MUS_Mapa3
 
 		dw MUS_StageClr		; 20 - Stage clear. Ha cogido todas las	gemas
+							; 20 - 스테이지 클리어. 그는 모든 보석을 가져갔다
 		dw MUS_StageClr2
 		dw MUS_StageClr3
 
 		dw MUS_Start		; 23 - Start game
+							; 23 - 게임 시작
 		dw MUS_Start2
 		dw MUS_Start3		; 25
 
 		dw MUS_GameOver		; 26 - Game Over
+							; 26 - 게임 오버
 		dw MUS_GameOver2
 		dw MUS_GameOver3
 
 		dw MUS_Muerte		; 29 - Prota muere
+							; 29 - 영웅 사망
 		dw MUS_Muerte2		; 30
 		dw MUS_Muerte3
 
 		dw SFX_Dummy		; 32 - Silencio
+							; 32 - 침묵
 		dw SFX_Dummy
 		dw SFX_Dummy
 
@@ -14328,10 +14477,10 @@ momiaDat:	# 16h*4			; 0 = Andando
 					; +#01 = 모니터
 					; +#02 = 방향
 					; +#03 = 그리고
-					; +#04 = X 소수부
+					; +#04 = X 소수
 					; +#05 = X
 					; +#06 = 방
-					; +#07 = 속도 X 소수부
+					; +#07 = 속도 X 소수
 					; +#08 = 속도 X
 					; +#09 = 스피드룸
 					; +#0b = 프레임
@@ -14353,7 +14502,7 @@ pyramidDoors:	# 18h			; Y (FF	= Desactivado)
 					; Direccion por	la que se entra	/ Flecha del mapa
 
 					; Y (FF = 꺼짐)
-					; X 소수부
+					; X 소수
 					; X
 					; 방
 					; 상태(높은 니블 = 상태, 낮은 니블 = 카운터)
@@ -14376,7 +14525,7 @@ datosGemas:	# 6Ch			; 0 = Color/activa. Nibble alto	indica el color. El bajo si 
 					; 0 = 색상/활성. 높은 니블은 색상을 나타냅니다. 저음이 활성화된 경우(1) 그렇지 않은 경우(0)
 					; 1 = 상태
 					; 2 = Y
-					; 3 = X 소수부
+					; 3 = X 소수
 					; 4 = X
 					; 5 = 방
 					; 6-8 = 0, 0, 0
